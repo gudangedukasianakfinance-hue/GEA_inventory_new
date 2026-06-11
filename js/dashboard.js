@@ -5,7 +5,7 @@ let chartOutletStatus = null;
 let currentMenu = "penjualan";
 let selectedSalesOutlet = "";
 const MENU_STORAGE_KEY = "inventoryActiveMenu";
-const VALID_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "forecast", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "mydashboard", "sotasks", "sohistory", "profile", "users", "settings"];
+const VALID_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "forecast", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "mydashboard", "sotasks", "sohistory", "profile", "users", "settings", "produk", "outlet", "pembelian"];
 const USER_ONLY_MENUS = ["opname", "mydashboard", "sotasks", "sohistory", "profile"];
 const ADMIN_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "forecast", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "users", "settings"];
 let isMobileMenuOpen = false;
@@ -890,6 +890,28 @@ function selectMenu(event, menu) {
   if (menu === "settings") {
     // Settings - load settings page
     showSettingsTab();
+    return;
+  }
+
+  // V4 Warehouse Menus
+  if (menu === "produk") {
+    // Show produk list
+    document.getElementById("persediaanTab").style.display = "block";
+    showModuleTab(null, "persediaan", "persediaanOverview");
+    return;
+  }
+
+  if (menu === "outlet") {
+    // Show outlet management - use sales tab with outlet view
+    document.getElementById("kpiTab").style.display = "block";
+    showToast('Manajemen Outlet - dalam pengembangan', true);
+    return;
+  }
+
+  if (menu === "pembelian") {
+    // Show pembelian - use sales tab with purchase view
+    document.getElementById("kpiTab").style.display = "block";
+    showToast('Manajemen Pembelian - dalam pengembangan', true);
     return;
   }
 }

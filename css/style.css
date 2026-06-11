@@ -153,3 +153,96 @@ body.auth-locked .sidebar,body.auth-locked .app-header,body.auth-locked .content
 .cursor-pointer{cursor:pointer}
 .select-none{user-select:none}
 @media print{.no-print{display:none!important}.print-only{display:block!important}}
+
+/* ================================================
+   V4 SIDEBAR SUBMENU STYLES
+   ================================================ */
+
+/* Has Submenu Item */
+.sidebar .has-submenu {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar .has-submenu .submenu-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+
+.sidebar .has-submenu.open .submenu-icon {
+  transform: rotate(180deg);
+}
+
+/* Submenu Container */
+.sidebar-submenu {
+  display: none;
+  padding-left: var(--space-6);
+  margin: var(--space-1) 0;
+}
+
+.sidebar-submenu.open {
+  display: block;
+}
+
+/* Submenu Items */
+.sidebar .submenu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin: 2px 0;
+}
+
+.sidebar .submenu-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.sidebar .submenu-item.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.sidebar .submenu-item i {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.sidebar .submenu-item:hover i {
+  opacity: 1;
+}
+
+/* Badge in submenu */
+.sidebar .badge {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-medium);
+}
+
+.sidebar .badge-warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+/* Mobile Submenu adjustments */
+@media (max-width: 768px) {
+  .sidebar-submenu {
+    padding-left: var(--space-4);
+  }
+  
+  .sidebar .submenu-item {
+    padding: var(--space-2);
+  }
+}

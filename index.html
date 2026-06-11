@@ -69,80 +69,226 @@
 
         <div class="sidebar-divider"></div>
 
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Operasional</p>
-          <ul>
-            <li data-menu="penjualan" onclick="selectMenu(event,'penjualan')">
-              <i data-lucide="shopping-cart"></i>
-              <span>Penjualan</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')">
-              <i data-lucide="package-check"></i>
-              <span>Stok Opname</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
+        <!-- TASK CENTER -->
         <div class="sidebar-section">
           <p class="sidebar-section__label">Tugas</p>
           <ul>
-            <li data-menu="taskcenter" onclick="selectMenu(event,'taskcenter')">
+            <li data-submenu="taskcenter" class="has-submenu" onclick="toggleSubmenu(event,'taskcenter-submenu')">
               <i data-lucide="clipboard-list"></i>
               <span>Task Center</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="taskcenter-submenu">
+            <li data-menu="taskcenter" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
+              <span>Tugas Saya</span>
+            </li>
+            <li data-menu="taskcenter-queue" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
+              <span>Antrian Tugas</span>
+            </li>
+            <li data-menu="taskcenter-history" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
+              <span>Riwayat</span>
             </li>
           </ul>
         </div>
 
         <div class="sidebar-divider"></div>
 
+        <!-- WAREHOUSE -->
+        <div class="sidebar-section">
+          <p class="sidebar-section__label">Warehouse</p>
+          <ul>
+            <li data-submenu="warehouse" class="has-submenu" onclick="toggleSubmenu(event,'warehouse-submenu')">
+              <i data-lucide="warehouse"></i>
+              <span>Warehouse</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="warehouse-submenu">
+            <li data-menu="persediaan" onclick="selectMenu(event,'persediaan')" class="submenu-item">
+              <i data-lucide="package"></i>
+              <span>Persediaan</span>
+            </li>
+            <li data-menu="produk" onclick="selectMenu(event,'produk')" class="submenu-item">
+              <i data-lucide="box"></i>
+              <span>Produk</span>
+            </li>
+            <li data-menu="outlet" onclick="selectMenu(event,'outlet')" class="submenu-item">
+              <i data-lucide="store"></i>
+              <span>Outlet</span>
+            </li>
+            <li data-menu="penjualan" onclick="selectMenu(event,'penjualan')" class="submenu-item">
+              <i data-lucide="shopping-cart"></i>
+              <span>Penjualan</span>
+            </li>
+            <li data-menu="pembelian" onclick="selectMenu(event,'pembelian')" class="submenu-item">
+              <i data-lucide="package-plus"></i>
+              <span>Pembelian</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- STOCK OPNAME -->
+        <div class="sidebar-section">
+          <p class="sidebar-section__label">Stock Opname</p>
+          <ul>
+            <li data-submenu="opname" class="has-submenu" onclick="toggleSubmenu(event,'opname-submenu')">
+              <i data-lucide="package-check"></i>
+              <span>Stok Opname</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="opname-submenu">
+            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="perintah">
+              <i data-lucide="file-text"></i>
+              <span>Perintah Opname</span>
+            </li>
+            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="input">
+              <i data-lucide="scan-line"></i>
+              <span>Input / Scan</span>
+            </li>
+            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="hasil">
+              <i data-lucide="clipboard-check"></i>
+              <span>Hasil</span>
+            </li>
+            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="history">
+              <i data-lucide="history"></i>
+              <span>History</span>
+            </li>
+            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="export">
+              <i data-lucide="download"></i>
+              <span>Export</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- APPROVAL CENTER -->
         <div class="sidebar-section">
           <p class="sidebar-section__label">Persetujuan</p>
           <ul>
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')">
+            <li data-submenu="approval" class="has-submenu" onclick="toggleSubmenu(event,'approval-submenu')">
               <i data-lucide="check-circle"></i>
               <span>Approval Center</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="approval-submenu">
+            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="pending">
+              <i data-lucide="clock"></i>
+              <span>Pending</span>
+              <span class="badge badge-warning" id="approvalPendingBadge" style="display:none;">0</span>
+            </li>
+            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="approved">
+              <i data-lucide="check"></i>
+              <span>Approved</span>
+            </li>
+            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="rejected">
+              <i data-lucide="x"></i>
+              <span>Rejected</span>
             </li>
           </ul>
         </div>
 
         <div class="sidebar-divider"></div>
 
+        <!-- REPORTS -->
         <div class="sidebar-section">
           <p class="sidebar-section__label">Laporan</p>
           <ul>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')">
+            <li data-submenu="reports" class="has-submenu" onclick="toggleSubmenu(event,'reports-submenu')">
               <i data-lucide="bar-chart-2"></i>
               <span>Laporan</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="reports-submenu">
+            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="stock">
+              <i data-lucide="package"></i>
+              <span>Laporan Stok</span>
+            </li>
+            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="sales">
+              <i data-lucide="shopping-cart"></i>
+              <span>Laporan Penjualan</span>
+            </li>
+            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="opname">
+              <i data-lucide="package-check"></i>
+              <span>Laporan Opname</span>
+            </li>
+            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="export">
+              <i data-lucide="download"></i>
+              <span>Export Data</span>
             </li>
           </ul>
         </div>
 
         <div class="sidebar-divider"></div>
 
+        <!-- AUDIT -->
         <div class="sidebar-section">
           <p class="sidebar-section__label">Audit</p>
           <ul>
-            <li data-menu="audit" onclick="selectMenu(event,'audit')">
+            <li data-submenu="audit" class="has-submenu" onclick="toggleSubmenu(event,'audit-submenu')">
               <i data-lucide="search"></i>
+              <span>Audit</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="audit-submenu">
+            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="activity">
+              <i data-lucide="activity"></i>
+              <span>Log Aktivitas</span>
+            </li>
+            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="stock">
+              <i data-lucide="package"></i>
               <span>Audit Stok</span>
+            </li>
+            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="integrity">
+              <i data-lucide="shield"></i>
+              <span>Data Integrity</span>
             </li>
           </ul>
         </div>
 
         <div class="sidebar-divider"></div>
 
+        <!-- PENGATURAN -->
         <div class="sidebar-section">
-          <p class="sidebar-section__label">Manajemen</p>
+          <p class="sidebar-section__label">Pengaturan</p>
           <ul>
-            <li data-menu="users" onclick="selectMenu(event,'users')">
-              <i data-lucide="users"></i>
-              <span>Pengguna</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')">
+            <li data-submenu="settings" class="has-submenu" onclick="toggleSubmenu(event,'settings-submenu')">
               <i data-lucide="settings"></i>
               <span>Pengaturan</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="settings-submenu">
+            <li data-menu="users" onclick="selectMenu(event,'users')" class="submenu-item">
+              <i data-lucide="users"></i>
+              <span>Manajemen User</span>
+            </li>
+            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="company">
+              <i data-lucide="building"></i>
+              <span>Profil Perusahaan</span>
+            </li>
+            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="roles">
+              <i data-lucide="shield"></i>
+              <span>Roles & Permission</span>
+            </li>
+            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="security">
+              <i data-lucide="lock"></i>
+              <span>Keamanan</span>
+            </li>
+            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="database">
+              <i data-lucide="database"></i>
+              <span>Status Database</span>
+            </li>
+            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="audit">
+              <i data-lucide="file-text"></i>
+              <span>Log Audit</span>
             </li>
           </ul>
         </div>
@@ -162,14 +308,54 @@
 
         <div class="sidebar-divider"></div>
 
+        <!-- MY TASKS -->
         <div class="sidebar-section">
           <p class="sidebar-section__label">Tugas</p>
           <ul>
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')">
+            <li data-submenu="mytasks" class="has-submenu" onclick="toggleSubmenu(event,'mytasks-submenu')">
               <i data-lucide="clipboard-list"></i>
-              <span>Tugas SO</span>
+              <span>Tugas Saya</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
             </li>
-            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')">
+          </ul>
+          <ul class="sidebar-submenu" id="mytasks-submenu">
+            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
+              <i data-lucide="list-check"></i>
+              <span>Tugas Aktif</span>
+            </li>
+            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
+              <i data-lucide="check-circle"></i>
+              <span>Tugas Selesai</span>
+            </li>
+            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')" class="submenu-item">
+              <i data-lucide="history"></i>
+              <span>Riwayat</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- STOCK OPNAME -->
+        <div class="sidebar-section">
+          <p class="sidebar-section__label">Stock Opname</p>
+          <ul>
+            <li data-submenu="opname-user" class="has-submenu" onclick="toggleSubmenu(event,'opname-user-submenu')">
+              <i data-lucide="package-check"></i>
+              <span>Stock Opname</span>
+              <i data-lucide="chevron-down" class="submenu-icon"></i>
+            </li>
+          </ul>
+          <ul class="sidebar-submenu" id="opname-user-submenu">
+            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
+              <i data-lucide="clipboard-list"></i>
+              <span>Tugas Opname</span>
+            </li>
+            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item">
+              <i data-lucide="scan-line"></i>
+              <span>Scan & Input</span>
+            </li>
+            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')" class="submenu-item">
               <i data-lucide="history"></i>
               <span>Riwayat Saya</span>
             </li>
@@ -178,6 +364,20 @@
 
         <div class="sidebar-divider"></div>
 
+        <!-- MY REPORTS -->
+        <div class="sidebar-section">
+          <p class="sidebar-section__label">Laporan</p>
+          <ul>
+            <li data-menu="reports" onclick="selectMenu(event,'reports')">
+              <i data-lucide="bar-chart-2"></i>
+              <span>Laporan Saya</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- PROFILE -->
         <div class="sidebar-section">
           <p class="sidebar-section__label">Akun</p>
           <ul>
@@ -1097,6 +1297,43 @@
     function closeLogin() {
       applyAuthState();
     }
+
+    // Toggle submenu visibility
+    function toggleSubmenu(event, submenuId) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      
+      const submenu = document.getElementById(submenuId);
+      const parentItem = event?.currentTarget?.closest('.has-submenu') || document.querySelector(`[onclick*="${submenuId}"]`);
+      
+      if (!submenu) return;
+      
+      // Close all other submenus
+      document.querySelectorAll('.sidebar-submenu').forEach(sm => {
+        if (sm.id !== submenuId) {
+          sm.classList.remove('open');
+        }
+      });
+      document.querySelectorAll('.has-submenu').forEach(item => {
+        if (item !== parentItem) {
+          item.classList.remove('open');
+        }
+      });
+      
+      // Toggle current submenu
+      submenu.classList.toggle('open');
+      parentItem?.classList.toggle('open');
+    }
+
+    // Close submenus when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.sidebar-submenu') && !e.target.closest('.has-submenu')) {
+        document.querySelectorAll('.sidebar-submenu').forEach(sm => sm.classList.remove('open'));
+        document.querySelectorAll('.has-submenu').forEach(item => item.classList.remove('open'));
+      }
+    });
 
     window.applyAuthState = applyAuthState;
 
