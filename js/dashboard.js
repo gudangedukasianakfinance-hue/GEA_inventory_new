@@ -465,16 +465,48 @@ function hideLoader() {
 }
 
 function showToast(message, success = true) {
-  const toast = document.getElementById("toast");
-  if (!toast) return;
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
 
-  toast.textContent = message;
-  toast.style.background = success ? "#257a56" : "#b14141";
-  toast.style.display = "block";
-  window.setTimeout(() => {
-    toast.style.display = "none";
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${success ? 'success' : 'error'}`;
+  
+  const iconName = success ? 'check-circle' : 'alert-circle';
+  toast.innerHTML = `
+    <i data-lucide="${iconName}" class="toast__icon"></i>
+    <div class="toast__content">
+      <p class="toast__message">${message}</p>
+    </div>
+    <button class="toast__close" onclick="this.parentElement.remove()">
+      <i data-lucide="x"></i>
+    </button>
+  `;
+
+  container.appendChild(toast);
+  
+  // Re-initialize Lucide icons for the new toast
+  if (window.lucide) {
+    lucide.createIcons({ nodes: [toast] });
+  }
+
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
+
+// Add animation for toast removal
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes toastSlideOut {
+    to {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 async function readFileAsText(file) {
   return new Promise((resolve, reject) => {
