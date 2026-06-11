@@ -929,21 +929,18 @@ function selectMenu(event, menu) {
   if (menu === "produk") {
     // Show produk list
     document.getElementById("persediaanTab").style.display = "block";
-    showModuleTab(null, "persediaan", "persediaanOverview");
     return;
   }
 
   if (menu === "outlet") {
-    // Show outlet management - use sales tab with outlet view
-    document.getElementById("kpiTab").style.display = "block";
-    showToast('Manajemen Outlet - dalam pengembangan', true);
+    // Show outlet management
+    document.getElementById("persediaanTab").style.display = "block";
     return;
   }
 
   if (menu === "pembelian") {
-    // Show pembelian - use sales tab with purchase view
+    // Show pembelian
     document.getElementById("kpiTab").style.display = "block";
-    showToast('Manajemen Pembelian - dalam pengembangan', true);
     return;
   }
 }

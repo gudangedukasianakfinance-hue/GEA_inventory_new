@@ -952,6 +952,256 @@
       </div>
     </section>
 
+    <!-- KPI/Sales Tab (for Penjualan menu) -->
+    <section id="kpiTab" class="tab-content" style="display:none;">
+      <div class="kpi-page">
+        <div class="kpi-header">
+          <div>
+            <p class="section-eyebrow">Sales Monitor</p>
+            <h2>Penjualan</h2>
+          </div>
+        </div>
+        <!-- KPI content is loaded dynamically -->
+        <div id="kpiContent" class="kpi-content">
+          <div class="loading-indicator">Memuat data penjualan...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Persediaan Tab (for Warehouse > Persediaan) -->
+    <section id="persediaanTab" class="tab-content" style="display:none;">
+      <div class="persediaan-page">
+        <div class="persediaan-header">
+          <div>
+            <p class="section-eyebrow">Inventory Control</p>
+            <h2>Persediaan</h2>
+          </div>
+          <div class="persediaan-actions">
+            <button class="btn-secondary" onclick="exportPersediaan()">
+              <i data-lucide="download"></i> Export
+            </button>
+          </div>
+        </div>
+        <div id="persediaanContent" class="persediaan-content">
+          <div class="loading-indicator">Memuat data persediaan...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Forecast Tab (for Sales Forecasting) -->
+    <section id="forecastTab" class="tab-content" style="display:none;">
+      <div class="forecast-page">
+        <div class="forecast-header">
+          <div>
+            <p class="section-eyebrow">Analytics</p>
+            <h2>Forecasting</h2>
+          </div>
+        </div>
+        <div id="forecastContent" class="forecast-content">
+          <div class="loading-indicator">Memuat data forecasting...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Task Center Tab (Admin) -->
+    <section id="taskcenterTab" class="tab-content" style="display:none;">
+      <div class="taskcenter-page">
+        <div class="taskcenter-header">
+          <div>
+            <p class="section-eyebrow">Task Management</p>
+            <h2>Task Center</h2>
+          </div>
+        </div>
+        <div class="taskcenter-tabs">
+          <button class="task-tab active" data-task-view="mine">Tugas Saya</button>
+          <button class="task-tab" data-task-view="queue">Antrian Tugas</button>
+          <button class="task-tab" data-task-view="history">Riwayat</button>
+        </div>
+        <div id="taskcenterContent" class="taskcenter-content">
+          <div class="loading-indicator">Memuat task center...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Approval Center Tab (Admin) -->
+    <section id="approvalcenterTab" class="tab-content" style="display:none;">
+      <div class="approval-page">
+        <div class="approval-header">
+          <div>
+            <p class="section-eyebrow">Workflow</p>
+            <h2>Approval Center</h2>
+          </div>
+        </div>
+        <div class="approval-tabs">
+          <button class="approval-tab active" data-approval-status="pending">
+            <i data-lucide="clock"></i> Pending <span class="badge" id="approvalPendingCount">0</span>
+          </button>
+          <button class="approval-tab" data-approval-status="approved">
+            <i data-lucide="check"></i> Approved
+          </button>
+          <button class="approval-tab" data-approval-status="rejected">
+            <i data-lucide="x"></i> Rejected
+          </button>
+        </div>
+        <div id="approvalcenterContent" class="approval-content">
+          <div class="loading-indicator">Memuat approval center...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reports Tab (Admin) -->
+    <section id="reportsTab" class="tab-content" style="display:none;">
+      <div class="reports-page">
+        <div class="reports-header">
+          <div>
+            <p class="section-eyebrow">Business Intelligence</p>
+            <h2>Laporan</h2>
+          </div>
+        </div>
+        <div class="reports-grid">
+          <div class="report-card" onclick="showReport('stock')">
+            <i data-lucide="package"></i>
+            <h4>Laporan Stok</h4>
+            <p>Laporan persediaan dan stok gudang</p>
+          </div>
+          <div class="report-card" onclick="showReport('sales')">
+            <i data-lucide="shopping-cart"></i>
+            <h4>Laporan Penjualan</h4>
+            <p>Laporan transaksi penjualan</p>
+          </div>
+          <div class="report-card" onclick="showReport('opname')">
+            <i data-lucide="package-check"></i>
+            <h4>Laporan Opname</h4>
+            <p>Laporan stok opname dan selisih</p>
+          </div>
+          <div class="report-card" onclick="showReport('export')">
+            <i data-lucide="download"></i>
+            <h4>Export Data</h4>
+            <p>Export data ke CSV/Excel</p>
+          </div>
+        </div>
+        <div id="reportDetail" class="report-detail" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- Audit Tab (Admin) -->
+    <section id="auditTab" class="tab-content" style="display:none;">
+      <div class="audit-page">
+        <div class="audit-header">
+          <div>
+            <p class="section-eyebrow">Compliance</p>
+            <h2>Audit</h2>
+          </div>
+        </div>
+        <div class="audit-tabs">
+          <button class="audit-tab active" data-audit-view="activity">Log Aktivitas</button>
+          <button class="audit-tab" data-audit-view="stock">Audit Stok</button>
+          <button class="audit-tab" data-audit-view="integrity">Data Integrity</button>
+        </div>
+        <div id="auditContent" class="audit-content">
+          <div class="loading-indicator">Memuat audit logs...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Operator/User Dashboard Tab -->
+    <section id="operatorTab" class="tab-content" style="display:none;">
+      <div class="operator-page">
+        <div class="operator-header">
+          <div>
+            <p class="section-eyebrow">My Workspace</p>
+            <h2>Dasbor Saya</h2>
+          </div>
+        </div>
+        <div class="operator-stats">
+          <div class="stat-card">
+            <i data-lucide="clipboard-list"></i>
+            <div class="stat-info">
+              <span class="stat-value" id="myPendingTasks">0</span>
+              <span class="stat-label">Tugas Pending</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i data-lucide="check-circle"></i>
+            <div class="stat-info">
+              <span class="stat-value" id="myCompletedTasks">0</span>
+              <span class="stat-label">Tugas Selesai</span>
+            </div>
+          </div>
+        </div>
+        <div id="operatorContent" class="operator-content">
+          <div class="loading-indicator">Memuat dashboard...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User Tasks Tab (SOTasks) -->
+    <section id="sotasksTab" class="tab-content" style="display:none;">
+      <div class="sotasks-page">
+        <div class="sotasks-header">
+          <div>
+            <p class="section-eyebrow">My Tasks</p>
+            <h2>Tugas Opname</h2>
+          </div>
+        </div>
+        <div class="sotasks-tabs">
+          <button class="sotask-tab active" data-sotask-view="active">Tugas Aktif</button>
+          <button class="sotask-tab" data-sotask-view="completed">Tugas Selesai</button>
+        </div>
+        <div id="sotasksContent" class="sotasks-content">
+          <div class="loading-indicator">Memuat tugas...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User History Tab (SOHistory) -->
+    <section id="sohistoryTab" class="tab-content" style="display:none;">
+      <div class="sohistory-page">
+        <div class="sohistory-header">
+          <div>
+            <p class="section-eyebrow">My Activity</p>
+            <h2>Riwayat Saya</h2>
+          </div>
+        </div>
+        <div id="sohistoryContent" class="sohistory-content">
+          <div class="loading-indicator">Memuat riwayat...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User Profile Tab -->
+    <section id="profileTab" class="tab-content" style="display:none;">
+      <div class="profile-page">
+        <div class="profile-header">
+          <div>
+            <p class="section-eyebrow">Account</p>
+            <h2>Profil Saya</h2>
+          </div>
+        </div>
+        <div class="profile-content">
+          <div class="profile-info">
+            <div class="profile-avatar" id="profileAvatar">?</div>
+            <div class="profile-details">
+              <h3 id="profileName">-</h3>
+              <p id="profileRole">-</p>
+              <p id="profileEmail">-</p>
+            </div>
+          </div>
+          <div class="profile-form">
+            <label class="form-control">
+              <span>Nama Lengkap</span>
+              <input type="text" id="profileFullName" placeholder="Nama lengkap">
+            </label>
+            <label class="form-control">
+              <span>Email</span>
+              <input type="email" id="profileEmailInput" placeholder="Email">
+            </label>
+            <button class="btn-primary" onclick="updateProfile()">Simpan Perubahan</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Users Management -->
     <section id="usersTab" class="tab-content" style="display:none;">
       <div class="users-page">
