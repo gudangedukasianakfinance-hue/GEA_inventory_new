@@ -6,6 +6,7 @@
   <title>CV EPIC Warehouse</title>
   <!-- Design System CSS -->
   <link rel="stylesheet" href="/css/design-system.css?v=v3-20260610">
+  <link rel="stylesheet" href="/css/style.css?v=v3-20260610">
   <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
 <body>
@@ -1272,6 +1273,55 @@
       </div>
     </section>
 
+    <!-- User Modal -->
+    <div id="userModal" class="modal" style="display: none;">
+      <div class="modal__content modal__content--sm">
+        <div class="modal__header">
+          <h3 id="userModalTitle">Tambah User Baru</h3>
+          <button class="modal__close" onclick="closeUserModal()">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="userForm" class="modal__body">
+          <div class="form-group">
+            <label for="userUsername">Username</label>
+            <input type="text" id="userUsername" name="username" required>
+          </div>
+          <div class="form-group">
+            <label for="userEmail">Email</label>
+            <input type="email" id="userEmail" name="email">
+          </div>
+          <div class="form-group">
+            <label for="userNamaLengkap">Nama Lengkap</label>
+            <input type="text" id="userNamaLengkap" name="nama_lengkap" required>
+          </div>
+          <div class="form-group">
+            <label for="userRole">Role</label>
+            <select id="userRole" name="role" required>
+              <option value="staff_gudang">Staff Gudang</option>
+              <option value="checker_opname">Checker Opname</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="userPassword">Password <span id="passwordHint">(kosongkan jika tidak diubah)</span></label>
+            <input type="password" id="userPassword" name="password">
+          </div>
+          <div class="form-group form-group--checkbox">
+            <input type="checkbox" id="userStatus" name="is_active" checked>
+            <label for="userStatus">User Aktif</label>
+          </div>
+        </form>
+        <div class="modal__footer">
+          <button type="button" class="btn-secondary" onclick="closeUserModal()">Batal</button>
+          <button type="button" class="btn-primary" onclick="saveUser()">
+            <i data-lucide="save"></i>
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Settings Tab -->
     <section id="settingsTab" class="tab-content" style="display:none;">
       <div class="settings-page">
@@ -1415,6 +1465,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="/js/dashboard.js?v=opname-history-20260521e"></script>
+  <script src="/js/user-management.js"></script>
   <script>
     lucide.createIcons();
   </script>

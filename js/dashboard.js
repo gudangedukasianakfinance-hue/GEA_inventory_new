@@ -916,6 +916,10 @@ function selectMenu(event, menu) {
   if (menu === "users") {
     // User management - show users tab
     document.getElementById("usersTab").style.display = "block";
+    // Load users list when tab is shown
+    if (typeof loadUsersList === 'function') {
+      loadUsersList();
+    }
     return;
   }
 
