@@ -1798,31 +1798,45 @@
     const AppLoader = {
       isReady: false,
       checkInterval: null,
+      maxWaitTime: 5000, // Max 5 seconds, then force hide
       
       init() {
         // Start checking if app is ready
         this.checkInterval = setInterval(() => this.checkReady(), 100);
+        
+        // Force hide after max wait time (safety fallback)
+        setTimeout(() => {
+          if (!this.isReady) {
+            console.log('AppLoader: Force hiding after timeout');
+            this.hide();
+          }
+        }, this.maxWaitTime);
       },
       
       checkReady() {
-        // Only hide when all conditions are met:
-        // 1. DOM is loaded
-        // 2. Lucide icons are available
-        // 3. Auth state has been applied (user is logged in OR login modal is shown)
+        // Only check once
         if (this.isReady) return;
         
+        // Wait for lucide to be available
         if (!window.lucide) return;
         
-        const authBadge = document.getElementById('authUserBadge');
-        const loginModal = document.getElementById('loginModal');
+        // Check if main components are visible
+        const mainContent = document.querySelector('.main-content');
         const sidebar = document.getElementById('mainSidebar');
+        const loginModal = document.getElementById('loginModal');
+        const authUserBadge = document.getElementById('authUserBadge');
         
-        // Check if auth state has been applied
-        const authApplied = (authBadge && authBadge.style.display !== 'none') || 
-                           (loginModal && loginModal.style.display !== 'none') ||
-                           (sidebar && sidebar.offsetHeight > 0);
+        // App is ready when either:
+        // 1. Main content area is visible (user is authenticated)
+        // 2. Login modal is visible (user needs to login)
+        // 3. Auth badge is visible (user is logged in)
+        const mainContentVisible = mainContent && mainContent.offsetHeight > 0;
+        const sidebarVisible = sidebar && sidebar.offsetHeight > 0;
+        const loginModalVisible = loginModal && getComputedStyle(loginModal).display !== 'none';
+        const authBadgeVisible = authUserBadge && getComputedStyle(authUserBadge).display !== 'none';
         
-        if (authApplied) {
+        if (mainContentVisible || sidebarVisible || loginModalVisible || authBadgeVisible) {
+          console.log('AppLoader: App is ready, hiding loader');
           this.hide();
         }
       },
