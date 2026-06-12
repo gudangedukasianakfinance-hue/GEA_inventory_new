@@ -3,1650 +3,342 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CV EPIC Warehouse</title>
-  <!-- Design System CSS -->
-  <link rel="stylesheet" href="/css/design-system.css?v=v3-20260610">
-  <link rel="stylesheet" href="/css/style.css?v=v3-20260610">
+  <title>CV EPIC Warehouse - Sistem Kontrol Inventaris</title>
+  <link rel="stylesheet" href="/css/design-system.css">
+  <link rel="stylesheet" href="/css/landing.css">
   <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <header class="app-header">
-    <div class="header-left">
-      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="Buka menu">
-        <i data-lucide="menu"></i>
-      </button>
-      <div class="brand">
-        <span class="brand-accent"></span>
-        <span class="brand-text">CV EPIC Warehouse</span>
+<body class="landing-page">
+  <!-- Navigation -->
+  <nav class="landing-nav">
+    <div class="nav-brand">
+      <img src="/assets/logo.png" alt="CV EPIC Warehouse" class="nav-logo">
+      <div class="nav-brand-text">
+        <span class="nav-brand-name">CV EPIC Warehouse</span>
+        <span class="nav-brand-tag">Rangkaian Kontrol Inventaris</span>
       </div>
     </div>
-    <div class="header-right">
-      <!-- Theme Toggle -->
-      <button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
-        <i data-lucide="sun" class="theme-icon-light"></i>
-        <i data-lucide="moon" class="theme-icon-dark"></i>
-      </button>
-      <div id="authUserBadge" class="user-info" style="display:none;">
-        <div class="user-avatar" id="userAvatar"></div>
-        <div class="user-details">
-          <span class="user-name" id="userName"></span>
-          <span class="user-role" id="userRole"></span>
-        </div>
-      </div>
-      <button id="logoutButton" class="btn-logout" onclick="performLogout()" style="display:none;">
-        <i data-lucide="log-out"></i>
-        <span>Keluar</span>
-      </button>
-      <button id="loginButton" class="btn-login" onclick="openLogin('user')">
-        <i data-lucide="log-in"></i>
+    <div class="nav-actions">
+      <button class="btn-nav" onclick="openLogin('user')">
+        <i data-lucide="user"></i>
         <span>Masuk</span>
       </button>
     </div>
-  </header>
-<aside class="sidebar" id="mainSidebar">
-    <div class="sidebar-brand">
-      <div class="sidebar-brand__logo">
-        <img src="/assets/logo.png" alt="CV EPIC Warehouse">
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+      <div class="hero-glow"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <i data-lucide="sparkles"></i>
+        <span>Sistem Manajemen Inventaris Modern</span>
       </div>
-      <div class="sidebar-brand__text">
-        <p class="sidebar-brand__tag">Rangkaian Kontrol Inventaris</p>
-        <h1 class="sidebar-brand__title">CV EPIC Warehouse</h1>
-        <span class="sidebar-brand__version">Versi 3</span>
+      <h1 class="hero-title">
+        <span class="hero-title-line">Kelola Inventaris</span>
+        <span class="hero-title-accent">dengan Mudah</span>
+      </h1>
+      <p class="hero-subtitle">
+        Platform lengkap untuk mengelola stok gudang, stock opname, dan penjualan. 
+        Dirancang untuk efisiensi dan akurasi dalam satu sistem terpadu.
+      </p>
+      <div class="hero-cta">
+        <button class="btn btn-primary btn-lg" onclick="openLogin('user')">
+          <i data-lucide="log-in"></i>
+          <span>Mulai Sekarang</span>
+        </button>
+        <button class="btn btn-ghost btn-lg" onclick="scrollToFeatures()">
+          <i data-lucide="info"></i>
+          <span>Pelajari Lebih</span>
+        </button>
       </div>
     </div>
-
-    <nav class="sidebar-nav" id="sidebarNav">
-      <!-- ADMIN SIDEBAR -->
-      <div class="sidebar-role-section" id="adminSidebar">
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Dasbor</p>
-          <ul>
-            <li data-menu="dashboard" onclick="selectMenu(event,'dashboard')" class="active">
-              <i data-lucide="layout-dashboard"></i>
-              <span>Dasbor</span>
-            </li>
-          </ul>
+    <div class="hero-visual">
+      <div class="dashboard-preview">
+        <div class="preview-header">
+          <div class="preview-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="preview-title">Dashboard Preview</span>
         </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- TASK CENTER -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Tugas</p>
-          <ul>
-            <li data-submenu="taskcenter" class="has-submenu" onclick="toggleSubmenu(event,'taskcenter-submenu')">
-              <i data-lucide="clipboard-list"></i>
-              <span>Task Center</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="taskcenter-submenu">
-            <li data-menu="taskcenter" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
-              <span>Tugas Saya</span>
-            </li>
-            <li data-menu="taskcenter-queue" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
-              <span>Antrian Tugas</span>
-            </li>
-            <li data-menu="taskcenter-history" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
-              <span>Riwayat</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- WAREHOUSE -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Warehouse</p>
-          <ul>
-            <li data-submenu="warehouse" class="has-submenu" onclick="toggleSubmenu(event,'warehouse-submenu')">
+        <div class="preview-content">
+          <div class="preview-kpi-grid">
+            <div class="preview-kpi">
+              <i data-lucide="package"></i>
+              <span class="kpi-value">1,247</span>
+              <span class="kpi-label">Total Produk</span>
+            </div>
+            <div class="preview-kpi">
+              <i data-lucide="shopping-cart"></i>
+              <span class="kpi-value">89</span>
+              <span class="kpi-label">Penjualan Hari Ini</span>
+            </div>
+            <div class="preview-kpi">
               <i data-lucide="warehouse"></i>
-              <span>Warehouse</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="warehouse-submenu">
-            <li data-menu="persediaan" onclick="selectMenu(event,'persediaan')" class="submenu-item">
-              <i data-lucide="package"></i>
-              <span>Persediaan</span>
-            </li>
-            <li data-menu="produk" onclick="selectMenu(event,'produk')" class="submenu-item">
-              <i data-lucide="box"></i>
-              <span>Produk</span>
-            </li>
-            <li data-menu="outlet" onclick="selectMenu(event,'outlet')" class="submenu-item">
-              <i data-lucide="store"></i>
-              <span>Outlet</span>
-            </li>
-            <li data-menu="penjualan" onclick="selectMenu(event,'penjualan')" class="submenu-item">
-              <i data-lucide="shopping-cart"></i>
-              <span>Penjualan</span>
-            </li>
-            <li data-menu="pembelian" onclick="selectMenu(event,'pembelian')" class="submenu-item">
-              <i data-lucide="package-plus"></i>
-              <span>Pembelian</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- STOCK OPNAME -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Stock Opname</p>
-          <ul>
-            <li data-submenu="opname" class="has-submenu" onclick="toggleSubmenu(event,'opname-submenu')">
-              <i data-lucide="package-check"></i>
-              <span>Stok Opname</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="opname-submenu">
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="perintah">
-              <i data-lucide="file-text"></i>
-              <span>Perintah Opname</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="input">
-              <i data-lucide="scan-line"></i>
-              <span>Input / Scan</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="hasil">
+              <span class="kpi-value">12</span>
+              <span class="kpi-label">Outlet Aktif</span>
+            </div>
+            <div class="preview-kpi">
               <i data-lucide="clipboard-check"></i>
-              <span>Hasil</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="history">
-              <i data-lucide="history"></i>
-              <span>History</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="export">
-              <i data-lucide="download"></i>
-              <span>Export</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- APPROVAL CENTER -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Persetujuan</p>
-          <ul>
-            <li data-submenu="approval" class="has-submenu" onclick="toggleSubmenu(event,'approval-submenu')">
-              <i data-lucide="check-circle"></i>
-              <span>Approval Center</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="approval-submenu">
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="pending">
-              <i data-lucide="clock"></i>
-              <span>Pending</span>
-              <span class="badge badge-warning" id="approvalPendingBadge" style="display:none;">0</span>
-            </li>
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="approved">
-              <i data-lucide="check"></i>
-              <span>Approved</span>
-            </li>
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="rejected">
-              <i data-lucide="x"></i>
-              <span>Rejected</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- REPORTS -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Laporan</p>
-          <ul>
-            <li data-submenu="reports" class="has-submenu" onclick="toggleSubmenu(event,'reports-submenu')">
-              <i data-lucide="bar-chart-2"></i>
-              <span>Laporan</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="reports-submenu">
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="stock">
-              <i data-lucide="package"></i>
-              <span>Laporan Stok</span>
-            </li>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="sales">
-              <i data-lucide="shopping-cart"></i>
-              <span>Laporan Penjualan</span>
-            </li>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="opname">
-              <i data-lucide="package-check"></i>
-              <span>Laporan Opname</span>
-            </li>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="export">
-              <i data-lucide="download"></i>
-              <span>Export Data</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- AUDIT -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Audit</p>
-          <ul>
-            <li data-submenu="audit" class="has-submenu" onclick="toggleSubmenu(event,'audit-submenu')">
-              <i data-lucide="search"></i>
-              <span>Audit</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="audit-submenu">
-            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="activity">
-              <i data-lucide="activity"></i>
-              <span>Log Aktivitas</span>
-            </li>
-            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="stock">
-              <i data-lucide="package"></i>
-              <span>Audit Stok</span>
-            </li>
-            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="integrity">
-              <i data-lucide="shield"></i>
-              <span>Data Integrity</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- PENGATURAN -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Pengaturan</p>
-          <ul>
-            <li data-submenu="settings" class="has-submenu" onclick="toggleSubmenu(event,'settings-submenu')">
-              <i data-lucide="settings"></i>
-              <span>Pengaturan</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="settings-submenu">
-            <li data-menu="users" onclick="selectMenu(event,'users')" class="submenu-item">
-              <i data-lucide="users"></i>
-              <span>Manajemen User</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="company">
-              <i data-lucide="building"></i>
-              <span>Profil Perusahaan</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="roles">
-              <i data-lucide="shield"></i>
-              <span>Roles & Permission</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="security">
-              <i data-lucide="lock"></i>
-              <span>Keamanan</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="database">
-              <i data-lucide="database"></i>
-              <span>Status Database</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="audit">
-              <i data-lucide="file-text"></i>
-              <span>Log Audit</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- USER SIDEBAR -->
-      <div class="sidebar-role-section" id="userSidebar" style="display:none;">
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Dasbor Saya</p>
-          <ul>
-            <li data-menu="mydashboard" onclick="selectMenu(event,'mydashboard')" class="active">
-              <i data-lucide="layout-dashboard"></i>
-              <span>Dasbor Saya</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- MY TASKS -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Tugas</p>
-          <ul>
-            <li data-submenu="mytasks" class="has-submenu" onclick="toggleSubmenu(event,'mytasks-submenu')">
-              <i data-lucide="clipboard-list"></i>
-              <span>Tugas Saya</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="mytasks-submenu">
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
-              <i data-lucide="list-check"></i>
-              <span>Tugas Aktif</span>
-            </li>
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
-              <i data-lucide="check-circle"></i>
-              <span>Tugas Selesai</span>
-            </li>
-            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')" class="submenu-item">
-              <i data-lucide="history"></i>
-              <span>Riwayat</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- STOCK OPNAME -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Stock Opname</p>
-          <ul>
-            <li data-submenu="opname-user" class="has-submenu" onclick="toggleSubmenu(event,'opname-user-submenu')">
-              <i data-lucide="package-check"></i>
-              <span>Stock Opname</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="opname-user-submenu">
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
-              <i data-lucide="clipboard-list"></i>
-              <span>Tugas Opname</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item">
-              <i data-lucide="scan-line"></i>
-              <span>Scan & Input</span>
-            </li>
-            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')" class="submenu-item">
-              <i data-lucide="history"></i>
-              <span>Riwayat Saya</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- MY REPORTS -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Laporan</p>
-          <ul>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')">
-              <i data-lucide="bar-chart-2"></i>
-              <span>Laporan Saya</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- PROFILE -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Akun</p>
-          <ul>
-            <li data-menu="profile" onclick="selectMenu(event,'profile')">
-              <i data-lucide="user"></i>
-              <span>Profil</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="sidebar-footer__info">
-        <i data-lucide="database"></i>
-        <span id="sidebarDbStatus">Menghubungkan...</span>
-      </div>
-    </div>
-  </aside>
-
-  <main class="container">
-    <section class="header-card">
-      <div class="page-heading">
-        <p id="pageEyebrow">Sales Monitor</p>
-        <h2 id="pageTitle">Dashboard Penjualan</h2>
-        <span class="page-caption" id="pageCaption">Filter periode aktif akan langsung diterapkan ke menu yang sedang dibuka.</span>
-      </div>
-
-      <div class="header-actions">
-        <div class="filter-bar" id="pageFilters">
-          <label class="filter-control">
-            <span>Bulan</span>
-            <select id="bulan">
-              <option value="1">Januari</option>
-              <option value="2">Februari</option>
-              <option value="3">Maret</option>
-              <option value="4">April</option>
-              <option value="5">Mei</option>
-              <option value="6">Juni</option>
-              <option value="7">Juli</option>
-              <option value="8">Agustus</option>
-              <option value="9">September</option>
-              <option value="10">Oktober</option>
-              <option value="11">November</option>
-              <option value="12">Desember</option>
-            </select>
-          </label>
-
-          <label class="filter-control">
-            <span>Tahun</span>
-            <select id="tahun"></select>
-          </label>
-
-          <label class="filter-control filter-control-wide">
-            <span>Produk</span>
-            <input id="filterProduk" list="produkList" placeholder="Ketik SKU / nama produk">
-            <datalist id="produkList"></datalist>
-          </label>
-        </div>
-
-        <div class="header-tools">
-          <div class="filter-status" id="filterStatus">Periode aktif: -</div>
-          <button type="button" class="btn-secondary" onclick="clearProdukFilter()">Reset Produk</button>
-          <button type="button" class="btn-primary" onclick="printCurrentView()">Print</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- V3 ERP DASHBOARD - MODERN WAREHOUSE -->
-    <section id="v3DashboardTab" class="tab-content">
-      <div class="erp-dashboard">
-        <!-- Header -->
-        <div class="erp-dashboard__header">
-          <div class="erp-dashboard__title">
-            <p class="section-eyebrow">ERP Warehouse · Real-time</p>
-            <h2>Dashboard Operasional</h2>
-          </div>
-          <div class="erp-dashboard__tools">
-            <span class="erp-dashboard__ts" id="v3DashboardTimestamp"></span>
-            <button class="btn-primary" onclick="loadV3Dashboard()">
-              <i data-lucide="refresh-cw"></i> Refresh
-            </button>
-          </div>
-        </div>
-
-        <!-- 10 KPI Cards -->
-        <div class="erp-kpi-grid">
-          <!-- 1. Penjualan Hari Ini -->
-          <div class="erp-kpi erp-kpi--sale">
-            <div class="erp-kpi__icon"><i data-lucide="shopping-cart"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_penjualan">-</span>
-              <span class="erp-kpi__label">Penjualan Hari Ini</span>
+              <span class="kpi-value">5</span>
+              <span class="kpi-label">Stock Opname</span>
             </div>
           </div>
-          <!-- 2. Pembelian Hari Ini -->
-          <div class="erp-kpi erp-kpi--purchase">
-            <div class="erp-kpi__icon"><i data-lucide="package-plus"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_pembelian">-</span>
-              <span class="erp-kpi__label">Pembelian Hari Ini</span>
-            </div>
+          <div class="preview-chart">
+            <div class="chart-bar" style="height: 60%"></div>
+            <div class="chart-bar" style="height: 80%"></div>
+            <div class="chart-bar" style="height: 45%"></div>
+            <div class="chart-bar" style="height: 90%"></div>
+            <div class="chart-bar" style="height: 70%"></div>
+            <div class="chart-bar" style="height: 55%"></div>
           </div>
-          <!-- 3. Produk Aktif -->
-          <div class="erp-kpi erp-kpi--product">
-            <div class="erp-kpi__icon"><i data-lucide="box"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_produk_aktif">-</span>
-              <span class="erp-kpi__label">Produk Aktif</span>
-            </div>
-          </div>
-          <!-- 4. Customer Aktif -->
-          <div class="erp-kpi erp-kpi--customer">
-            <div class="erp-kpi__icon"><i data-lucide="store"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_customer">-</span>
-              <span class="erp-kpi__label">Customer Aktif Hari Ini</span>
-            </div>
-          </div>
-          <!-- 5. Stok Kritis -->
-          <div class="erp-kpi erp-kpi--danger" id="kpi_stok_kritis_card">
-            <div class="erp-kpi__icon"><i data-lucide="alert-triangle"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_stok_kritis">-</span>
-              <span class="erp-kpi__label">Stok Kritis</span>
-            </div>
-          </div>
-          <!-- 6. SO Berjalan -->
-          <div class="erp-kpi erp-kpi--warning">
-            <div class="erp-kpi__icon"><i data-lucide="clipboard-list"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_so_berjalan">-</span>
-              <span class="erp-kpi__label">SO Berjalan</span>
-            </div>
-          </div>
-          <!-- 7. Pending Approval -->
-          <div class="erp-kpi erp-kpi--warning" id="kpi_pending_card">
-            <div class="erp-kpi__icon"><i data-lucide="clock"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_pending">-</span>
-              <span class="erp-kpi__label">Pending Approval</span>
-            </div>
-          </div>
-          <!-- 8. SO Selesai -->
-          <div class="erp-kpi erp-kpi--success">
-            <div class="erp-kpi__icon"><i data-lucide="check-circle"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_so_selesai">-</span>
-              <span class="erp-kpi__label">SO Selesai Bulan Ini</span>
-            </div>
-          </div>
-          <!-- 9. User Aktif -->
-          <div class="erp-kpi erp-kpi--user">
-            <div class="erp-kpi__icon"><i data-lucide="users"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_users">-</span>
-              <span class="erp-kpi__label">User Aktif</span>
-            </div>
-          </div>
-          <!-- 10. Outlet Aktif -->
-          <div class="erp-kpi erp-kpi--outlet">
-            <div class="erp-kpi__icon"><i data-lucide="building-2"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_outlet">-</span>
-              <span class="erp-kpi__label">Outlet Aktif Bulan Ini</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="opnameTab" class="tab-content" style="display:none;">
-      <div class="card opname-workspace">
-        <div class="section-header opname-header">
-          <div>
-            <p class="section-eyebrow">Stock Control</p>
-            <h3>Stok Opname Gudang</h3>
-          </div>
-          <div class="opname-filter">
-            <label class="filter-control">
-              <span>Bulan</span>
-              <select id="opnameBulan">
-                <option value="1">Januari</option>
-                <option value="2">Februari</option>
-                <option value="3">Maret</option>
-                <option value="4">April</option>
-                <option value="5">Mei</option>
-                <option value="6">Juni</option>
-                <option value="7">Juli</option>
-                <option value="8">Agustus</option>
-                <option value="9">September</option>
-                <option value="10">Oktober</option>
-                <option value="11">November</option>
-                <option value="12">Desember</option>
-              </select>
-            </label>
-            <label class="filter-control">
-              <span>Tahun</span>
-              <select id="opnameTahun"></select>
-            </label>
-          </div>
-        </div>
-
-        <div class="subtab-menu tab-menu-opname">
-          <button data-opname-tab="opnameKPI" onclick="showOpnameTab(event,'opnameKPI')" class="active-tab"><i data-lucide="layout-dashboard"></i><span>KPI</span></button>
-          <button data-opname-tab="opnamePerintah" onclick="showOpnameTab(event,'opnamePerintah')"><i data-lucide="clipboard-list"></i><span>Perintah SO</span></button>
-          <button data-opname-tab="opnameHasil" onclick="showOpnameTab(event,'opnameHasil')"><i data-lucide="folder-open"></i><span>Hasil SO</span></button>
-          <button data-opname-tab="opnameInput" onclick="showOpnameTab(event,'opnameInput')" id="opnameInputTabBtn"><i data-lucide="scan-line"></i><span>Scan & Input</span></button>
-          <button data-opname-tab="opnameHistory" onclick="showOpnameTab(event,'opnameHistory')"><i data-lucide="history"></i><span>History</span></button>
-          <button data-opname-tab="opnameImport" onclick="showOpnameTab(event,'opnameImport')"><i data-lucide="upload"></i><span>Import</span></button>
-          <button data-opname-tab="opnameBarcode" onclick="showOpnameTab(event,'opnameBarcode')"><i data-lucide="barcode"></i><span>Barcode</span></button>
-        </div>
-
-        <div id="opnameKPI" class="opname-content">
-          <div class="opname-kpi-grid">
-            <div class="opname-metric">
-              <span>Total SKU</span>
-              <h2 id="kpi_opname_total">0</h2>
-              <p>Produk dalam stok sistem periode ini</p>
-            </div>
-            <div class="opname-metric">
-              <span>Sudah Dihitung</span>
-              <h2 id="kpi_opname_counted">0</h2>
-              <p id="kpi_opname_progress">0% progress</p>
-            </div>
-            <div class="opname-metric">
-              <span>Stok Sistem</span>
-              <h2 id="kpi_opname_sistem">0</h2>
-              <p>Akumulasi item yang sudah diinput</p>
-            </div>
-            <div class="opname-metric">
-              <span>Stok Fisik</span>
-              <h2 id="kpi_opname_fisik">0</h2>
-              <p>Hasil hitung fisik sementara</p>
-            </div>
-            <div class="opname-metric metric-alert">
-              <span>Net Selisih</span>
-              <h2 id="kpi_opname_selisih">0</h2>
-              <p>Fisik dikurangi sistem</p>
-            </div>
-            <div class="opname-metric metric-warning">
-              <span>Item Selisih</span>
-              <h2 id="kpi_opname_problem">0</h2>
-              <p id="kpi_opname_remaining">0 belum dihitung</p>
-            </div>
-          </div>
-          <div class="opname-dashboard-grid">
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow">Live Workflow</p>
-                  <h4>Status Hitung</h4>
-                </div>
-                <span id="opnameLastScanBadge" class="opname-pill">Belum ada scan</span>
-              </div>
-              <div class="opname-progress-track">
-                <span id="opnameProgressBar"></span>
-              </div>
-              <div class="opname-summary">
-                <div>Total dihitung: <b id="sum_total">0</b></div>
-                <div>Net selisih: <b id="sum_selisih">0</b></div>
-                <div>Item problem: <b id="sum_problem">0</b></div>
-              </div>
-            </div>
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow">Quick Actions</p>
-                  <h4>Aksi Cepat</h4>
-                </div>
-              </div>
-              <div class="opname-quick-actions">
-                <button class="btn-primary" onclick="showOpnameTab(null,'opnamePerintah')"><i data-lucide="clipboard-list"></i><span>Buat Perintah</span></button>
-                <button class="btn-secondary" onclick="showOpnameTab(null,'opnameHasil')"><i data-lucide="folder-open"></i><span>Hasil SO</span></button>
-                <button class="btn-secondary" onclick="showOpnameTab(null,'opnameBarcode')"><i data-lucide="barcode"></i><span>Barcode</span></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnamePerintah" class="opname-content" style="display:none;">
-          <div class="opname-panel">
-            <div class="opname-panel-heading">
-              <div>
-                <p class="section-eyebrow">SVP / Supervisor</p>
-                <h4 id="perintahFormTitle">Buat Perintah Stok Opname</h4>
-              </div>
-              <span id="perintahFormModeBadge" class="opname-pill" style="display:none;">Mode Edit</span>
-            </div>
-            <p id="perintahFormHelp" class="opname-help-text">Buat atau edit perintah SO. Setelah disimpan, perintah muncul di tab <strong>Hasil SO</strong> untuk dikerjakan pelaksana.</p>
-            <input type="hidden" id="perintahEditId" value="">
-            <div class="print-meta-grid">
-              <label class="filter-control">
-                <span>Kode SO</span>
-                <input type="text" id="perintahKodeSo" placeholder="Contoh: SO001" maxlength="50">
-              </label>
-              <label class="filter-control">
-                <span>Tanggal Perintah</span>
-                <input type="date" id="perintahTanggal">
-              </label>
-              <label class="filter-control">
-                <span>Nama SVP</span>
-                <input type="text" id="perintahSvpNama" placeholder="Nama supervisor">
-              </label>
-              <label class="filter-control">
-                <span>Lokasi / Gudang</span>
-                <input type="text" id="perintahLokasi" placeholder="Gudang utama">
-              </label>
-            </div>
-            <div class="filter-control top-space">
-              <span>Kategori SO</span>
-              <div id="perintahKategoriChoices" class="perintah-kategori-choices">
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="modul" checked> Modul</label>
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="seragam" checked> Seragam</label>
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="poster" checked> Poster</label>
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="lain-lain" checked> Lain-lain</label>
-              </div>
-            </div>
-            <label class="filter-control top-space">
-              <span>Keterangan</span>
-              <input type="text" id="perintahKeterangan" placeholder="Catatan perintah (opsional)">
-            </label>
-            <div id="perintahKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-            <div class="section-actions top-space" id="perintahFormActions">
-              <button type="button" class="btn-primary" id="perintahSubmitBtn" onclick="simpanPerintahOpname()"><i data-lucide="plus-circle"></i><span>Tambah Perintah SO</span></button>
-              <button type="button" class="btn-secondary" id="perintahCancelEditBtn" onclick="resetPerintahForm()" style="display:none;"><i data-lucide="x"></i><span>Batal Edit</span></button>
-            </div>
-            <div id="perintahListSection" class="top-space"></div>
-          </div>
-        </div>
-
-        <div id="opnameHasil" class="opname-content" style="display:none;">
-          <div id="opnameHasilList" style="display:block;">
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow">Pelaksana</p>
-                  <h4>Daftar Perintah & Hasil SO</h4>
-                </div>
-              </div>
-              <p class="opname-help-text">Klik kartu SO untuk mulai atau melanjutkan scan. Simpan hanya mencatat hasil; gunakan <strong>Sesuaikan Stok</strong> di detail untuk menerapkan selisih ke gudang. Filter bulan hanya untuk melihat progres.</p>
-              <div id="hasilKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-              <div id="hasilSoList" class="hasil-so-grid"></div>
-            </div>
-          </div>
-          <div id="opnameHasilDetail" style="display:none;">
-            <button type="button" class="btn-secondary" onclick="goBackHasilSoList()" style="margin-bottom: 16px;"><i data-lucide="arrow-left"></i><span>Kembali</span></button>
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow"><span id="hasilDetailKode">SO001</span></p>
-                  <h4>Detail Hasil Stok Opname</h4>
-                </div>
-                <span id="hasilDetailStatusBadge" class="opname-pill">-</span>
-              </div>
-              <div id="hasilDetailKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-              <div class="print-meta-grid" style="margin-bottom: 16px;">
-                <div><label>Tanggal</label><p id="hasilDetailDate" style="font-weight:600;margin:0;">-</p></div>
-                <div><label>SVP</label><p id="hasilDetailSvp" style="font-weight:600;margin:0;">-</p></div>
-                <div><label>Pelaksana</label><p id="hasilDetailChecker" style="font-weight:600;margin:0;">-</p></div>
-                <div><label>Lokasi</label><p id="hasilDetailLokasi" style="font-weight:600;margin:0;">-</p></div>
-              </div>
-              <div class="table-shell">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Produk</th>
-                      <th>Stok Sistem</th>
-                      <th>Stok Fisik</th>
-                      <th>Selisih</th>
-                    </tr>
-                  </thead>
-                  <tbody id="hasilDetailBody"></tbody>
-                </table>
-              </div>
-              <p id="hasilSesuaikanNote" class="opname-help-text top-space"></p>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" id="hasilSesuaikanBtn" onclick="sesuaikanHasilSO()" style="display:none;"><i data-lucide="git-compare"></i><span>Sesuaikan Stok</span></button>
-                <button type="button" class="btn-primary" onclick="exportHasilSOcsv()"><i data-lucide="download"></i><span>Download CSV</span></button>
-                <button type="button" class="btn-secondary" id="hasilMulaiScanBtn" onclick="mulaiScanDariHasil()"><i data-lucide="scan-line"></i><span>Mulai / Lanjut Scan</span></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnameInput" style="display:none;" class="opname-content">
-          <div id="opnameInputLocked" class="opname-locked-panel">
-            <i data-lucide="lock"></i>
-            <h4>Scan belum aktif</h4>
-            <p>Pilih perintah SO dari tab <strong>Hasil SO</strong>, lalu klik kartu SO untuk membuka scan & input.</p>
-            <button type="button" class="btn-primary" onclick="showOpnameTab(null,'opnameHasil')"><i data-lucide="folder-open"></i><span>Buka Hasil SO</span></button>
-          </div>
-          <div id="opnameInputActive" style="display:none;">
-            <div class="opname-active-banner">
-              <div>
-                <p class="section-eyebrow">Perintah Aktif</p>
-                <h4 id="activeSoKode">-</h4>
-                <p id="activeSoMeta" class="opname-help-text" style="margin:0;"></p>
-                <div id="activeSoKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-              </div>
-              <button type="button" class="btn-secondary" onclick="clearActivePerintah()"><i data-lucide="x"></i><span>Tutup</span></button>
-            </div>
-            <div class="opname-work-grid top-space">
-              <div class="opname-panel scanner-panel">
-                <div class="opname-panel-heading">
-                  <div>
-                    <p class="section-eyebrow">Input Mode</p>
-                    <h4>Scan & Input Qty Fisik</h4>
-                  </div>
-                  <span id="scanOpnameStatus" class="opname-pill">Siap scan</span>
-                </div>
-                <div id="scannerPreview" class="scanner-preview"></div>
-                <div class="scanner-actions">
-                  <button type="button" class="btn-primary" onclick="startOpnameScanner()"><i data-lucide="camera"></i><span>Mulai Kamera</span></button>
-                  <button type="button" class="btn-secondary" onclick="stopOpnameScanner()"><i data-lucide="camera-off"></i><span>Stop Kamera</span></button>
-                </div>
-                <div class="print-meta-grid top-space">
-                  <input type="text" id="opnameChecker" placeholder="Nama PIC pelaksana" required>
-                  <input type="text" id="opnameGudang" placeholder="Gudang / lokasi" required>
-                </div>
-                <div class="manual-scan-row top-space">
-                  <input type="text" id="manualOpnameScan" placeholder="Scan / Ketik SKU atau barcode" onkeydown="if(event.key==='Enter'){event.preventDefault();applyManualOpnameScan();}">
-                  <button type="button" class="btn-primary" onclick="applyManualOpnameScan()"><i data-lucide="search"></i><span>Cari</span></button>
-                </div>
-                <p class="opname-help-text" style="margin-top: 12px;">Scan atau input qty fisik akan otomatis disimpan ke database. Gunakan tombol <strong>Finalisasi Hasil</strong> untuk menyelesaikan perintah SO dan menutup hasil.</p>
-                <div class="scanner-actions top-space">
-                  <button type="button" onclick="simpanOpname()" class="btn-primary" style="flex:1"><i data-lucide="save"></i><span>Finalisasi Hasil</span></button>
-                  <button type="button" onclick="resetOpnameScanState()" class="btn-secondary" style="flex:1"><i data-lucide="refresh-cw"></i><span>Reset Scan</span></button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="opnameScanResult" class="opname-panel" style="margin-top: 16px; display:none;">
-            <div class="opname-panel-heading">
-              <p class="section-eyebrow">Item Terbaru</p>
-              <h4>Data Scan</h4>
-            </div>
-            <div id="scanResultDetail" style="padding: 16px; background: #2a2e33; border-radius: 8px; color: #f5f7fa;">
-              <!-- Dynamic content -->
-            </div>
-          </div>
-
-          <div class="opname-summary" style="margin-top: 16px;">
-            <h4>Ringkasan Scan</h4>
-            <div>
-              <b>Item Terbaca: </b><span id="scanCount">0</span>
-            </div>
-            <div>
-              <b>Qty Sistem: </b><span id="scanSistem">0</span>
-            </div>
-            <div>
-              <b>Qty Fisik: </b><span id="scanFisik">0</span>
-            </div>
-            <div>
-              <b>Total Selisih: </b><span id="scanSelisih">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnameHistory" class="opname-content" style="display:none;">
-          <div class="section-actions">
-            <button type="button" class="btn-secondary" onclick="exportOpnameHistory()"><i data-lucide="download"></i><span>Download CSV Lengkap</span></button>
-          </div>
-          <div class="table-shell top-space">
-            <table class="table history-so-table">
-              <thead>
-                <tr>
-                  <th>Kode SO</th>
-                  <th>Tgl Perintah</th>
-                  <th>Tgl Pelaksanaan</th>
-                  <th>SVP</th>
-                  <th>PIC Pelaksana</th>
-                  <th>Lokasi</th>
-                  <th>Item</th>
-                  <th>Selisih</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="historyBody"></tbody>
-            </table>
-          </div>
-          <div id="historyDetailPanel" class="opname-panel top-space" style="display:none;">
-            <div class="opname-panel-heading">
-              <div>
-                <p class="section-eyebrow">Detail History</p>
-                <h4 id="historyDetailTitle">-</h4>
-              </div>
-              <button type="button" class="btn-secondary" onclick="closeHistoryDetail()"><i data-lucide="x"></i><span>Tutup</span></button>
-            </div>
-            <div class="print-meta-grid" id="historyDetailMeta"></div>
-            <div class="table-shell top-space">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Nama Produk</th>
-                    <th>Stok Sistem</th>
-                    <th>Stok Fisik</th>
-                    <th>Selisih</th>
-                    <th>Waktu Input</th>
-                  </tr>
-                </thead>
-                <tbody id="historyDetailBody"></tbody>
-              </table>
-            </div>
-            <div class="section-actions top-space">
-              <button type="button" class="btn-primary" id="historySesuaikanBtn" onclick="sesuaikanHistoryOpname()" style="display:none;"><i data-lucide="git-compare"></i><span>Sesuaikan Stok</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnameImport" class="opname-content" style="display:none;">
-          <div class="opname-panel">
-            <div class="opname-panel-heading">
-              <div>
-                <p class="section-eyebrow">Bulk Input</p>
-                <h4>Import CSV Opname</h4>
-              </div>
-              <button class="btn-secondary" onclick="downloadOpnameTemplate()"><i data-lucide="file-down"></i><span>Template</span></button>
-            </div>
-            <div class="opname-import-box">
-              <input type="file" id="opnameImportFile" accept=".csv,text/csv">
-              <button onclick="previewOpnameImport()" class="btn-primary"><i data-lucide="table"></i><span>Preview</span></button>
-            </div>
-            <div id="opnameImportPreview" class="top-space"></div>
-          </div>
-        </div>
-
-        <div id="opnameBarcode" class="opname-content" style="display:none;">
-          <div class="barcode-generator-grid">
-            <div class="barcode-panel barcode-panel--wide">
-              <h4>Barcode Semua Produk</h4>
-              <p>Generate barcode untuk seluruh produk. Unduh dokumen Word (A5, 3 kolom × 10 baris). Ukuran label: 5 cm × 2 cm — nama produk di atas, kode SKU di bawah barcode.</p>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" onclick="downloadAllBarcodeDoc()"><i data-lucide="file-down"></i><span>Download DOC Semua Produk</span></button>
-                <button type="button" class="btn-secondary" onclick="previewAllBarcodeDoc()"><i data-lucide="eye"></i><span>Preview</span></button>
-              </div>
-              <div id="barcodeDocPreview" class="barcode-doc-preview top-space"></div>
-            </div>
-            <div class="barcode-panel">
-              <h4>Barcode Satuan</h4>
-              <p>Preview barcode satu produk atau rak.</p>
-              <label class="filter-control">
-                <span>Produk</span>
-                <input type="text" id="barcodeProductInput" list="produkList" placeholder="Ketik SKU / nama produk">
-              </label>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" onclick="renderProductBarcode()">Generate Produk</button>
-                <button type="button" class="btn-secondary" onclick="downloadBarcodeSvg('productBarcodeSvg','produk')">Download SVG</button>
-              </div>
-              <div class="barcode-output top-space">
-                <p><strong>Nilai:</strong> <span id="productBarcodeValue">-</span></p>
-                <svg id="productBarcodeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-              </div>
-              <label class="filter-control top-space">
-                <span>Kode Rak</span>
-                <input type="text" id="barcodeRackInput" placeholder="Kode rak">
-              </label>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" onclick="renderRackBarcode()">Generate Rak</button>
-                <button type="button" class="btn-secondary" onclick="downloadBarcodeSvg('rackBarcodeSvg','rak')">Download SVG Rak</button>
-              </div>
-              <div class="barcode-output top-space">
-                <p><strong>Nilai:</strong> <span id="rackBarcodeValue">-</span></p>
-                <svg id="rackBarcodeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- KPI/Sales Tab (for Penjualan menu) -->
-    <section id="kpiTab" class="tab-content" style="display:none;">
-      <div class="kpi-page">
-        <div class="kpi-header">
-          <div>
-            <p class="section-eyebrow">Sales Monitor</p>
-            <h2>Penjualan</h2>
-          </div>
-        </div>
-        <!-- KPI content is loaded dynamically -->
-        <div id="kpiContent" class="kpi-content">
-          <div class="loading-indicator">Memuat data penjualan...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Persediaan Tab (for Warehouse > Persediaan) -->
-    <section id="persediaanTab" class="tab-content" style="display:none;">
-      <div class="persediaan-page">
-        <div class="persediaan-header">
-          <div>
-            <p class="section-eyebrow">Inventory Control</p>
-            <h2>Persediaan</h2>
-          </div>
-          <div class="persediaan-actions">
-            <button class="btn-secondary" onclick="exportPersediaan()">
-              <i data-lucide="download"></i> Export
-            </button>
-          </div>
-        </div>
-        <div id="persediaanContent" class="persediaan-content">
-          <div class="loading-indicator">Memuat data persediaan...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Forecast Tab (for Sales Forecasting) -->
-    <section id="forecastTab" class="tab-content" style="display:none;">
-      <div class="forecast-page">
-        <div class="forecast-header">
-          <div>
-            <p class="section-eyebrow">Analytics</p>
-            <h2>Forecasting</h2>
-          </div>
-        </div>
-        <div id="forecastContent" class="forecast-content">
-          <div class="loading-indicator">Memuat data forecasting...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Task Center Tab (Admin) -->
-    <section id="taskcenterTab" class="tab-content" style="display:none;">
-      <div class="taskcenter-page">
-        <div class="taskcenter-header">
-          <div>
-            <p class="section-eyebrow">Task Management</p>
-            <h2>Task Center</h2>
-          </div>
-        </div>
-        <div class="taskcenter-tabs">
-          <button class="task-tab active" data-task-view="mine">Tugas Saya</button>
-          <button class="task-tab" data-task-view="queue">Antrian Tugas</button>
-          <button class="task-tab" data-task-view="history">Riwayat</button>
-        </div>
-        <div id="taskcenterContent" class="taskcenter-content">
-          <div class="loading-indicator">Memuat task center...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Approval Center Tab (Admin) -->
-    <section id="approvalcenterTab" class="tab-content" style="display:none;">
-      <div class="approval-page">
-        <div class="approval-header">
-          <div>
-            <p class="section-eyebrow">Workflow</p>
-            <h2>Approval Center</h2>
-          </div>
-        </div>
-        <div class="approval-tabs">
-          <button class="approval-tab active" data-approval-status="pending">
-            <i data-lucide="clock"></i> Pending <span class="badge" id="approvalPendingCount">0</span>
-          </button>
-          <button class="approval-tab" data-approval-status="approved">
-            <i data-lucide="check"></i> Approved
-          </button>
-          <button class="approval-tab" data-approval-status="rejected">
-            <i data-lucide="x"></i> Rejected
-          </button>
-        </div>
-        <div id="approvalcenterContent" class="approval-content">
-          <div class="loading-indicator">Memuat approval center...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Reports Tab (Admin) -->
-    <section id="reportsTab" class="tab-content" style="display:none;">
-      <div class="reports-page">
-        <div class="reports-header">
-          <div>
-            <p class="section-eyebrow">Business Intelligence</p>
-            <h2>Laporan</h2>
-          </div>
-        </div>
-        <div class="reports-grid">
-          <div class="report-card" onclick="showReport('stock')">
-            <i data-lucide="package"></i>
-            <h4>Laporan Stok</h4>
-            <p>Laporan persediaan dan stok gudang</p>
-          </div>
-          <div class="report-card" onclick="showReport('sales')">
-            <i data-lucide="shopping-cart"></i>
-            <h4>Laporan Penjualan</h4>
-            <p>Laporan transaksi penjualan</p>
-          </div>
-          <div class="report-card" onclick="showReport('opname')">
-            <i data-lucide="package-check"></i>
-            <h4>Laporan Opname</h4>
-            <p>Laporan stok opname dan selisih</p>
-          </div>
-          <div class="report-card" onclick="showReport('export')">
-            <i data-lucide="download"></i>
-            <h4>Export Data</h4>
-            <p>Export data ke CSV/Excel</p>
-          </div>
-        </div>
-        <div id="reportDetail" class="report-detail" style="display:none;"></div>
-      </div>
-    </section>
-
-    <!-- Audit Tab (Admin) -->
-    <section id="auditTab" class="tab-content" style="display:none;">
-      <div class="audit-page">
-        <div class="audit-header">
-          <div>
-            <p class="section-eyebrow">Compliance</p>
-            <h2>Audit</h2>
-          </div>
-        </div>
-        <div class="audit-tabs">
-          <button class="audit-tab active" data-audit-view="activity">Log Aktivitas</button>
-          <button class="audit-tab" data-audit-view="stock">Audit Stok</button>
-          <button class="audit-tab" data-audit-view="integrity">Data Integrity</button>
-        </div>
-        <div id="auditContent" class="audit-content">
-          <div class="loading-indicator">Memuat audit logs...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Operator/User Dashboard Tab -->
-    <section id="operatorTab" class="tab-content" style="display:none;">
-      <div class="operator-page">
-        <div class="operator-header">
-          <div>
-            <p class="section-eyebrow">My Workspace</p>
-            <h2>Dasbor Saya</h2>
-          </div>
-        </div>
-        <div class="operator-stats">
-          <div class="stat-card">
-            <i data-lucide="clipboard-list"></i>
-            <div class="stat-info">
-              <span class="stat-value" id="myPendingTasks">0</span>
-              <span class="stat-label">Tugas Pending</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <i data-lucide="check-circle"></i>
-            <div class="stat-info">
-              <span class="stat-value" id="myCompletedTasks">0</span>
-              <span class="stat-label">Tugas Selesai</span>
-            </div>
-          </div>
-        </div>
-        <div id="operatorContent" class="operator-content">
-          <div class="loading-indicator">Memuat dashboard...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- User Tasks Tab (SOTasks) -->
-    <section id="sotasksTab" class="tab-content" style="display:none;">
-      <div class="sotasks-page">
-        <div class="sotasks-header">
-          <div>
-            <p class="section-eyebrow">My Tasks</p>
-            <h2>Tugas Opname</h2>
-          </div>
-        </div>
-        <div class="sotasks-tabs">
-          <button class="sotask-tab active" data-sotask-view="active">Tugas Aktif</button>
-          <button class="sotask-tab" data-sotask-view="completed">Tugas Selesai</button>
-        </div>
-        <div id="sotasksContent" class="sotasks-content">
-          <div class="loading-indicator">Memuat tugas...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- User History Tab (SOHistory) -->
-    <section id="sohistoryTab" class="tab-content" style="display:none;">
-      <div class="sohistory-page">
-        <div class="sohistory-header">
-          <div>
-            <p class="section-eyebrow">My Activity</p>
-            <h2>Riwayat Saya</h2>
-          </div>
-        </div>
-        <div id="sohistoryContent" class="sohistory-content">
-          <div class="loading-indicator">Memuat riwayat...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- User Profile Tab -->
-    <section id="profileTab" class="tab-content" style="display:none;">
-      <div class="profile-page">
-        <div class="profile-header">
-          <div>
-            <p class="section-eyebrow">Account</p>
-            <h2>Profil Saya</h2>
-          </div>
-        </div>
-        <div class="profile-content">
-          <div class="profile-info">
-            <div class="profile-avatar" id="profileAvatar">?</div>
-            <div class="profile-details">
-              <h3 id="profileName">-</h3>
-              <p id="profileRole">-</p>
-              <p id="profileEmail">-</p>
-            </div>
-          </div>
-          <div class="profile-form">
-            <label class="form-control">
-              <span>Nama Lengkap</span>
-              <input type="text" id="profileFullName" placeholder="Nama lengkap">
-            </label>
-            <label class="form-control">
-              <span>Email</span>
-              <input type="email" id="profileEmailInput" placeholder="Email">
-            </label>
-            <button class="btn-primary" onclick="updateProfile()">Simpan Perubahan</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Users Management -->
-    <section id="usersTab" class="tab-content" style="display:none;">
-      <div class="users-page">
-        <!-- Header -->
-        <div class="users-header">
-          <div class="users-header__left">
-            <p class="section-eyebrow">User Management</p>
-            <h2>Pengguna</h2>
-            <span class="page-caption" id="userCount">Memuat...</span>
-          </div>
-          <div class="users-header__right">
-            <div class="users-search">
-              <i data-lucide="search"></i>
-              <input type="text" id="userSearch" placeholder="Cari pengguna..." oninput="loadUsersList()">
-            </div>
-            <button type="button" class="btn-primary" onclick="openAddUserModal()">
-              <i data-lucide="user-plus"></i>
-              Tambah User
-            </button>
-          </div>
-        </div>
-
-        <!-- Filter Bar -->
-        <div class="users-filters">
-          <div class="filter-bar">
-            <label class="filter-control">
-              <span>Role</span>
-              <select id="roleFilter" onchange="loadUsersList()">
-                <option value="">Semua Role</option>
-                <option value="admin">Admin</option>
-                <option value="staff_gudang">Staff Gudang</option>
-                <option value="checker_opname">Checker Opname</option>
-              </select>
-            </label>
-            <label class="filter-control">
-              <span>Status</span>
-              <select id="statusFilter" onchange="loadUsersList()">
-                <option value="">Semua Status</option>
-                <option value="true">Aktif</option>
-                <option value="false">Nonaktif</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <!-- Users Table -->
-        <div class="users-table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody">
-              <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted);">
-                  <div style="padding: 20px;">Memuat...</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- User Modal -->
-    <div id="userModal" class="modal" style="display: none;">
-      <div class="modal__content modal__content--sm">
-        <div class="modal__header">
-          <h3 id="userModalTitle">Tambah User Baru</h3>
-          <button class="modal__close" onclick="closeUserModal()">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
-        <form id="userForm" class="modal__body">
-          <div class="form-group">
-            <label for="userUsername">Username</label>
-            <input type="text" id="userUsername" name="username" required>
-          </div>
-          <div class="form-group">
-            <label for="userEmail">Email</label>
-            <input type="email" id="userEmail" name="email">
-          </div>
-          <div class="form-group">
-            <label for="userNamaLengkap">Nama Lengkap</label>
-            <input type="text" id="userNamaLengkap" name="nama_lengkap" required>
-          </div>
-          <div class="form-group">
-            <label for="userRole">Role</label>
-            <select id="userRole" name="role" required>
-              <option value="staff_gudang">Staff Gudang</option>
-              <option value="checker_opname">Checker Opname</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="userPassword">Password <span id="passwordHint">(kosongkan jika tidak diubah)</span></label>
-            <input type="password" id="userPassword" name="password">
-          </div>
-          <div class="form-group form-group--checkbox">
-            <input type="checkbox" id="userStatus" name="is_active" checked>
-            <label for="userStatus">User Aktif</label>
-          </div>
-        </form>
-        <div class="modal__footer">
-          <button type="button" class="btn-secondary" onclick="closeUserModal()">Batal</button>
-          <button type="button" class="btn-primary" onclick="saveUser()">
-            <i data-lucide="save"></i>
-            Simpan
-          </button>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Settings Tab -->
-    <section id="settingsTab" class="tab-content" style="display:none;">
-      <div class="settings-page">
-        <!-- Header -->
-        <div class="settings-header">
-          <div class="settings-header__left">
-            <p class="section-eyebrow">System Configuration</p>
-            <h2>Pengaturan</h2>
-          </div>
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="section-header">
+      <span class="section-badge">Fitur</span>
+      <h2 class="section-title">Semua yang Anda Butuhkan</h2>
+      <p class="section-subtitle">Fitur lengkap untuk mengelola inventaris perusahaan Anda</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="layout-dashboard"></i>
         </div>
-
-        <!-- Settings Navigation -->
-        <div class="settings-nav">
-          <button class="settings-nav__item active" data-section="profile">
-            <i data-lucide="user"></i>
-            <span>Profil</span>
-          </button>
-          <button class="settings-nav__item" data-section="security">
-            <i data-lucide="shield"></i>
-            <span>Keamanan</span>
-          </button>
-          <button class="settings-nav__item" data-section="system">
-            <i data-lucide="monitor"></i>
-            <span>Sistem</span>
-          </button>
-          <button class="settings-nav__item" data-section="database">
-            <i data-lucide="database"></i>
-            <span>Database</span>
-          </button>
+        <h3>Dashboard Real-time</h3>
+        <p>Pantau semua metric penting dalam satu tampilan. Update data real-time untuk keputusan cepat.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="package-check"></i>
         </div>
+        <h3>Stock Opname</h3>
+        <p>Sistem scan barcode dan input qty fisik. Generate laporan selisih otomatis.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="shopping-cart"></i>
+        </div>
+        <h3>Transaksi Penjualan</h3>
+        <p>Catat penjualan dan pembelian dengan mudah. Import data dari Excel/CSV.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="users"></i>
+        </div>
+        <h3>Manajemen User</h3>
+        <p>Kelola akses pengguna dengan role-based permission. Admin, Staff Gudang, atau Checker.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="file-bar-chart"></i>
+        </div>
+        <h3>Laporan Lengkap</h3>
+        <p>Generate laporan stok, penjualan, dan opname. Export ke CSV atau Excel.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <h3>Keamanan Data</h3>
+        <p>Enkripsi password, audit log, dan backup otomatis untuk keamanan data Anda.</p>
+      </div>
+    </div>
+  </section>
 
-        <!-- Settings Content -->
-        <div class="settings-content">
-          <!-- Profile Section -->
-          <div id="settingsProfile" class="settings-section" style="display: block;">
-            <div class="settings-card">
-              <h3>Informasi Profil</h3>
-              <div class="form-group">
-                <label>Nama Lengkap</label>
-                <input type="text" id="profileName" class="form-input" placeholder="Nama lengkap">
-              </div>
-              <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="profileUsername" class="form-input" disabled>
-              </div>
-              <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="profileEmail" class="form-input" placeholder="Email">
-              </div>
-              <div class="form-group">
-                <label>Role</label>
-                <input type="text" id="profileRole" class="form-input" disabled>
-              </div>
-              <button type="button" class="btn-primary" onclick="updateProfile()">
-                <i data-lucide="save"></i>
-                Simpan Perubahan
-              </button>
-            </div>
-          </div>
+  <!-- Roles Section -->
+  <section class="roles">
+    <div class="section-header">
+      <span class="section-badge">Peran</span>
+      <h2 class="section-title">Tiga Peran Utama</h2>
+      <p class="section-subtitle">Setiap peran memiliki akses yang sesuai dengan tanggung jawabnya</p>
+    </div>
+    <div class="roles-grid">
+      <div class="role-card">
+        <div class="role-badge role-admin">Admin</div>
+        <h3>Administrator</h3>
+        <p>Akses penuh ke semua fitur sistem. Kelola pengguna, laporan, dan pengaturan.</p>
+        <ul class="role-permissions">
+          <li><i data-lucide="check"></i> Dashboard Lengkap</li>
+          <li><i data-lucide="check"></i> Manajemen User</li>
+          <li><i data-lucide="check"></i> Semua Laporan</li>
+          <li><i data-lucide="check"></i> Pengaturan Sistem</li>
+        </ul>
+      </div>
+      <div class="role-card">
+        <div class="role-badge role-staff">Staff Gudang</div>
+        <h3>Staff Gudang</h3>
+        <p>Kelola operasional gudang sehari-hari. Input transaksi dan laporan.</p>
+        <ul class="role-permissions">
+          <li><i data-lucide="check"></i> Input Penjualan</li>
+          <li><i data-lucide="check"></i> Stock Opname</li>
+          <li><i data-lucide="check"></i> Laporan Gudang</li>
+          <li><i data-lucide="check"></i> Forecast Stok</li>
+        </ul>
+      </div>
+      <div class="role-card">
+        <div class="role-badge role-checker">Checker</div>
+        <h3>Checker Opname</h3>
+        <p>Fokus pada stock opname dan penghitungan fisik barang.</p>
+        <ul class="role-permissions">
+          <li><i data-lucide="check"></i> Scan & Input SO</li>
+          <li><i data-lucide="check"></i> Riwayat Opname</li>
+          <li><i data-lucide="check"></i> Laporan Personal</li>
+          <li><i data-lucide="check"></i> Update Profil</li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
-          <!-- Security Section -->
-          <div id="settingsSecurity" class="settings-section" style="display: none;">
-            <div class="settings-card">
-              <h3>Ubah Password</h3>
-              <div class="form-group">
-                <label>Password Lama</label>
-                <input type="password" id="oldPassword" class="form-input" placeholder="Password lama">
-              </div>
-              <div class="form-group">
-                <label>Password Baru</label>
-                <input type="password" id="newPassword" class="form-input" placeholder="Password baru (min. 8 karakter)">
-              </div>
-              <div class="form-group">
-                <label>Konfirmasi Password Baru</label>
-                <input type="password" id="confirmPassword" class="form-input" placeholder="Konfirmasi password baru">
-              </div>
-              <button type="button" class="btn-primary" onclick="changePassword()">
-                <i data-lucide="lock"></i>
-                Ubah Password
-              </button>
-            </div>
-          </div>
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="cta-content">
+      <h2>Siap Memulai?</h2>
+      <p>Masuk ke sistem dan kelola inventaris Anda dengan lebih efisien</p>
+      <button class="btn btn-primary btn-lg" onclick="openLogin('user')">
+        <i data-lucide="log-in"></i>
+        <span>Masuk ke Sistem</span>
+      </button>
+    </div>
+  </section>
 
-          <!-- System Section -->
-          <div id="settingsSystem" class="settings-section" style="display: none;">
-            <div class="settings-card">
-              <h3>Informasi Sistem</h3>
-              <div class="settings-info-grid">
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Nama Aplikasi</span>
-                  <span class="settings-info-value">CV EPIC Warehouse</span>
-                </div>
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Versi</span>
-                  <span class="settings-info-value">3.0.0</span>
-                </div>
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Environment</span>
-                  <span class="settings-info-value">Production</span>
-                </div>
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Fitur</span>
-                  <span class="settings-info-value">User Management, Opname Approval, Forecast, Multi Outlet</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Database Section -->
-          <div id="settingsDatabase" class="settings-section" style="display: none;">
-            <div class="settings-card">
-              <h3>Status Database</h3>
-              <div id="databaseStatusContent">
-                <div class="settings-loading">Memuat status database...</div>
-              </div>
-            </div>
-          </div>
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="/assets/logo.png" alt="CV EPIC Warehouse" class="footer-logo">
+        <div>
+          <span class="footer-name">CV EPIC Warehouse</span>
+          <span class="footer-version">Versi 3.0</span>
         </div>
       </div>
-    </section>
-  </main>
-
-  <div id="toast"></div>
-
-  <footer class="app-footer">
-    <div>© CV EPIC Warehouse</div>
-    <div class="credit">Design & UI enhancements: Mr.Wid</div>
+      <div class="footer-info">
+        <p>&copy; 2024 CV EPIC Warehouse. All rights reserved.</p>
+        <p>Design & UI: Mr.Wid</p>
+      </div>
+    </div>
   </footer>
 
-  
-
-  <div id="loader">
-    <div class="loader-content">
-      <img src="/assets/logo.png" class="loader-logo" alt="CV EPIC Warehouse">
-      <p>Memuat dashboard...</p>
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal modal-auth">
+      <button class="modal-close" onclick="closeLogin()">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="modal-auth-header">
+        <img src="/assets/logo.png" alt="CV EPIC Warehouse" class="auth-logo">
+        <h2>CV EPIC Warehouse</h2>
+        <p>Sistem Kontrol Inventaris</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-mode="user" onclick="setLoginMode('user')">
+          <i data-lucide="user"></i>
+          <span>User</span>
+        </button>
+        <button class="auth-tab" data-mode="admin" onclick="setLoginMode('admin')">
+          <i data-lucide="shield"></i>
+          <span>Admin</span>
+        </button>
+      </div>
+      
+      <p class="auth-caption" id="authCaption">
+        Login user operasional untuk staff gudang/checker sesuai role masing-masing.
+      </p>
+      
+      <form class="auth-form" onsubmit="event.preventDefault(); performLogin();">
+        <div class="form-group">
+          <label>
+            <i data-lucide="user"></i>
+            <span>Username</span>
+          </label>
+          <input type="text" id="loginUsername" placeholder="Masukkan username" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label>
+            <i data-lucide="lock"></i>
+            <span>Password</span>
+          </label>
+          <input type="password" id="loginPassword" placeholder="Masukkan password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i data-lucide="log-in"></i>
+          <span>Masuk</span>
+        </button>
+      </form>
+      
+      <p class="auth-help">Lupa password? Hubungi administrator.</p>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="/js/dashboard.js?v=opname-history-20260521e"></script>
-  <script src="/js/user-management.js"></script>
   <script>
     lucide.createIcons();
-  </script>
-  <script>
+
     let loginMode = 'user';
-
-    function getStoredAuth() {
-      try {
-        return JSON.parse(window.localStorage.getItem('auth_user') || 'null');
-      } catch {
-        return null;
-      }
-    }
-
+    
     function setLoginMode(mode) {
-      loginMode = mode === 'admin' ? 'admin' : 'user';
-      document.getElementById('loginModeUser')?.classList.toggle('active-tab', loginMode === 'user');
-      document.getElementById('loginModeAdmin')?.classList.toggle('active-tab', loginMode === 'admin');
-      const caption = document.getElementById('loginModeCaption');
-      if (caption) {
-        caption.textContent = loginMode === 'admin'
-          ? 'Login admin khusus untuk pengaturan penuh dan kontrol semua modul.'
-          : 'Login user operasional untuk staff gudang/checker sesuai role masing-masing.';
-      }
-    }
-
-    function updateAuthHeader() {
-      const auth = getStoredAuth();
-      const userInfo = document.getElementById('authUserBadge');
-      const userAvatar = document.getElementById('userAvatar');
-      const userName = document.getElementById('userName');
-      const userRole = document.getElementById('userRole');
-      const loginButton = document.getElementById('loginButton');
-      const logoutButton = document.getElementById('logoutButton');
-      const adminMenuItem = document.getElementById('adminMenuItem');
-      if (auth?.access_token) {
-        const roleLabel = auth.role === 'admin' ? 'Admin' : 'User';
-        const displayName = auth.nama_lengkap || auth.username || 'User';
-        const initial = displayName.charAt(0).toUpperCase();
-        if (userInfo) userInfo.style.display = 'flex';
-        if (userAvatar) userAvatar.textContent = initial;
-        if (userName) userName.textContent = displayName;
-        if (userRole) {
-          userRole.textContent = roleLabel;
-          userRole.className = `user-role role-${auth.role || 'user'}`;
-        }
-        if (loginButton) loginButton.style.display = 'none';
-        if (logoutButton) logoutButton.style.display = 'inline-flex';
-        // Show admin menu item only for admin role
-        if (adminMenuItem) {
-          adminMenuItem.style.display = auth.role === 'admin' ? 'flex' : 'none';
-        }
+      loginMode = mode;
+      document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+      });
+      const caption = document.getElementById('authCaption');
+      if (mode === 'admin') {
+        caption.textContent = 'Login administrator untuk akses penuh ke semua fitur sistem.';
       } else {
-        if (userInfo) userInfo.style.display = 'none';
-        if (loginButton) loginButton.style.display = 'inline-flex';
-        if (logoutButton) logoutButton.style.display = 'none';
-        if (adminMenuItem) adminMenuItem.style.display = 'none';
+        caption.textContent = 'Login user operasional untuk staff gudang/checker sesuai role masing-masing.';
       }
+      document.getElementById('loginUsername').focus();
     }
 
-    function applyAuthState() {
-      const hasAuth = Boolean(getStoredAuth()?.access_token);
-      const userRole = getStoredAuth()?.role || null;
-      const isAdmin = userRole === 'admin';
-      
-      document.body.classList.toggle('auth-locked', !hasAuth);
-      document.getElementById('loginModal')?.removeAttribute('style');
-      updateAuthHeader();
-      
-      // V3: Switch sidebar based on role
-      const adminSidebar = document.getElementById('adminSidebar');
-      const userSidebar = document.getElementById('userSidebar');
-      if (adminSidebar && userSidebar) {
-        if (isAdmin) {
-          adminSidebar.style.display = 'block';
-          userSidebar.style.display = 'none';
-        } else {
-          adminSidebar.style.display = 'none';
-          userSidebar.style.display = 'block';
-        }
-      }
-      
-      // Update sidebar database status indicator
-      const dbStatus = document.getElementById('sidebarDbStatus');
-      if (dbStatus) {
-        dbStatus.textContent = hasAuth ? 'Database Terhubung' : 'Menghubungkan...';
-      }
-      
-      // Legacy sidebar sections (keep for compatibility)
-      const sistemSection = document.getElementById('sistemSection');
-      if (sistemSection) {
-        sistemSection.style.display = isAdmin ? 'block' : 'none';
-      }
-      
-      // Update mobile menu sistem section
-      const mobileSistemSection = document.getElementById('mobileSistemSection');
-      if (mobileSistemSection) {
-        mobileSistemSection.style.display = isAdmin ? 'block' : 'none';
-      }
-      
-      // Update mobile user info
-      const mobileUserAvatar = document.getElementById('mobileUserAvatar');
-      const mobileUserName = document.getElementById('mobileUserName');
-      const mobileUserRole = document.getElementById('mobileUserRole');
-      
-      if (mobileUserAvatar) {
-        mobileUserAvatar.textContent = userRole ? userRole.charAt(0).toUpperCase() : '?';
-      }
-      if (mobileUserName) {
-        mobileUserName.textContent = getStoredAuth()?.username || 'Guest';
-      }
-      if (mobileUserRole) {
-        mobileUserRole.textContent = userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : '-';
-      }
-      
-      if (!hasAuth) {
-        setLoginMode(loginMode);
-        setTimeout(() => document.getElementById('loginUsername')?.focus(), 50);
-      }
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function openLogin(mode = 'user') {
+    function openLogin(mode) {
+      loginMode = mode;
       setLoginMode(mode);
-      document.body.classList.add('auth-locked');
-      document.getElementById('loginModal')?.removeAttribute('style');
-      setTimeout(() => document.getElementById('loginUsername')?.focus(), 50);
+      if (mode === 'admin') {
+        document.querySelector('[data-mode="admin"]').click();
+      }
+      document.getElementById('loginModal').classList.add('active');
+      setTimeout(() => document.getElementById('loginUsername')?.focus(), 100);
     }
 
     function closeLogin() {
-      applyAuthState();
+      document.getElementById('loginModal').classList.remove('active');
+      document.getElementById('loginPassword').value = '';
     }
 
-    // Toggle submenu visibility
-    function toggleSubmenu(event, submenuId) {
-      if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-      
-      const submenu = document.getElementById(submenuId);
-      const parentItem = event?.currentTarget?.closest('.has-submenu') || document.querySelector(`[onclick*="${submenuId}"]`);
-      
-      if (!submenu) return;
-      
-      // Close all other submenus
-      document.querySelectorAll('.sidebar-submenu').forEach(sm => {
-        if (sm.id !== submenuId) {
-          sm.classList.remove('open');
-        }
-      });
-      document.querySelectorAll('.has-submenu').forEach(item => {
-        if (item !== parentItem) {
-          item.classList.remove('open');
-        }
-      });
-      
-      // Toggle current submenu
-      submenu.classList.toggle('open');
-      parentItem?.classList.toggle('open');
+    function showToast(message, isSuccess = true) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
+      toast.innerHTML = `<i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons({ nodes: [toast] });
+      setTimeout(() => toast.remove(), 3000);
     }
-
-    // Close submenus when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.sidebar-submenu') && !e.target.closest('.has-submenu')) {
-        document.querySelectorAll('.sidebar-submenu').forEach(sm => sm.classList.remove('open'));
-        document.querySelectorAll('.has-submenu').forEach(item => item.classList.remove('open'));
-      }
-    });
-
-    window.applyAuthState = applyAuthState;
 
     async function performLogin() {
       const user = document.getElementById('loginUsername').value.trim();
       const pass = document.getElementById('loginPassword').value;
+      
       if (!user || !pass) {
         showToast('Masukkan username dan password', false);
         return;
       }
 
       const endpoint = loginMode === 'admin' ? '/api/v1/auth/login/admin' : '/api/v1/auth/login/user';
+      
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
@@ -1654,129 +346,35 @@
           body: JSON.stringify({ username: user, password: pass })
         });
         const data = await res.json();
+        
         if (!res.ok) {
           showToast(data.message || 'Login gagal', false);
           return;
         }
 
         const authData = data.data || data;
-        window.localStorage.setItem('auth_user', JSON.stringify(authData));
-        document.getElementById('loginPassword').value = '';
-        applyAuthState();
-        showToast(`Login ${loginMode === 'admin' ? 'admin' : 'user'} berhasil`, true);
-        closeLogin();
-        if (typeof selectMenu === 'function') selectMenu(null, typeof getSavedMenu === 'function' ? getSavedMenu() : 'penjualan');
-        applyCurrentFilters();
+        localStorage.setItem('auth_user', JSON.stringify(authData));
+        showToast(`Login ${loginMode === 'admin' ? 'admin' : 'user'} berhasil!`, true);
+        
+        setTimeout(() => {
+          window.location.href = '/app.html';
+        }, 500);
       } catch (err) {
         console.error(err);
-        showToast('Gagal menghubungi server auth', false);
+        showToast('Gagal menghubungi server', false);
       }
     }
 
-    async function performLogout() {
-      const auth = getStoredAuth();
-      try {
-        if (auth?.access_token) {
-          await fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${auth.access_token}` }
-          });
-        }
-      } catch (err) {
-        console.warn('Logout server gagal, sesi lokal tetap dihapus', err);
-      } finally {
-        window.localStorage.removeItem('auth_user');
-        applyAuthState();
-        showToast('Anda sudah keluar', true);
-      }
+    function scrollToFeatures() {
+      document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
     }
 
-    applyAuthState();
-  </script>
+    document.getElementById('loginModal').addEventListener('click', (e) => {
+      if (e.target.id === 'loginModal') closeLogin();
+    });
 
-  <!-- Login Modal -->
-  <div id="loginModal" class="modal-overlay" style="display:none;">
-    <div class="modal modal--auth">
-      <div class="modal__header">
-        <div class="modal__logo">
-          <img src="/assets/logo.png" alt="CV EPIC Warehouse" onerror="this.style.display='none'">
-        </div>
-        <h2 class="modal__title">CV EPIC Warehouse</h3>
-        <p class="modal__subtitle">Sistem Kontrol Inventaris V3</p>
-      </div>
-      
-      <div class="modal__tabs">
-        <button id="loginModeUser" class="modal__tab active-tab" onclick="setLoginMode('user')">
-          <i data-lucide="user"></i>
-          <span>User</span>
-        </button>
-        <button id="loginModeAdmin" class="modal__tab" onclick="setLoginMode('admin')">
-          <i data-lucide="shield"></i>
-          <span>Admin</span>
-        </button>
-      </div>
-      
-      <p id="loginModeCaption" class="modal__caption">
-        Login user operasional untuk staff gudang/checker sesuai role masing-masing.
-      </p>
-      
-      <form class="modal__form" onsubmit="event.preventDefault(); performLogin();">
-        <div class="form-group">
-          <label for="loginUsername" class="form-label">
-            <i data-lucide="user"></i>
-            <span>Username</span>
-          </label>
-          <input 
-            type="text" 
-            id="loginUsername" 
-            class="form-input" 
-            placeholder="Masukkan username"
-            autocomplete="username"
-            required
-          >
-        </div>
-        
-        <div class="form-group">
-          <label for="loginPassword" class="form-label">
-            <i data-lucide="lock"></i>
-            <span>Password</span>
-          </label>
-          <input 
-            type="password" 
-            id="loginPassword" 
-            class="form-input" 
-            placeholder="Masukkan password"
-            autocomplete="current-password"
-            required
-          >
-        </div>
-        
-        <button type="submit" class="btn btn--primary btn--full">
-          <i data-lucide="log-in"></i>
-          <span>Masuk</span>
-        </button>
-      </form>
-      
-      <div class="modal__footer">
-        <p class="modal__help">Lupa password? Hubungi administrator.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification Container -->
-  <div id="toastContainer" class="toast-container"></div>
-
-  <!-- 
-    Data Validation: All dashboard data is now fetched from real database APIs.
-    No mock data or dummy content is rendered. Charts and KPIs are populated
-    only after successful API responses from /api/kpi, /api/chart, etc.
-  -->
-  <script>
-    // Re-initialize Lucide icons after all content loads
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) {
-        lucide.createIcons();
-      }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLogin();
     });
   </script>
 </body>

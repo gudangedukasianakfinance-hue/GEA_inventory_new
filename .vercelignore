@@ -1,8 +1,0 @@
-# Ignore documentation files for build
-*.md
-docs/
-
-# Ignore test files
-*.test.js
-test/
-tests/
