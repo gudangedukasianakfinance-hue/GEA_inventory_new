@@ -815,27 +815,34 @@ function selectMenu(event, menu) {
   document.querySelectorAll(".tab-content")
     .forEach(tab => { tab.style.display = "none"; });
 
-  document.getElementById("salesTabMenu").style.display = menu === "penjualan" ? "flex" : "none";
+  // Safe element access with null checks
+  const salesTabMenu = document.getElementById("salesTabMenu");
+  if (salesTabMenu) salesTabMenu.style.display = menu === "penjualan" ? "flex" : "none";
   document.querySelectorAll("#salesTabMenu button")
     .forEach(button => button.classList.remove("active-tab"));
 
   // Handle dashboard and admin menu
   if (menu === "dashboard" || menu === "admin") {
-    document.getElementById("v3DashboardTab").style.display = "block";
+    const v3DashboardTab = document.getElementById("v3DashboardTab");
+    if (v3DashboardTab) v3DashboardTab.style.display = "block";
     loadV3Dashboard();
     return;
   }
 
   if (menu === "penjualan") {
-    document.getElementById("kpiTab").style.display = "block";
+    const kpiTab = document.getElementById("kpiTab");
+    if (kpiTab) kpiTab.style.display = "block";
     document.querySelector("#salesTabMenu button")?.classList.add("active-tab");
     loadV3Dashboard();
     return;
   }
 
   if (menu === "persediaan") {
-    document.getElementById("persediaanTab").style.display = "block";
-    showModuleTab(null, "persediaan", "persediaanOverview");
+    const persediaanTab = document.getElementById("persediaanTab");
+    if (persediaanTab) {
+      persediaanTab.style.display = "block";
+      showModuleTab(null, "persediaan", "persediaanOverview");
+    }
     document.querySelector("#persediaanMenu button")?.classList.add("active-tab");
     return;
   }
@@ -843,8 +850,11 @@ function selectMenu(event, menu) {
   // Audit menu removed from UI; related code cleaned up
 
   if (menu === "forecast") {
-    document.getElementById("forecastTab").style.display = "block";
-    showModuleTab(null, "forecast", "forecastOverview");
+    const forecastTab = document.getElementById("forecastTab");
+    if (forecastTab) {
+      forecastTab.style.display = "block";
+      showModuleTab(null, "forecast", "forecastOverview");
+    }
     document.querySelector("#forecastMenu button")?.classList.add("active-tab");
     return;
   }
@@ -852,57 +862,69 @@ function selectMenu(event, menu) {
   if (menu === "opname") {
     // For non-admin users, show operator dashboard instead of full opname
     if (getCurrentUserRole() !== 'admin') {
-      document.getElementById("operatorTab").style.display = "block";
+      const operatorTab = document.getElementById("operatorTab");
+      if (operatorTab) operatorTab.style.display = "block";
       loadOperatorDashboard();
     } else {
       // For admin users, show the full opname tab
-      document.getElementById("opnameTab").style.display = "block";
-      showOpnameTab(null, "opnameKPI");
-      document.querySelector(".tab-menu-opname button")?.classList.add("active-tab");
-      syncOpnamePeriodToLocal();
-      initPerintahFormDefaults();
-      loadPerintahList();
-      loadOpnameKpiData();
-      updateOpnameInputVisibility();
+      const opnameTab = document.getElementById("opnameTab");
+      if (opnameTab) {
+        opnameTab.style.display = "block";
+        showOpnameTab(null, "opnameKPI");
+        document.querySelector(".tab-menu-opname button")?.classList.add("active-tab");
+        syncOpnamePeriodToLocal();
+        initPerintahFormDefaults();
+        loadPerintahList();
+        loadOpnameKpiData();
+        updateOpnameInputVisibility();
+      }
     }
   }
 
   if (menu === "taskcenter") {
-    document.getElementById("taskcenterTab").style.display = "block";
+    const taskcenterTab = document.getElementById("taskcenterTab");
+    if (taskcenterTab) taskcenterTab.style.display = "block";
   }
 
   if (menu === "approvalcenter") {
-    document.getElementById("approvalcenterTab").style.display = "block";
+    const approvalcenterTab = document.getElementById("approvalcenterTab");
+    if (approvalcenterTab) approvalcenterTab.style.display = "block";
   }
 
   if (menu === "activity") {
-    document.getElementById("activityTab").style.display = "block";
+    const activityTab = document.getElementById("activityTab");
+    if (activityTab) activityTab.style.display = "block";
   }
 
   if (menu === "audit") {
-    document.getElementById("auditTab").style.display = "block";
+    const auditTab = document.getElementById("auditTab");
+    if (auditTab) auditTab.style.display = "block";
   }
 
   if (menu === "reports") {
-    document.getElementById("reportsTab").style.display = "block";
+    const reportsTab = document.getElementById("reportsTab");
+    if (reportsTab) reportsTab.style.display = "block";
   }
 
   // User-specific menus
   if (menu === "mydashboard") {
     // Show user dashboard - reuse operator dashboard logic
-    document.getElementById("operatorTab").style.display = "block";
+    const operatorTab = document.getElementById("operatorTab");
+    if (operatorTab) operatorTab.style.display = "block";
     return;
   }
 
   if (menu === "sotasks") {
     // User tasks - show opname commands assigned to user
-    document.getElementById("taskcenterTab").style.display = "block";
+    const taskcenterTab = document.getElementById("taskcenterTab");
+    if (taskcenterTab) taskcenterTab.style.display = "block";
     return;
   }
 
   if (menu === "sohistory") {
     // User history - show opname history
-    document.getElementById("approvalcenterTab").style.display = "block";
+    const approvalTab = document.getElementById("approvalcenterTab");
+    if (approvalTab) approvalTab.style.display = "block";
     return;
   }
 
@@ -915,10 +937,13 @@ function selectMenu(event, menu) {
   // Admin-only menus
   if (menu === "users") {
     // User management - show users tab
-    document.getElementById("usersTab").style.display = "block";
-    // Load users list when tab is shown
-    if (typeof loadUsersList === 'function') {
-      loadUsersList();
+    const usersTab = document.getElementById("usersTab");
+    if (usersTab) {
+      usersTab.style.display = "block";
+      // Load users list when tab is shown
+      if (typeof loadUsersList === 'function') {
+        loadUsersList();
+      }
     }
     return;
   }
@@ -932,19 +957,22 @@ function selectMenu(event, menu) {
   // V4 Warehouse Menus
   if (menu === "produk") {
     // Show produk list
-    document.getElementById("persediaanTab").style.display = "block";
+    const persediaanTab = document.getElementById("persediaanTab");
+    if (persediaanTab) persediaanTab.style.display = "block";
     return;
   }
 
   if (menu === "outlet") {
     // Show outlet management
-    document.getElementById("persediaanTab").style.display = "block";
+    const persediaanTab = document.getElementById("persediaanTab");
+    if (persediaanTab) persediaanTab.style.display = "block";
     return;
   }
 
   if (menu === "pembelian") {
     // Show pembelian
-    document.getElementById("kpiTab").style.display = "block";
+    const kpiTab = document.getElementById("kpiTab");
+    if (kpiTab) kpiTab.style.display = "block";
     return;
   }
 }
@@ -2355,7 +2383,8 @@ async function showHistoryDetail(opnameId) {
       `).join('')
       : '<tr><td colspan="6">Tidak ada detail produk.</td></tr>';
 
-    document.getElementById('historyDetailPanel').style.display = 'block';
+    const historyPanel = document.getElementById('historyDetailPanel');
+    if (historyPanel) historyPanel.style.display = 'block';
     document.getElementById('historyDetailPanel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     if (window.lucide) lucide.createIcons();
   } catch (error) {
