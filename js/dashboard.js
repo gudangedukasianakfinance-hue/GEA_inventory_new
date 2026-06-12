@@ -5,9 +5,9 @@ let chartOutletStatus = null;
 let currentMenu = "penjualan";
 let selectedSalesOutlet = "";
 const MENU_STORAGE_KEY = "inventoryActiveMenu";
-const VALID_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "forecast", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "mydashboard", "sotasks", "sohistory", "profile", "users", "settings", "produk", "outlet", "pembelian"];
+const VALID_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "mydashboard", "sotasks", "sohistory", "profile", "users", "settings", "produk", "outlet", "pembelian"];
 const USER_ONLY_MENUS = ["opname", "mydashboard", "sotasks", "sohistory", "profile"];
-const ADMIN_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "forecast", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "users", "settings"];
+const ADMIN_MENUS = ["dashboard", "admin", "penjualan", "persediaan", "opname", "taskcenter", "approvalcenter", "activity", "audit", "reports", "users", "settings"];
 let isMobileMenuOpen = false;
 
 // Chart management - prevent memory leaks
@@ -107,8 +107,7 @@ const state = {
   persediaan: [],
   persediaanCategory: "all",
   outletDetailCategory: "all",
-  forecastCategory: "all",
-  forecast: [],
+  // state.forecast removed - forecast feature deprecated
   audit: {
     db_ready: false,
     summary: {},
@@ -181,11 +180,7 @@ const pageMeta = {
     title: "Persediaan Warehouse",
     caption: "Rolling stock dihitung mengikuti cutoff bulan database agar mutasi masuk dan keluar tetap konsisten."
   },
-  forecast: {
-    eyebrow: "Demand Planning",
-    title: "Forecast Penjualan",
-    caption: "Forecast memakai EMA 3 bulan + buffer 10% dan dibulatkan ke atas agar stok tidak seret."
-  },
+  // Forecast menu metadata removed - feature deprecated
   opname: {
     eyebrow: "Stock Control",
     title: "Stok Opname Gudang",
@@ -902,16 +897,6 @@ function selectMenu(event, menu) {
   }
 
   // Audit menu removed from UI; related code cleaned up
-
-  if (menu === "forecast") {
-    const forecastTab = document.getElementById("forecastTab");
-    if (forecastTab) {
-      forecastTab.style.display = "block";
-      showModuleTab(null, "forecast", "forecastOverview");
-    }
-    document.querySelector("#forecastMenu button")?.classList.add("active-tab");
-    return;
-  }
 
   if (menu === "opname") {
     // For non-admin users, show operator dashboard instead of full opname
@@ -1811,127 +1796,7 @@ function renderAuditIntegration() {
   `;
 }
 
-async function loadForecast() {
-  showLoader();
-  try {
-    state.forecast = toArray(await fetchJson(`/api/forecast?${getQueryParams().toString()}`));
-    renderForecast();
-  } catch (error) {
-    console.error("Forecast error:", error);
-    showToast(error.message || "Gagal memuat forecast", false);
-  } finally {
-    hideLoader();
-  }
-}
-
-function renderForecast() {
-  const body = document.getElementById("forecastBody");
-  const recommendationCards = document.getElementById("forecastRecommendationCards");
-  if (!body || !recommendationCards) return;
-
-  body.innerHTML = "";
-  recommendationCards.innerHTML = "";
-
-  let totalForecast = 0;
-  let totalActual = 0;
-  let totalGap = 0;
-  let produkAktif = 0;
-  let accuracyTotal = 0;
-  let accuracyCount = 0;
-
-  const filteredItems = state.forecast.filter(item => {
-    const category = getOpnameCategory(item.nama_produk);
-    return state.forecastCategory === "all" || category === state.forecastCategory;
-  });
-
-  filteredItems.forEach(item => {
-    const forecast = Number(item.forecast_bulan_depan || 0);
-    const actual = Number(item.bulan_3 || 0);
-    const gap = forecast - actual;
-    totalForecast += forecast;
-    totalActual += actual;
-    totalGap += gap;
-    if (forecast > 0) produkAktif += 1;
-
-    const accuracy = getForecastAccuracy(forecast, actual);
-    if (accuracy !== null) {
-      accuracyTotal += accuracy;
-      accuracyCount += 1;
-    }
-
-    body.innerHTML += `
-      <tr>
-        <td>${escapeHtml(item.sku)}</td>
-        <td>${escapeHtml(item.nama_produk)}</td>
-        <td>${formatNumber(item.bulan_1)}</td>
-        <td>${formatNumber(item.bulan_2)}</td>
-        <td>${formatNumber(item.bulan_3)}</td>
-        <td>${formatNumber(item.ema_3_bulan)}</td>
-        <td>${formatNumber(item.forecast_bulan_depan)}</td>
-      </tr>
-    `;
-  });
-
-  if (!filteredItems.length) {
-    body.innerHTML = `<tr><td colspan="7">Tidak ada data forecast pada kategori ini.</td></tr>`;
-  }
-
-  const sorted = [...filteredItems].sort((a, b) => Number(b.forecast_bulan_depan || 0) - Number(a.forecast_bulan_depan || 0));
-  const topDemand = sorted[0];
-
-  setText("forecast_total_produk", formatNumber(filteredItems.length));
-  setText("forecast_total_value", formatNumber(totalForecast));
-  setText("forecast_actual_value", formatNumber(totalActual));
-  setText("forecast_gap_value", formatNumber(totalGap));
-  setText("forecast_accuracy", `${formatForecastPercentage(accuracyCount ? accuracyTotal / accuracyCount : 0)}%`);
-  setText("forecast_avg_tahunan", formatNumber(filteredItems.length ? Math.ceil(totalForecast / filteredItems.length) : 0));
-  setText("forecast_top_demand", topDemand ? topDemand.nama_produk : "-");
-  setText("forecast_produk_aktif", formatNumber(produkAktif));
-
-  sorted.filter(item => Number(item.forecast_bulan_depan || 0) > 0).slice(0, 3).forEach((item, index) => {
-    recommendationCards.innerHTML += `
-      <div class="insight-card">
-        <h4>Prioritas ${index + 1}</h4>
-        <p>${escapeHtml(item.nama_produk)} diproyeksikan membutuhkan ${formatNumber(item.forecast_bulan_depan)} unit bulan depan. Siapkan stok minimal di atas angka ini.</p>
-      </div>
-    `;
-  });
-
-  if (!recommendationCards.innerHTML) {
-    recommendationCards.innerHTML = `
-      <div class="insight-card">
-        <h4>Belum ada rekomendasi</h4>
-        <p>Histori penjualan 3 bulan masih belum cukup untuk memberi prioritas forecast.</p>
-      </div>
-    `;
-  }
-}
-
-function selectForecastCategory(event, category) {
-  state.forecastCategory = category;
-  document.querySelectorAll("#forecastCategoryTabs button")
-    .forEach(button => button.classList.remove("active-mini-tab"));
-  document.querySelector(`#forecastCategoryTabs button[onclick*="'${category}'"]`)?.classList.add("active-mini-tab");
-  renderForecast();
-}
-
-function getForecastAccuracy(forecast, actual) {
-  const safeForecast = Number(forecast || 0);
-  const safeActual = Number(actual || 0);
-
-  if (safeForecast === 0 && safeActual === 0) return 100;
-  if (safeActual === 0) return 0;
-
-  const accuracy = 100 - (Math.abs(safeForecast - safeActual) / safeActual) * 100;
-  return Math.max(0, Math.min(100, accuracy));
-}
-
-function formatForecastPercentage(value) {
-  return Number(value || 0).toLocaleString("id-ID", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  });
-}
+// Forecast functions removed - feature deprecated
 
 function getOpnameCategory(namaProduk = "") {
   const nama = namaProduk.toLowerCase().trim();
@@ -2469,6 +2334,29 @@ async function exportOpnameHistory() {
     console.error('Export history error:', error);
     showToast(error.message || 'Gagal mengekspor history opname', false);
   }
+}
+
+function downloadCsv(filename, headers, rows) {
+  const content = [
+    headers.join(","),
+    ...rows.map(row => row.map(cell => csvEscape(cell)).join(","))
+  ].join("\n");
+
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
 }
 
 async function simpanOpname() {
@@ -3202,39 +3090,11 @@ function exportCurrentModule() {
   }
 
   if (currentMenu === "forecast") {
-    downloadCsv(
-      `forecast_${getTahun()}_${getBulan()}.csv`,
-      ["sku", "nama_produk", "bulan_1", "bulan_2", "bulan_3", "ema_3_bulan", "forecast_bulan_depan"],
-      state.forecast.map(item => [item.sku, item.nama_produk, item.bulan_1, item.bulan_2, item.bulan_3, item.ema_3_bulan, item.forecast_bulan_depan])
-    );
+    // Forecast export disabled - feature deprecated
+    return;
   }
-}
 
-function downloadCsv(filename, headers, rows) {
-  const content = [
-    headers.join(","),
-    ...rows.map(row => row.map(cell => csvEscape(cell)).join(","))
-  ].join("\n");
-
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function csvEscape(value) {
-  const text = String(value ?? "");
-  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
-    return `"${text.replaceAll('"', '""')}"`;
-  }
-  return text;
-}
-
-function printCurrentView() {
-  if (currentMenu === "penjualan") {
+  if (currentMenu === "opname") {
     openPrintWindow({
       title: "Ringkasan Penjualan Warehouse",
       subtitle: `Periode ${getBulanLabel()} ${getTahun()}${getSelectedSku() ? ` | SKU ${getSelectedSku()}` : ""}`,
@@ -3279,16 +3139,6 @@ function printCurrentView() {
       ],
       headers: ["Outlet", "SKU", "Nama Produk", "Opening", "Masuk", "Keluar", "Penyesuaian", "Stok Akhir"],
       rows: state.audit.outlet_summary.map(item => [item.nama_outlet, item.sku, item.nama_produk, item.opening_stok, item.stok_masuk, item.stok_keluar, item.penyesuaian, item.stok_akhir])
-    });
-    return;
-  }
-
-  if (currentMenu === "forecast") {
-    openPrintWindow({
-      title: "Laporan Forecast Penjualan",
-      subtitle: `Periode ${getBulanLabel()} ${getTahun()}`,
-      headers: ["SKU", "Nama Produk", "Bulan -2", "Bulan -1", "Bulan Aktif", "EMA 3 Bulan", "Forecast +10%"],
-      rows: state.forecast.map(item => [item.sku, item.nama_produk, item.bulan_1, item.bulan_2, item.bulan_3, item.ema_3_bulan, item.forecast_bulan_depan])
     });
     return;
   }
