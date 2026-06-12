@@ -61,9 +61,24 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 404 handler
+// Serve app.html for authenticated routes
+app.get('/app.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'app.html'));
+});
+
+// Serve static HTML files
+app.get('/:file.html', (req, res) => {
+  const filePath = path.join(__dirname, `${req.params.file}.html`);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).sendFile(path.join(__dirname, 'index.html'));
+    }
+  });
+});
+
+// 404 handler - serve index.html for SPA routing
 app.get('*', (req, res) => {
-  res.status(404).send('Not Found');
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Only start server in non-Vercel environment
