@@ -1794,30 +1794,74 @@
     only after successful API responses from /api/kpi, /api/chart, etc.
   -->
   <script>
+    // App loading state manager
+    const AppLoader = {
+      isReady: false,
+      checkInterval: null,
+      
+      init() {
+        // Start checking if app is ready
+        this.checkInterval = setInterval(() => this.checkReady(), 100);
+      },
+      
+      checkReady() {
+        // Only hide when all conditions are met:
+        // 1. DOM is loaded
+        // 2. Lucide icons are available
+        // 3. Auth state has been applied (user is logged in OR login modal is shown)
+        if (this.isReady) return;
+        
+        if (!window.lucide) return;
+        
+        const authBadge = document.getElementById('authUserBadge');
+        const loginModal = document.getElementById('loginModal');
+        const sidebar = document.getElementById('mainSidebar');
+        
+        // Check if auth state has been applied
+        const authApplied = (authBadge && authBadge.style.display !== 'none') || 
+                           (loginModal && loginModal.style.display !== 'none') ||
+                           (sidebar && sidebar.offsetHeight > 0);
+        
+        if (authApplied) {
+          this.hide();
+        }
+      },
+      
+      hide() {
+        if (this.isReady) return;
+        this.isReady = true;
+        
+        if (this.checkInterval) {
+          clearInterval(this.checkInterval);
+          this.checkInterval = null;
+        }
+        
+        const appLoader = document.getElementById('appLoader');
+        if (appLoader) {
+          appLoader.classList.add('hidden');
+          setTimeout(() => {
+            if (appLoader.parentElement) {
+              appLoader.parentElement.removeChild(appLoader);
+            }
+          }, 500);
+        }
+      }
+    };
+    
     // Re-initialize Lucide icons after all content loads
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {
         lucide.createIcons();
       }
-      // Hide app loader when app is ready
-      hideAppLoader();
     });
     
-    // Hide the global app loader
-    function hideAppLoader() {
-      const appLoader = document.getElementById('appLoader');
-      if (appLoader) {
-        appLoader.classList.add('hidden');
-        setTimeout(() => {
-          if (appLoader.parentElement) {
-            appLoader.parentElement.removeChild(appLoader);
-          }
-        }, 500);
-      }
-    }
+    // Start checking when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      AppLoader.init();
+    });
     
     // Make hideAppLoader available globally
-    window.hideAppLoader = hideAppLoader;
+    window.hideAppLoader = () => AppLoader.hide();
   </script>
 </body>
 </html>
