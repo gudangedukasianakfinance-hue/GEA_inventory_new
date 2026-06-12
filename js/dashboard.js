@@ -805,6 +805,15 @@ function selectMenu(event, menu) {
   updatePageHeader(menu);
   updateFilterStatus();
 
+  // Show page loader for better UX
+  const pageLoader = document.getElementById('pageLoader');
+  if (pageLoader) pageLoader.classList.add('active');
+  
+  // Hide page loader after short delay
+  setTimeout(() => {
+    if (pageLoader) pageLoader.classList.remove('active');
+  }, 800);
+
   document.querySelectorAll(".sidebar li")
     .forEach(item => item.classList.remove("active"));
 
@@ -1025,40 +1034,233 @@ async function applyCurrentFilters() {
 
 // V3 Dashboard Loader - MODERN ERP
 async function loadV3Dashboard() {
+  // Show skeleton loaders for better UX
+  const kpiContainer = document.getElementById('v3DashboardTab');
+  if (kpiContainer) {
+    kpiContainer.innerHTML = `
+      <div class="erp-dashboard">
+        <header class="erp-dashboard__header">
+          <div>
+            <h2 class="erp-dashboard__title">Dashboard Overview</h2>
+            <span class="erp-dashboard__ts" id="v3DashboardTimestamp">
+              <div class="skeleton" style="width: 150px; height: 14px;"></div>
+            </span>
+          </div>
+        </header>
+        
+        <!-- KPI Grid Skeleton -->
+        <div class="kpi-grid-skeleton">
+          ${Array(10).fill(`
+            <div class="skeleton-kpi">
+              <div class="skeleton-kpi__icon skeleton"></div>
+              <div class="skeleton-kpi__content">
+                <div class="skeleton-kpi__value skeleton"></div>
+                <div class="skeleton-kpi__label skeleton"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <!-- Chart Skeleton -->
+        <div class="analytics-grid mt-6">
+          <div class="skeleton-chart">
+            <div class="skeleton-chart__header">
+              <div class="skeleton-chart__title skeleton"></div>
+            </div>
+            <div class="skeleton-chart__area skeleton"></div>
+          </div>
+          <div class="skeleton-chart">
+            <div class="skeleton-chart__header">
+              <div class="skeleton-chart__title skeleton"></div>
+            </div>
+            <div class="skeleton-chart__area skeleton"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
   try {
     const data = await fetchJson('/api/v3-dashboard');
-
-    if (data.generated_at) {
-      const ts = document.getElementById('v3DashboardTimestamp');
-      if (ts) ts.textContent = new Date(data.generated_at).toLocaleString('id-ID');
+    
+    // Restore actual dashboard content
+    if (kpiContainer) {
+      kpiContainer.innerHTML = `
+        <div class="erp-dashboard">
+          <header class="erp-dashboard__header">
+            <div>
+              <h2 class="erp-dashboard__title">Dashboard Overview</h2>
+              <span class="erp-dashboard__ts" id="v3DashboardTimestamp">${data.generated_at ? new Date(data.generated_at).toLocaleString('id-ID') : '-'}</span>
+            </div>
+          </header>
+          
+          <!-- KPI Grid -->
+          <div class="kpi-grid">
+            <div class="erp-kpi" id="kpi_penjualan_card">
+              <div class="erp-kpi__icon erp-kpi__icon--success">
+                <i data-lucide="trending-up"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_penjualan">${formatNumber(data.today?.penjualan || 0)}</span>
+                <span class="erp-kpi__label">Penjualan Hari Ini</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_pembelian_card">
+              <div class="erp-kpi__icon erp-kpi__icon--primary">
+                <i data-lucide="package-plus"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_pembelian">${formatNumber(data.today?.pembelian || 0)}</span>
+                <span class="erp-kpi__label">Pembelian Hari Ini</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_produk_aktif_card">
+              <div class="erp-kpi__icon erp-kpi__icon--info">
+                <i data-lucide="package"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_produk_aktif">${formatNumber(data.produk?.aktif || 0)}</span>
+                <span class="erp-kpi__label">Produk Aktif</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_customer_card">
+              <div class="erp-kpi__icon erp-kpi__icon--warning">
+                <i data-lucide="users"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_customer">${formatNumber(data.today?.customer_count || 0)}</span>
+                <span class="erp-kpi__label">Customer Hari Ini</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_stok_kritis_card">
+              <div class="erp-kpi__icon erp-kpi__icon--danger">
+                <i data-lucide="alert-triangle"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_stok_kritis">${formatNumber(Number(data.stok?.kritis || 0))}</span>
+                <span class="erp-kpi__label">Stok Kritis</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_so_berjalan_card">
+              <div class="erp-kpi__icon erp-kpi__icon--info">
+                <i data-lucide="clipboard-list"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_so_berjalan">${formatNumber(data.opname?.berjalan || 0)}</span>
+                <span class="erp-kpi__label">SO Berjalan</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_pending_card">
+              <div class="erp-kpi__icon erp-kpi__icon--warning">
+                <i data-lucide="clock"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_pending">${formatNumber(Number(data.opname?.pending_approval || 0))}</span>
+                <span class="erp-kpi__label">Pending Approval</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_so_selesai_card">
+              <div class="erp-kpi__icon erp-kpi__icon--success">
+                <i data-lucide="check-circle"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_so_selesai">${formatNumber(data.opname?.selesai_bulan_ini || 0)}</span>
+                <span class="erp-kpi__label">SO Selesai Bulan Ini</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_users_card">
+              <div class="erp-kpi__icon erp-kpi__icon--primary">
+                <i data-lucide="user-check"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_users">${formatNumber(data.users?.total || 0)}</span>
+                <span class="erp-kpi__label">Total User</span>
+              </div>
+            </div>
+            
+            <div class="erp-kpi" id="kpi_outlet_card">
+              <div class="erp-kpi__icon erp-kpi__icon--success">
+                <i data-lucide="store"></i>
+              </div>
+              <div class="erp-kpi__content">
+                <span class="erp-kpi__value" id="kpi_outlet">${formatNumber(data.outlet?.aktif || 0)} / ${formatNumber(data.outlet?.total || 0)}</span>
+                <span class="erp-kpi__label">Outlet Aktif / Total</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Analytics Grid -->
+          <div class="analytics-grid mt-6">
+            <div class="chart-card">
+              <div class="chart-card__header">
+                <h3 class="chart-card__title">Tren Penjualan</h3>
+              </div>
+              <div class="chart-container">
+                <canvas id="salesChart"></canvas>
+              </div>
+            </div>
+            
+            <div class="chart-card">
+              <div class="chart-card__header">
+                <h3 class="chart-card__title">Top Produk</h3>
+              </div>
+              <div class="chart-container">
+                <canvas id="topProdukChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Reinitialize Lucide icons
+      if (window.lucide) lucide.createIcons();
+      
+      // Add fade-in animation
+      kpiContainer.classList.add('fade-in');
+      setTimeout(() => kpiContainer.classList.remove('fade-in'), 500);
     }
 
-    setText("kpi_penjualan", formatNumber(data.today?.penjualan || 0));
-    setText("kpi_pembelian", formatNumber(data.today?.pembelian || 0));
-    setText("kpi_produk_aktif", formatNumber(data.produk?.aktif || 0));
-    setText("kpi_customer", formatNumber(data.today?.customer_count || 0));
-
+    // Update alert states
     const kritis = Number(data.stok?.kritis || 0);
-    setText("kpi_stok_kritis", formatNumber(kritis));
     const kritisCard = document.getElementById('kpi_stok_kritis_card');
     if (kritisCard) kritisCard.classList.toggle('erp-kpi--alert', kritis > 0);
 
-    setText("kpi_so_berjalan", formatNumber(data.opname?.berjalan || 0));
-
     const pending = Number(data.opname?.pending_approval || 0);
-    setText("kpi_pending", formatNumber(pending));
     const pendingCard = document.getElementById('kpi_pending_card');
     if (pendingCard) pendingCard.classList.toggle('erp-kpi--alert', pending > 0);
 
-    setText("kpi_so_selesai", formatNumber(data.opname?.selesai_bulan_ini || 0));
-    setText("kpi_users", formatNumber(data.users?.total || 0));
-    setText("kpi_outlet", `${formatNumber(data.outlet?.aktif || 0)} / ${formatNumber(data.outlet?.total || 0)}`);
-
   } catch (error) {
     console.error("Dashboard load error:", error);
-    ["kpi_penjualan","kpi_pembelian","kpi_produk_aktif","kpi_customer",
-     "kpi_stok_kritis","kpi_so_berjalan","kpi_pending","kpi_so_selesai",
-     "kpi_users","kpi_outlet"].forEach(id => setText(id, "Error"));
+    if (kpiContainer) {
+      kpiContainer.innerHTML = `
+        <div class="error-state">
+          <div class="error-state__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3 class="error-state__title">Gagal Memuat Dashboard</h3>
+          <p class="error-state__message">Terjadi kesalahan saat mengambil data. Silakan coba lagi.</p>
+          <div class="error-state__actions">
+            <button class="btn btn--primary" onclick="loadV3Dashboard()">
+              <i data-lucide="refresh-cw"></i>
+              <span>Coba Lagi</span>
+            </button>
+          </div>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons({ nodes: [kpiContainer] });
+    }
   }
 }
 

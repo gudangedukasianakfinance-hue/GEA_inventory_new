@@ -9,9 +9,29 @@
   <link rel="stylesheet" href="/css/design-system.css">
   <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/loader.css">
   <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
 <body class="app-page">
+  <!-- Global App Loader -->
+  <div id="appLoader" class="app-loader">
+    <div class="app-loader__logo">
+      <img src="/assets/logo.png" alt="CV EPIC Warehouse">
+    </div>
+    <div class="app-loader__brand">
+      <h1 class="app-loader__title">CV EPIC Warehouse</h1>
+      <p class="app-loader__subtitle">Sistem Kontrol Inventaris</p>
+    </div>
+    <div class="app-loader__progress">
+      <div class="app-loader__progress-bar animating"></div>
+    </div>
+    <p class="app-loader__status" id="appLoaderStatus">Memuat aplikasi...</p>
+  </div>
+
+  <!-- Page Loader (top bar for page transitions) -->
+  <div id="pageLoader" class="page-loader">
+    <div class="page-loader__bar"></div>
+  </div>
   <header class="app-header">
     <div class="header-left">
       <button class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="Buka menu">
@@ -1453,12 +1473,11 @@
     <div class="credit">Design & UI enhancements: Mr.Wid</div>
   </footer>
 
-  
-
+  <!-- Legacy Loader (for backwards compatibility) -->
   <div id="loader">
     <div class="loader-content">
       <img src="/assets/logo.png" class="loader-logo" alt="CV EPIC Warehouse">
-      <p>Memuat dashboard...</p>
+      <p>Memuat...</p>
     </div>
   </div>
 
@@ -1466,6 +1485,7 @@
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="/js/loader.js"></script>
   <script src="/js/dashboard.js?v=opname-history-20260521e"></script>
   <script src="/js/user-management.js"></script>
   <script>
@@ -1779,7 +1799,25 @@
       if (window.lucide) {
         lucide.createIcons();
       }
+      // Hide app loader when app is ready
+      hideAppLoader();
     });
+    
+    // Hide the global app loader
+    function hideAppLoader() {
+      const appLoader = document.getElementById('appLoader');
+      if (appLoader) {
+        appLoader.classList.add('hidden');
+        setTimeout(() => {
+          if (appLoader.parentElement) {
+            appLoader.parentElement.removeChild(appLoader);
+          }
+        }, 500);
+      }
+    }
+    
+    // Make hideAppLoader available globally
+    window.hideAppLoader = hideAppLoader;
   </script>
 </body>
 </html>
