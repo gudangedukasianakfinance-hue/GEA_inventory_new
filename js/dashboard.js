@@ -244,8 +244,10 @@ const pageMeta = {
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log('[STARTUP] DOMContentLoaded fired');
+  console.log('[STARTUP] Checking hideAppLoader availability:', typeof hideAppLoader);
   
   try {
+    console.log('[STARTUP] STEP 1: Initializing basic UI components...');
     // Initialize basic UI components
     initTahun("tahun");
     initTahun("opnameTahun");
@@ -257,38 +259,60 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTheme();
     updateMobileNavHighlight();
     
-    console.log('[STARTUP] Basic UI initialized');
+    console.log('[STARTUP] STEP 1: COMPLETE');
+    console.log('[STARTUP] STEP 2: Loading produk options...');
     
     // Load produk options ONCE
-    console.log('[STARTUP] Loading produk options...');
     await loadProdukOptions();
-    console.log('[STARTUP] Produk loaded, count:', state.produkOptions.length);
+    console.log('[STARTUP] STEP 2: COMPLETE - Produk loaded, count:', state.produkOptions.length);
     
+    console.log('[STARTUP] STEP 3: Checking authentication...');
     // Check authentication
     if (!isAuthenticated()) {
-      console.log('[STARTUP] Not authenticated, showing login');
+      console.log('[STARTUP] STEP 3: Not authenticated, showing login');
       window.applyAuthState?.();
+      console.log('[STARTUP] Calling hideAppLoader after auth check...');
+      if (typeof hideAppLoader === 'function') {
+        hideAppLoader();
+      } else {
+        console.warn('[STARTUP] hideAppLoader not available, using fallback');
+        const loader = document.getElementById('appLoader');
+        if (loader) loader.classList.add('hidden');
+      }
       return;
     }
 
     // Authenticated - apply auth state and load dashboard
-    console.log('[STARTUP] Authenticated, applying auth state...');
+    console.log('[STARTUP] STEP 3: Authenticated');
+    console.log('[STARTUP] STEP 4: Applying auth state...');
     window.applyAuthState?.();
     
+    console.log('[STARTUP] STEP 5: Navigating to menu...');
     // Navigate to saved menu or default dashboard
     const savedMenu = getSavedMenu();
-    console.log('[STARTUP] Navigating to menu:', savedMenu);
+    console.log('[STARTUP] Selected menu:', savedMenu);
     selectMenu(null, savedMenu);
     
-    console.log('[STARTUP] Startup complete');
+    console.log('[STARTUP] STEP 5: COMPLETE');
     
   } catch (error) {
-    console.error('[STARTUP] Error during initialization:', error);
+    console.error('[STARTUP] ERROR:', error);
     window.applyAuthState?.();
   } finally {
     // ALWAYS hide the app loader
-    console.log('[STARTUP] Final cleanup');
-    hideAppLoader();
+    console.log('[STARTUP] STEP 6: Final cleanup - hiding loader');
+    console.log('[STARTUP] hideAppLoader type:', typeof hideAppLoader);
+    if (typeof hideAppLoader === 'function') {
+      hideAppLoader();
+    } else {
+      console.warn('[STARTUP] hideAppLoader fallback');
+      const loader = document.getElementById('appLoader');
+      if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(() => loader.remove(), 500);
+      }
+    }
+    console.log('[STARTUP] COMPLETE');
   }
 });
 

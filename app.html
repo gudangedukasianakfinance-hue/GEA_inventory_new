@@ -1846,6 +1846,8 @@
       },
       
       checkReady() {
+        console.log('AppLoader: checkReady called, isReady=', this.isReady);
+        
         // Only check once
         if (this.isReady) {
           if (this.checkInterval) {
@@ -1860,6 +1862,8 @@
         const sidebar = document.getElementById('mainSidebar');
         const appHeader = document.querySelector('.app-header');
         
+        console.log('AppLoader: DOM checks - mainContent:', !!mainContent, 'sidebar:', !!sidebar, 'appHeader:', !!appHeader);
+        
         // Also check for auth-related elements
         const loginModal = document.getElementById('loginModal');
         const authUserBadge = document.getElementById('authUserBadge');
@@ -1872,6 +1876,8 @@
         // Also ready if login modal or auth badge exists (for non-logged in state)
         const hasAuthUI = (loginModal !== null) || (authUserBadge !== null);
         
+        console.log('AppLoader: hasMainContent:', hasMainContent, 'hasSidebar:', hasSidebar, 'hasAppHeader:', hasAppHeader, 'hasAuthUI:', hasAuthUI);
+        
         if (hasMainContent || hasSidebar || (hasAppHeader && hasAuthUI)) {
           console.log('AppLoader: App is ready, hiding loader');
           this.hide();
@@ -1879,6 +1885,7 @@
       },
       
       hide() {
+        console.log('AppLoader: hide() called, current isReady=', this.isReady);
         if (this.isReady) return;
         this.isReady = true;
         
@@ -1888,6 +1895,7 @@
         }
         
         const appLoader = document.getElementById('appLoader');
+        console.log('AppLoader: Found loader element:', !!appLoader);
         if (appLoader) {
           console.log('AppLoader: Hiding...');
           appLoader.classList.add('hidden');
