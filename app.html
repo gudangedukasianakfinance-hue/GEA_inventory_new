@@ -1474,7 +1474,18 @@
   <script src="/js/dashboard.js?v=opname-history-20260521e"></script>
   <script src="/js/user-management.js"></script>
   <script>
-    lucide.createIcons();
+    // Safe lucide initialization - wait for lucide to be available
+    function initLucide() {
+      if (window.lucide) {
+        lucide.createIcons();
+        console.log('Lucide icons initialized');
+      } else {
+        // Retry after a short delay if not yet loaded
+        setTimeout(initLucide, 100);
+      }
+    }
+    // Initialize with small delay to ensure lucide is loaded
+    setTimeout(initLucide, 200);
   </script>
   <script>
     let loginMode = 'user';
@@ -1821,6 +1832,21 @@
     only after successful API responses from /api/kpi, /api/chart, etc.
   -->
   <script>
+    // CRITICAL: Define hideAppLoader immediately to ensure it's available
+    // This prevents ReferenceError when dashboard.js tries to call it
+    window.hideAppLoader = function() {
+      const loader = document.getElementById('appLoader');
+      if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(() => {
+          if (loader.parentElement) loader.parentElement.removeChild(loader);
+        }, 500);
+      }
+      // Also set AppLoader.isReady if it exists
+      if (window.AppLoader) window.AppLoader.isReady = true;
+      console.log('Global hideAppLoader called');
+    };
+    
     // App loading state manager
     const AppLoader = {
       isReady: false,
@@ -1919,24 +1945,28 @@
         console.log('AppLoader: Lucide icons initialized');
       }
       
-      // Start AppLoader after small delay
+      // Start AppLoader after small delay - give dashboard.js time to initialize first
       setTimeout(() => {
         AppLoader.init();
-      }, 50);
+      }, 100);
     });
     
-    // Make hideAppLoader available globally
-    window.hideAppLoader = () => AppLoader.hide();
+    // hideAppLoader already defined at top of script
     
-    // Also try to hide on window load as fallback
+    // ULTIMATE FALLBACK: Ensure loader is hidden on window.load (last resort)
     window.addEventListener('load', () => {
-      console.log('AppLoader: window.load fired');
+      console.log('AppLoader: window.load fired - ULTIMATE FALLBACK');
       setTimeout(() => {
-        if (!AppLoader.isReady) {
-          console.log('AppLoader: Force hiding on window.load');
-          AppLoader.hide();
+        // Always try to hide the loader, even if AppLoader.isReady is true
+        const loader = document.getElementById('appLoader');
+        if (loader && !loader.classList.contains('hidden')) {
+          console.log('AppLoader: ULTIMATE FALLBACK - Force hiding loader');
+          loader.classList.add('hidden');
+          setTimeout(() => {
+            if (loader.parentElement) loader.parentElement.removeChild(loader);
+          }, 500);
         }
-      }, 100);
+      }, 300);
     });
   </script>
 </body>
