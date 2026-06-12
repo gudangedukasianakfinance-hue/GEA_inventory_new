@@ -7,6 +7,72 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 /* ============================================
+   CSS Variables - Override Landing Variables
+   ============================================ */
+:root {
+  /* Use landing page variables but ensure compatibility */
+  --primary: #ff3b30;
+  --primary-hover: #e63229;
+  --primary-soft: rgba(255, 59, 48, 0.1);
+  --success: #34c759;
+  --warning: #ffb020;
+  --danger: #ff4757;
+  --info: #5ac8fa;
+  
+  --bg: #0a0a0f;
+  --bg-secondary: #12121a;
+  --surface: #1a1a24;
+  --surface-hover: #222230;
+  --surface-active: #2a2a38;
+  
+  --text: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #606070;
+  
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --border-active: rgba(255, 59, 48, 0.3);
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+  
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px rgba(255, 59, 48, 0.2);
+  
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.15s ease;
+}
+
+/* ============================================
+   Base Reset for App Page
+   ============================================ */
+body.app-page {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body.app-page .landing-nav,
+body.app-page .hero,
+body.app-page .features,
+body.app-page .roles,
+body.app-page .cta,
+body.app-page .landing-footer {
+  display: none;
+}
+
+/* ============================================
    Layout - App Wrapper
    ============================================ */
 .app-wrapper {
