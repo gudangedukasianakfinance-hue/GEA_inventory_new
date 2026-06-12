@@ -1889,30 +1889,6 @@ function getOpnameCategoryLabel(category) {
   return labels[category] || "Lain-lain";
 }
 
-function normalizeKategoriTargets(targets) {
-  const allowed = ['modul', 'seragam', 'poster', 'lain-lain'];
-  if (Array.isArray(targets)) {
-    return [...new Set(targets
-      .map((item) => String(item || '').trim().toLowerCase())
-      .filter((item) => allowed.includes(item)))];
-  }
-
-  if (typeof targets === 'string' && targets.trim()) {
-    try {
-      const parsed = JSON.parse(targets);
-      if (Array.isArray(parsed)) return normalizeKategoriTargets(parsed);
-    } catch {
-      // continue to comma-split logic
-    }
-    return [...new Set(targets
-      .split(',')
-      .map((item) => String(item || '').trim().toLowerCase())
-      .filter((item) => allowed.includes(item)))];
-  }
-
-  return [];
-}
-
 let opnameScanner = null;
 let opnameScannerMode = 'barang';
 

@@ -1404,6 +1404,28 @@ button, input, select, textarea {
 }
 
 /* ============================================
+   Responsive - Small Mobile (<480px)
+   ============================================ */
+
+@media (max-width: 480px) {
+  .content-area {
+    padding: var(--space-3);
+  }
+  
+  .kpi-grid {
+    gap: var(--space-3);
+  }
+  
+  .chart-card {
+    padding: var(--space-4);
+  }
+  
+  .chart-container {
+    height: 200px;
+  }
+}
+
+/* ============================================
    Print Styles
    ============================================ */
 
