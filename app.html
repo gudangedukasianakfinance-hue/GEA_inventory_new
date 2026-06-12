@@ -1798,10 +1798,15 @@
     const AppLoader = {
       isReady: false,
       checkInterval: null,
-      maxWaitTime: 5000, // Max 5 seconds, then force hide
+      maxWaitTime: 3000, // Max 3 seconds, then force hide
       
       init() {
-        // Start checking if app is ready
+        console.log('AppLoader: Initializing...');
+        
+        // Immediately try to hide if elements exist
+        this.checkReady();
+        
+        // Start checking if app is ready (poll every 100ms)
         this.checkInterval = setInterval(() => this.checkReady(), 100);
         
         // Force hide after max wait time (safety fallback)
@@ -1815,27 +1820,32 @@
       
       checkReady() {
         // Only check once
-        if (this.isReady) return;
+        if (this.isReady) {
+          if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+          }
+          return;
+        }
         
-        // Wait for lucide to be available
-        if (!window.lucide) return;
-        
-        // Check if main components are visible
+        // Check if main content or sidebar exists in DOM
         const mainContent = document.querySelector('.main-content');
         const sidebar = document.getElementById('mainSidebar');
+        const appHeader = document.querySelector('.app-header');
+        
+        // Also check for auth-related elements
         const loginModal = document.getElementById('loginModal');
         const authUserBadge = document.getElementById('authUserBadge');
         
-        // App is ready when either:
-        // 1. Main content area is visible (user is authenticated)
-        // 2. Login modal is visible (user needs to login)
-        // 3. Auth badge is visible (user is logged in)
-        const mainContentVisible = mainContent && mainContent.offsetHeight > 0;
-        const sidebarVisible = sidebar && sidebar.offsetHeight > 0;
-        const loginModalVisible = loginModal && getComputedStyle(loginModal).display !== 'none';
-        const authBadgeVisible = authUserBadge && getComputedStyle(authUserBadge).display !== 'none';
+        // App is ready when critical elements exist
+        const hasMainContent = mainContent !== null;
+        const hasSidebar = sidebar !== null;
+        const hasAppHeader = appHeader !== null;
         
-        if (mainContentVisible || sidebarVisible || loginModalVisible || authBadgeVisible) {
+        // Also ready if login modal or auth badge exists (for non-logged in state)
+        const hasAuthUI = (loginModal !== null) || (authUserBadge !== null);
+        
+        if (hasMainContent || hasSidebar || (hasAppHeader && hasAuthUI)) {
           console.log('AppLoader: App is ready, hiding loader');
           this.hide();
         }
@@ -1852,10 +1862,12 @@
         
         const appLoader = document.getElementById('appLoader');
         if (appLoader) {
+          console.log('AppLoader: Hiding...');
           appLoader.classList.add('hidden');
           setTimeout(() => {
             if (appLoader.parentElement) {
               appLoader.parentElement.removeChild(appLoader);
+              console.log('AppLoader: Removed from DOM');
             }
           }, 500);
         }
@@ -1864,18 +1876,34 @@
     
     // Re-initialize Lucide icons after all content loads
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('AppLoader: DOMContentLoaded fired');
       if (window.lucide) {
         lucide.createIcons();
+        console.log('AppLoader: Lucide icons initialized');
       }
     });
     
     // Start checking when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
-      AppLoader.init();
+      // Small delay to ensure all scripts have run
+      setTimeout(() => {
+        AppLoader.init();
+      }, 50);
     });
     
     // Make hideAppLoader available globally
     window.hideAppLoader = () => AppLoader.hide();
+    
+    // Also try to hide on window load as fallback
+    window.addEventListener('load', () => {
+      console.log('AppLoader: window.load fired');
+      setTimeout(() => {
+        if (!AppLoader.isReady) {
+          console.log('AppLoader: Force hiding on window.load');
+          AppLoader.hide();
+        }
+      }, 100);
+    });
   </script>
 </body>
 </html>
