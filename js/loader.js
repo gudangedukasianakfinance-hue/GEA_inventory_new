@@ -3,6 +3,9 @@
    V4 Modern Loading Experience
    ============================================ */
 
+// V4 DESIGN SYSTEM VERIFICATION
+console.log("%c🟠 V4 DESIGN SYSTEM LOADED", "color: #FF4D3A; font-weight: bold; font-size: 14px;");
+
 const LoadingManager = {
   // App loader element
   appLoader: null,
