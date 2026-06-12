@@ -229,6 +229,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     bindGlobalFilters();
     initOpnameQtyModal();
     
+    // Initialize theme and mobile nav
+    initTheme();
+    updateMobileNavHighlight();
+    
     console.log('[STARTUP] Basic UI initialized');
     
     // Load produk options ONCE
@@ -3435,11 +3439,7 @@ function navigateToOperatorSection(section) {
   selectMenu(null, targetMenu);
 }
 
-// Initialize operator dashboard on page load
-document.addEventListener("DOMContentLoaded", () => {
-  // Operator dashboard is shown for non-admin users when they select opname
-  // The actual visibility is handled in selectMenu function
-});
+// Operator dashboard functions are initialized in main startup
 
 /* ============================================
    Task Center Functions
@@ -3842,10 +3842,7 @@ function isOverdue(dateStr) {
   return dueDate < today;
 }
 
-// Initialize Task Center when page loads
-document.addEventListener("DOMContentLoaded", () => {
-  // Task center data will be loaded when user selects the menu
-});
+// Task Center functions are initialized when user selects the menu
 
 /* ============================================
    Approval Center Functions
@@ -5061,19 +5058,6 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && isMobileMenuOpen) {
     toggleMobileMenu();
   }
-});
-
-// Initialize mobile nav on page load
-document.addEventListener('DOMContentLoaded', function() {
-  updateMobileNavHighlight();
-  
-  // Re-initialize Lucide icons
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-  
-  // Initialize theme from localStorage
-  initTheme();
 });
 
 /* ============================================

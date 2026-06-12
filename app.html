@@ -1874,18 +1874,17 @@
       }
     };
     
-    // Re-initialize Lucide icons after all content loads
+    // Initialize on DOM ready - combined handler
     document.addEventListener('DOMContentLoaded', () => {
       console.log('AppLoader: DOMContentLoaded fired');
+      
+      // Initialize Lucide icons
       if (window.lucide) {
         lucide.createIcons();
         console.log('AppLoader: Lucide icons initialized');
       }
-    });
-    
-    // Start checking when DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-      // Small delay to ensure all scripts have run
+      
+      // Start AppLoader after small delay
       setTimeout(() => {
         AppLoader.init();
       }, 50);
