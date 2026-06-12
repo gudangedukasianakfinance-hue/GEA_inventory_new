@@ -5,7 +5,7 @@ import addPenjualanHandler from "../backend/add-penjualan.js";
 import addStokAwalHandler from "../backend/add-stok_awal.js";
 import auditHandler from "../backend/audit.js";
 import chartHandler from "../backend/chart.js";
-import forecastHandler from "../backend/forecast.js";
+// forecast.js REMOVED - feature deprecated
 import importOutletHandler from "../backend/import-outlet.js";
 import importPembelianHandler from "../backend/import-pembelian.js";
 import importPenjualanHandler from "../backend/import-penjualan.js";
@@ -117,7 +117,7 @@ const routes = {
   "GET /opname-export": opnameExportHandler,
   "GET /persediaan": persediaanHandler,
   "GET /audit": auditHandler,
-  "GET /forecast": forecastHandler,
+  // GET /forecast REMOVED - feature deprecated
   "GET /produk-list": produkListHandler,
   "GET /v3-dashboard": v3DashboardHandler,
   "GET /v3-penjualan": v3PenjualanHandler,
