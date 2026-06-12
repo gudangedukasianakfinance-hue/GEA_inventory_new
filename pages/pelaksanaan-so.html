@@ -1,0 +1,259 @@
+<!-- Pelaksanaan SO Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Pelaksanaan SO</h2>
+    <p class="page-subtitle">Scan dan input qty fisik stok opname</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tabs__item active" data-tab="scan">
+      <i data-lucide="scan-line"></i>
+      <span>Scan & Input</span>
+    </button>
+    <button class="tabs__item" data-tab="progress">
+      <i data-lucide="clipboard-list"></i>
+      <span>Progress</span>
+    </button>
+  </div>
+
+  <!-- Scan Tab -->
+  <div id="scanTab" class="tab-content active">
+    <div class="scan-container">
+      <div class="scan-header">
+        <div class="scan-info">
+          <h3 id="currentSoCode">SO001</h3>
+          <p id="currentSoInfo">Perintah SO - Gudang Utama</p>
+        </div>
+        <div class="scan-stats">
+          <div class="scan-stat">
+            <span class="scan-stat__value" id="scanCount">0</span>
+            <span class="scan-stat__label">Item Diinput</span>
+          </div>
+          <div class="scan-stat">
+            <span class="scan-stat__value" id="scanProgress">0%</span>
+            <span class="scan-stat__label">Progress</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scan Input -->
+      <div class="scan-input-area">
+        <div class="scan-input-wrapper">
+          <i data-lucide="scan-line"></i>
+          <input type="text" id="scanInput" class="scan-input" placeholder="Scan barcode atau input SKU..." autofocus>
+        </div>
+        <button class="btn btn--primary" onclick="processScan()">
+          <i data-lucide="plus"></i>
+        </button>
+      </div>
+
+      <!-- Recent Scans -->
+      <div class="recent-scans">
+        <h4>Scan Terbaru</h4>
+        <div id="recentScansList">
+          <div class="empty-state">Belum ada scan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Tab -->
+  <div id="progressTab" class="tab-content" style="display:none;">
+    <div class="card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Produk</th>
+            <th>Stok Sistem</th>
+            <th>Stok Fisik</th>
+            <th>Selisih</th>
+          </tr>
+        </thead>
+        <tbody id="progressTableBody">
+          <tr>
+            <td colspan="5" class="text-center text-muted">Pilih perintah SO terlebih dahulu</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<style>
+  .scan-container {
+    background: #101827;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 18px;
+    padding: 24px;
+  }
+  
+  .scan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  
+  .scan-info h3 {
+    font-size: 20px;
+    color: #FFF;
+    margin-bottom: 4px;
+  }
+  
+  .scan-info p {
+    color: #94A3B8;
+    font-size: 13px;
+  }
+  
+  .scan-stats {
+    display: flex;
+    gap: 24px;
+  }
+  
+  .scan-stat {
+    text-align: center;
+  }
+  
+  .scan-stat__value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #FF4D3A;
+  }
+  
+  .scan-stat__label {
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  
+  .scan-input-area {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  
+  .scan-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .scan-input-wrapper i {
+    position: absolute;
+    left: 16px;
+    color: #94A3B8;
+  }
+  
+  .scan-input {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    color: #FFF;
+    font-size: 16px;
+  }
+  
+  .scan-input:focus {
+    outline: none;
+    border-color: #FF4D3A;
+  }
+  
+  .recent-scans h4 {
+    color: #94A3B8;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  
+  .tabs__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    color: #94A3B8;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .tabs__item:hover {
+    background: rgba(255,255,255,.08);
+  }
+  
+  .tabs__item.active {
+    background: rgba(255, 77, 58, 0.12);
+    border-color: #FF4D3A;
+    color: #FF4D3A;
+  }
+</style>
+
+<script>
+  let currentSoId = null;
+  let scanHistory = [];
+
+  // Tab switching
+  document.querySelectorAll('.tabs__item').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tabs__item').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+      
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab + 'Tab').style.display = 'block';
+    });
+  });
+
+  function processScan() {
+    const input = document.getElementById('scanInput');
+    const sku = input.value.trim();
+    
+    if (!sku) return;
+    
+    // Add to history
+    scanHistory.unshift({
+      sku: sku,
+      waktu: new Date().toLocaleTimeString('id-ID')
+    });
+    
+    // Update UI
+    document.getElementById('scanCount').textContent = scanHistory.length;
+    input.value = '';
+    input.focus();
+    
+    renderScanHistory();
+  }
+
+  function renderScanHistory() {
+    const container = document.getElementById('recentScansList');
+    
+    if (scanHistory.length === 0) {
+      container.innerHTML = '<div class="empty-state">Belum ada scan</div>';
+      return;
+    }
+    
+    container.innerHTML = scanHistory.slice(0, 10).map(scan => `
+      <div class="scan-item">
+        <span class="scan-item__sku">${scan.sku}</span>
+        <span class="scan-item__time">${scan.waktu}</span>
+      </div>
+    `).join('');
+  }
+
+  // Enter key to submit
+  document.getElementById('scanInput')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      processScan();
+    }
+  });
+</script>

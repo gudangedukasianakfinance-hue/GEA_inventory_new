@@ -1,0 +1,218 @@
+<!-- Laporan Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Laporan</h2>
+    <p class="page-subtitle">Generate laporan dan analisis data</p>
+  </div>
+
+  <!-- Report Cards -->
+  <div class="report-grid">
+    <div class="report-card" onclick="generateReport('stok')">
+      <div class="report-card__icon">
+        <i data-lucide="package"></i>
+      </div>
+      <div class="report-card__content">
+        <h3>Laporan Stok</h3>
+        <p>Laporan persediaan dan stok gudang</p>
+      </div>
+      <div class="report-card__action">
+        <i data-lucide="chevron-right"></i>
+      </div>
+    </div>
+
+    <div class="report-card" onclick="generateReport('penjualan')">
+      <div class="report-card__icon">
+        <i data-lucide="shopping-cart"></i>
+      </div>
+      <div class="report-card__content">
+        <h3>Laporan Penjualan</h3>
+        <p>Laporan transaksi penjualan</p>
+      </div>
+      <div class="report-card__action">
+        <i data-lucide="chevron-right"></i>
+      </div>
+    </div>
+
+    <div class="report-card" onclick="generateReport('opname')">
+      <div class="report-card__icon">
+        <i data-lucide="clipboard-check"></i>
+      </div>
+      <div class="report-card__content">
+        <h3>Laporan Opname</h3>
+        <p>Laporan stok opname dan selisih</p>
+      </div>
+      <div class="report-card__action">
+        <i data-lucide="chevron-right"></i>
+      </div>
+    </div>
+
+    <div class="report-card" onclick="generateReport('export')">
+      <div class="report-card__icon">
+        <i data-lucide="download"></i>
+      </div>
+      <div class="report-card__content">
+        <h3>Export Data</h3>
+        <p>Export data ke CSV/Excel</p>
+      </div>
+      <div class="report-card__action">
+        <i data-lucide="chevron-right"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Preview -->
+  <div class="card report-preview" id="reportPreview" style="display:none;">
+    <div class="card__header">
+      <h3 id="reportTitle">Preview Laporan</h3>
+      <div class="report-actions">
+        <button class="btn btn--secondary" onclick="downloadReport()">
+          <i data-lucide="download"></i>
+          <span>Download</span>
+        </button>
+        <button class="btn btn--secondary" onclick="printReport()">
+          <i data-lucide="printer"></i>
+          <span>Print</span>
+        </button>
+      </div>
+    </div>
+    <div id="reportContent">
+      <!-- Report content will be loaded here -->
+    </div>
+  </div>
+</section>
+
+<style>
+  .report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .report-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: #101827;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .report-card:hover {
+    border-color: #FF4D3A;
+    transform: translateY(-2px);
+  }
+  
+  .report-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 77, 58, 0.12);
+    color: #FF4D3A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .report-card__content {
+    flex: 1;
+  }
+  
+  .report-card__content h3 {
+    font-size: 16px;
+    color: #FFF;
+    margin-bottom: 4px;
+  }
+  
+  .report-card__content p {
+    font-size: 13px;
+    color: #94A3B8;
+  }
+  
+  .report-card__action {
+    color: #94A3B8;
+  }
+  
+  .report-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .report-preview .card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+
+<script>
+  let currentReportType = null;
+
+  function generateReport(type) {
+    currentReportType = type;
+    
+    const titles = {
+      'stok': 'Laporan Stok Gudang',
+      'penjualan': 'Laporan Penjualan',
+      'opname': 'Laporan Stok Opname',
+      'export': 'Export Data'
+    };
+    
+    document.getElementById('reportTitle').textContent = titles[type];
+    document.getElementById('reportPreview').style.display = 'block';
+    
+    loadReportContent(type);
+  }
+
+  async function loadReportContent(type) {
+    const container = document.getElementById('reportContent');
+    container.innerHTML = '<div class="loading-state">Memuat laporan...</div>';
+    
+    try {
+      const response = await fetch(`/api/v1/reports/${type}`);
+      if (!response.ok) throw new Error('Failed to load');
+      const data = await response.json();
+      
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              ${data.headers.map(h => `<th>${h}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${data.rows.map(row => `
+              <tr>
+                ${row.map(cell => `<td>${cell}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } catch (error) {
+      console.error('Error loading report:', error);
+      container.innerHTML = '<div class="error-state">Gagal memuat laporan</div>';
+    }
+  }
+
+  function downloadReport() {
+    if (currentReportType) {
+      window.open(`/api/v1/reports/download/${currentReportType}`, '_blank');
+    }
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  } else {
+    if (window.lucide) lucide.createIcons();
+  }
+</script>

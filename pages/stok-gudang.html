@@ -1,0 +1,115 @@
+<!-- Stok Gudang Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Stok Gudang</h2>
+    <p class="page-subtitle">Monitor persediaan barang di gudang</p>
+  </div>
+
+  <!-- KPI Summary -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(34, 197, 94, 0.12); color: #22C55E;">
+        <i data-lucide="package"></i>
+      </div>
+      <div class="kpi-label">Total SKU</div>
+      <div class="kpi-value" id="totalSku">-</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
+        <i data-lucide="boxes"></i>
+      </div>
+      <div class="kpi-label">Total Unit</div>
+      <div class="kpi-value" id="totalUnit">-</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
+        <i data-lucide="alert-triangle"></i>
+      </div>
+      <div class="kpi-label">Stok Rendah</div>
+      <div class="kpi-value" id="stokRendah">-</div>
+    </div>
+  </div>
+
+  <!-- Stock Table -->
+  <div class="card">
+    <div class="card__header">
+      <h3>Daftar Stok Gudang</h3>
+      <div class="filter-group">
+        <input type="text" id="searchStok" placeholder="Cari produk..." class="form-input">
+      </div>
+    </div>
+    <table class="data-table" id="stokTable">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Nama Produk</th>
+          <th>Kategori</th>
+          <th>Stok Sistem</th>
+          <th>Stok Fisik</th>
+          <th>Selisih</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="stokTableBody">
+        <tr>
+          <td colspan="7" class="text-center text-muted">Memuat data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  async function loadStokGudang() {
+    try {
+      const response = await fetch('/api/v1/stok/gudang');
+      if (!response.ok) throw new Error('Failed to load');
+      const data = await response.json();
+      
+      document.getElementById('totalSku').textContent = data.total_sku || 0;
+      document.getElementById('totalUnit').textContent = data.total_unit || 0;
+      document.getElementById('stokRendah').textContent = data.stok_rendah || 0;
+      
+      renderStokTable(data.items || []);
+    } catch (error) {
+      console.error('Error loading stok:', error);
+    }
+  }
+
+  function renderStokTable(items) {
+    const tbody = document.getElementById('stokTableBody');
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Tidak ada data</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = items.map(item => {
+      const selisih = item.stok_fisik - item.stok_sistem;
+      const statusClass = selisih < 0 ? 'danger' : selisih > 0 ? 'success' : '';
+      const statusText = selisih < 0 ? 'Kurang' : selisih > 0 ? ' Lebih' : 'Sesuai';
+      
+      return `
+        <tr>
+          <td><code>${item.sku}</code></td>
+          <td>${item.nama_produk}</td>
+          <td>${item.kategori}</td>
+          <td>${item.stok_sistem}</td>
+          <td>${item.stok_fisik}</td>
+          <td class="text-${statusClass}">${selisih > 0 ? '+' : ''}${selisih}</td>
+          <td><span class="badge badge--${statusClass}">${statusText}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Search
+  document.getElementById('searchStok')?.addEventListener('input', (e) => {
+    console.log('Search:', e.target.value);
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadStokGudang);
+  } else {
+    loadStokGudang();
+  }
+</script>

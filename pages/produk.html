@@ -1,0 +1,253 @@
+<!-- Produk Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Manajemen Produk</h2>
+    <p class="page-subtitle">Kelola daftar produk inventaris</p>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Kategori</label>
+      <select id="filterKategori">
+        <option value="">Semua Kategori</option>
+        <option value="seragam">Seragam</option>
+        <option value="poster">Poster</option>
+        <option value="lain">Lain-lain</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <input type="text" id="searchProduk" placeholder="Cari produk..." class="form-input">
+    </div>
+    <button class="btn btn--primary" onclick="showAddProdukModal()">
+      <i data-lucide="plus"></i>
+      <span>Tambah Produk</span>
+    </button>
+  </div>
+
+  <!-- Products Table -->
+  <div class="card">
+    <table class="data-table" id="produkTable">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Nama Produk</th>
+          <th>Kategori</th>
+          <th>Stok</th>
+          <th>Stok Min</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="produkTableBody">
+        <tr>
+          <td colspan="6" class="text-center text-muted">Memuat data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" id="pagination">
+    <!-- Pagination will be rendered here -->
+  </div>
+</section>
+
+<!-- Add/Edit Modal -->
+<div id="produkModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title" id="produkModalTitle">Tambah Produk</h3>
+      <button class="modal__close" onclick="closeProdukModal()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="produkForm" onsubmit="saveProduk(event)">
+      <div class="form-group">
+        <label>SKU</label>
+        <input type="text" id="produkSku" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>Nama Produk</label>
+        <input type="text" id="produkNama" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="produkKategori" class="form-input" required>
+          <option value="seragam">Seragam</option>
+          <option value="poster">Poster</option>
+          <option value="lain">Lain-lain</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Stok Minimum</label>
+        <input type="number" id="produkStokMin" class="form-input" value="10" required>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn--secondary" onclick="closeProdukModal()">Batal</button>
+        <button type="submit" class="btn btn--primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let produkList = [];
+  let editingId = null;
+
+  async function loadProduk() {
+    try {
+      const response = await fetch('/api/v1/produk');
+      if (!response.ok) throw new Error('Failed to load produk');
+      produkList = await response.json();
+      renderProdukTable();
+    } catch (error) {
+      console.error('Error loading produk:', error);
+      document.getElementById('produkTableBody').innerHTML = 
+        '<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>';
+    }
+  }
+
+  function renderProdukTable() {
+    const tbody = document.getElementById('produkTableBody');
+    if (produkList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = produkList.map(p => `
+      <tr>
+        <td><code>${p.sku}</code></td>
+        <td>${p.nama}</td>
+        <td><span class="badge">${p.kategori}</span></td>
+        <td>${p.stok}</td>
+        <td>${p.stok_minimum}</td>
+        <td>
+          <button class="action-btn" onclick="editProduk('${p.id}')">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button class="action-btn danger" onclick="deleteProduk('${p.id}')">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+  }
+
+  function showAddProdukModal() {
+    editingId = null;
+    document.getElementById('produkModalTitle').textContent = 'Tambah Produk';
+    document.getElementById('produkForm').reset();
+    document.getElementById('produkModal').style.display = 'flex';
+  }
+
+  function editProduk(id) {
+    const produk = produkList.find(p => p.id == id);
+    if (!produk) return;
+    
+    editingId = id;
+    document.getElementById('produkModalTitle').textContent = 'Edit Produk';
+    document.getElementById('produkSku').value = produk.sku;
+    document.getElementById('produkNama').value = produk.nama;
+    document.getElementById('produkKategori').value = produk.kategori;
+    document.getElementById('produkStokMin').value = produk.stok_minimum;
+    document.getElementById('produkModal').style.display = 'flex';
+  }
+
+  function closeProdukModal() {
+    document.getElementById('produkModal').style.display = 'none';
+    editingId = null;
+  }
+
+  async function saveProduk(event) {
+    event.preventDefault();
+    
+    const data = {
+      sku: document.getElementById('produkSku').value,
+      nama: document.getElementById('produkNama').value,
+      kategori: document.getElementById('produkKategori').value,
+      stok_minimum: document.getElementById('produkStokMin').value
+    };
+
+    try {
+      const url = editingId ? `/api/v1/produk/${editingId}` : '/api/v1/produk';
+      const method = editingId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) throw new Error('Failed to save');
+      
+      showToast(editingId ? 'Produk berhasil diupdate' : 'Produk berhasil ditambahkan');
+      closeProdukModal();
+      loadProduk();
+    } catch (error) {
+      console.error('Error saving produk:', error);
+      showToast('Gagal menyimpan produk', false);
+    }
+  }
+
+  async function deleteProduk(id) {
+    if (!confirm('Yakin hapus produk ini?')) return;
+    
+    try {
+      const response = await fetch(`/api/v1/produk/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete');
+      
+      showToast('Produk berhasil dihapus');
+      loadProduk();
+    } catch (error) {
+      console.error('Error deleting produk:', error);
+      showToast('Gagal menghapus produk', false);
+    }
+  }
+
+  // Search functionality
+  document.getElementById('searchProduk')?.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = produkList.filter(p => 
+      p.nama.toLowerCase().includes(query) || 
+      p.sku.toLowerCase().includes(query)
+    );
+    renderFilteredTable(filtered);
+  });
+
+  function renderFilteredTable(data) {
+    const tbody = document.getElementById('produkTableBody');
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada hasil</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td><code>${p.sku}</code></td>
+        <td>${p.nama}</td>
+        <td><span class="badge">${p.kategori}</span></td>
+        <td>${p.stok}</td>
+        <td>${p.stok_minimum}</td>
+        <td>
+          <button class="action-btn" onclick="editProduk('${p.id}')">
+            <i data-lucide="edit-2"></i>
+          </button>
+          <button class="action-btn danger" onclick="deleteProduk('${p.id}')">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+  }
+
+  // Initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadProduk);
+  } else {
+    loadProduk();
+  }
+</script>

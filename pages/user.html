@@ -1,0 +1,272 @@
+<!-- User Management Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Manajemen User</h2>
+    <p class="page-subtitle">Kelola pengguna sistem</p>
+  </div>
+
+  <!-- Actions -->
+  <div class="page-actions">
+    <button class="btn btn--primary" onclick="showAddUserModal()">
+      <i data-lucide="plus"></i>
+      <span>Tambah User</span>
+    </button>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Role</label>
+      <select id="filterRole">
+        <option value="">Semua Role</option>
+        <option value="admin">Admin</option>
+        <option value="staff_gudang">Staff Gudang</option>
+        <option value="checker_opname">Checker Opname</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select id="filterStatus">
+        <option value="">Semua Status</option>
+        <option value="active">Aktif</option>
+        <option value="inactive">Nonaktif</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card">
+    <table class="data-table" id="usersTable">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody">
+        <tr>
+          <td colspan="6" class="text-center text-muted">Memuat data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Add/Edit User Modal -->
+<div id="userModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title" id="userModalTitle">Tambah User</h3>
+      <button class="modal__close" onclick="closeUserModal()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="userForm" onsubmit="saveUser(event)">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="userUsername" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="userEmail" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="userNama" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="userRole" class="form-input" required>
+          <option value="staff_gudang">Staff Gudang</option>
+          <option value="checker_opname">Checker Opname</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Password <span id="passwordHint">(kosongkan jika tidak diubah)</span></label>
+        <input type="password" id="userPassword" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="userActive" checked>
+          <span>User Aktif</span>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn--secondary" onclick="closeUserModal()">Batal</button>
+        <button type="submit" class="btn btn--primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  
+  .checkbox-label input {
+    width: 18px;
+    height: 18px;
+  }
+  
+  #passwordHint {
+    font-size: 11px;
+    color: #94A3B8;
+    font-weight: normal;
+  }
+</style>
+
+<script>
+  let userList = [];
+  let editingUserId = null;
+
+  async function loadUsers() {
+    try {
+      const response = await fetch('/api/v1/users');
+      if (!response.ok) throw new Error('Failed to load');
+      userList = await response.json();
+      renderUsersTable();
+    } catch (error) {
+      console.error('Error loading users:', error);
+      document.getElementById('usersTableBody').innerHTML = 
+        '<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>';
+    }
+  }
+
+  function renderUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (userList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada user</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = userList.map(user => {
+      const roleClass = user.role === 'admin' ? 'role-admin' : user.role === 'staff_gudang' ? 'role-staff_gudang' : 'role-checker_opname';
+      const statusClass = user.status === 'active' ? 'status-active' : 'status-inactive';
+      
+      return `
+        <tr>
+          <td>${user.nama}</td>
+          <td><code>${user.username}</code></td>
+          <td>${user.email}</td>
+          <td><span class="role-badge ${roleClass}">${formatRole(user.role)}</span></td>
+          <td><span class="status-badge ${statusClass}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
+          <td>
+            <button class="action-btn" onclick="editUser('${user.id}')">
+              <i data-lucide="edit-2"></i>
+            </button>
+            <button class="action-btn danger" onclick="deleteUser('${user.id}')">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+  }
+
+  function formatRole(role) {
+    const roles = {
+      'admin': 'Admin',
+      'staff_gudang': 'Staff Gudang',
+      'checker_opname': 'Checker'
+    };
+    return roles[role] || role;
+  }
+
+  function showAddUserModal() {
+    editingUserId = null;
+    document.getElementById('userModalTitle').textContent = 'Tambah User';
+    document.getElementById('userForm').reset();
+    document.getElementById('passwordHint').style.display = 'none';
+    document.getElementById('userModal').style.display = 'flex';
+  }
+
+  function editUser(id) {
+    const user = userList.find(u => u.id == id);
+    if (!user) return;
+    
+    editingUserId = id;
+    document.getElementById('userModalTitle').textContent = 'Edit User';
+    document.getElementById('userUsername').value = user.username;
+    document.getElementById('userEmail').value = user.email;
+    document.getElementById('userNama').value = user.nama;
+    document.getElementById('userRole').value = user.role;
+    document.getElementById('userPassword').value = '';
+    document.getElementById('userActive').checked = user.status === 'active';
+    document.getElementById('passwordHint').style.display = 'inline';
+    document.getElementById('userModal').style.display = 'flex';
+  }
+
+  function closeUserModal() {
+    document.getElementById('userModal').style.display = 'none';
+    editingUserId = null;
+  }
+
+  async function saveUser(event) {
+    event.preventDefault();
+    
+    const data = {
+      username: document.getElementById('userUsername').value,
+      email: document.getElementById('userEmail').value,
+      nama: document.getElementById('userNama').value,
+      role: document.getElementById('userRole').value,
+      password: document.getElementById('userPassword').value,
+      status: document.getElementById('userActive').checked ? 'active' : 'inactive'
+    };
+
+    try {
+      const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
+      const method = editingUserId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) throw new Error('Failed to save');
+      
+      showToast(editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
+      closeUserModal();
+      loadUsers();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      showToast('Gagal menyimpan user', false);
+    }
+  }
+
+  async function deleteUser(id) {
+    if (!confirm('Yakin hapus user ini?')) return;
+    
+    try {
+      const response = await fetch(`/api/v1/users/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete');
+      
+      showToast('User berhasil dihapus');
+      loadUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showToast('Gagal menghapus user', false);
+    }
+  }
+
+  // Filters
+  document.getElementById('filterRole')?.addEventListener('change', loadUsers);
+  document.getElementById('filterStatus')?.addEventListener('change', loadUsers);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadUsers);
+  } else {
+    loadUsers();
+  }
+</script>

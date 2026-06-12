@@ -1,0 +1,124 @@
+<!-- Riwayat SO Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Riwayat Stok Opname</h2>
+    <p class="page-subtitle">Lihat histori hasil stok opname</p>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Bulan</label>
+      <select id="filterBulan">
+        <option value="">Semua Bulan</option>
+        <option value="01">Januari</option>
+        <option value="02">Februari</option>
+        <option value="03">Maret</option>
+        <option value="04">April</option>
+        <option value="05">Mei</option>
+        <option value="06">Juni</option>
+        <option value="07">Juli</option>
+        <option value="08">Agustus</option>
+        <option value="09">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Tahun</label>
+      <select id="filterTahun">
+        <option value="">Semua Tahun</option>
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <div class="card">
+    <table class="data-table" id="historyTable">
+      <thead>
+        <tr>
+          <th>Kode SO</th>
+          <th>Tanggal</th>
+          <th>SVP</th>
+          <th>Lokasi</th>
+          <th>Item</th>
+          <th>Total Selisih</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="historyTableBody">
+        <tr>
+          <td colspan="8" class="text-center text-muted">Memuat data...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  async function loadHistory() {
+    try {
+      const response = await fetch('/api/v1/opname/history');
+      if (!response.ok) throw new Error('Failed to load');
+      const data = await response.json();
+      renderHistoryTable(data.items || []);
+    } catch (error) {
+      console.error('Error loading history:', error);
+    }
+  }
+
+  function renderHistoryTable(items) {
+    const tbody = document.getElementById('historyTableBody');
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Tidak ada riwayat</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td><code>${item.kode}</code></td>
+        <td>${item.tanggal}</td>
+        <td>${item.svp}</td>
+        <td>${item.lokasi}</td>
+        <td>${item.total_item}</td>
+        <td class="${item.selisih > 0 ? 'text-success' : item.selisih < 0 ? 'text-danger' : ''}">
+          ${item.selisih > 0 ? '+' : ''}${item.selisih}
+        </td>
+        <td><span class="badge badge--${item.status}">${item.status}</span></td>
+        <td>
+          <button class="action-btn" onclick="viewDetail('${item.id}')">
+            <i data-lucide="eye"></i>
+          </button>
+          <button class="action-btn" onclick="downloadCsv('${item.id}')">
+            <i data-lucide="download"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+  }
+
+  function viewDetail(id) {
+    console.log('View detail:', id);
+  }
+
+  function downloadCsv(id) {
+    window.open(`/api/v1/opname/export/${id}`, '_blank');
+  }
+
+  // Filters
+  document.getElementById('filterBulan')?.addEventListener('change', loadHistory);
+  document.getElementById('filterTahun')?.addEventListener('change', loadHistory);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadHistory);
+  } else {
+    loadHistory();
+  }
+</script>

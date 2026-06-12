@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV EPIC Warehouse - Dashboard</title>
-  <!-- CSS -->
+  
   <!-- CSS - LOAD ORDER: V4 Base → Components → Utilities → Loader -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/design-system-v4.css">
@@ -33,6 +33,8 @@
   <div id="pageLoader" class="page-loader">
     <div class="page-loader__bar"></div>
   </div>
+
+  <!-- Header -->
   <header class="app-header">
     <div class="header-left">
       <button class="mobile-menu-toggle" type="button" onclick="toggleMobileSidebar()" aria-label="Buka menu">
@@ -88,8 +90,9 @@
       </div>
     </div>
   </header>
-<aside class="sidebar" id="mainSidebar">
-    <!-- Sidebar Overlay for Mobile -->
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="mainSidebar">
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
     
     <div class="sidebar-brand">
@@ -103,12 +106,10 @@
     </div>
 
     <nav class="sidebar-nav" id="sidebarNav">
-      <!-- SIDEBAR PER SPEC: Dashboard V4 -->
-      
       <!-- Dashboard -->
       <div class="sidebar-section">
         <ul>
-          <li data-menu="dashboard" onclick="selectMenu(event,'dashboard')" class="active">
+          <li data-page="dashboard" class="active">
             <i data-lucide="layout-dashboard"></i>
             <span>Dashboard</span>
           </li>
@@ -128,15 +129,15 @@
           </li>
         </ul>
         <ul class="sidebar-submenu" id="warehouse-submenu">
-          <li data-menu="produk" onclick="selectMenu(event,'produk')" class="submenu-item">
+          <li data-page="produk" class="submenu-item">
             <i data-lucide="box"></i>
             <span>Produk</span>
           </li>
-          <li data-menu="stok-gudang" onclick="selectMenu(event,'stok-gudang')" class="submenu-item">
+          <li data-page="stok-gudang" class="submenu-item">
             <i data-lucide="package"></i>
             <span>Stok Gudang</span>
           </li>
-          <li data-menu="pembelian" onclick="selectMenu(event,'pembelian')" class="submenu-item">
+          <li data-page="pembelian" class="submenu-item">
             <i data-lucide="package-plus"></i>
             <span>Pembelian</span>
           </li>
@@ -156,11 +157,11 @@
           </li>
         </ul>
         <ul class="sidebar-submenu" id="distribusi-submenu">
-          <li data-menu="distribusi-outlet" onclick="selectMenu(event,'distribusi-outlet')" class="submenu-item">
+          <li data-page="distribusi-outlet" class="submenu-item">
             <i data-lucide="send"></i>
             <span>Distribusi Outlet</span>
           </li>
-          <li data-menu="monitoring-outlet" onclick="selectMenu(event,'monitoring-outlet')" class="submenu-item">
+          <li data-page="monitoring-outlet" class="submenu-item">
             <i data-lucide="activity"></i>
             <span>Monitoring Outlet</span>
           </li>
@@ -180,15 +181,15 @@
           </li>
         </ul>
         <ul class="sidebar-submenu" id="opname-submenu">
-          <li data-menu="perintah-so" onclick="selectMenu(event,'perintah-so')" class="submenu-item">
+          <li data-page="perintah-so" class="submenu-item">
             <i data-lucide="file-text"></i>
             <span>Perintah SO</span>
           </li>
-          <li data-menu="pelaksanaan-so" onclick="selectMenu(event,'pelaksanaan-so')" class="submenu-item">
+          <li data-page="pelaksanaan-so" class="submenu-item">
             <i data-lucide="clipboard-check"></i>
             <span>Pelaksanaan SO</span>
           </li>
-          <li data-menu="riwayat-so" onclick="selectMenu(event,'riwayat-so')" class="submenu-item">
+          <li data-page="riwayat-so" class="submenu-item">
             <i data-lucide="history"></i>
             <span>Riwayat</span>
           </li>
@@ -201,7 +202,7 @@
       <div class="sidebar-section">
         <p class="sidebar-section__label">Laporan</p>
         <ul>
-          <li data-menu="laporan" onclick="selectMenu(event,'laporan')">
+          <li data-page="laporan">
             <i data-lucide="file-bar-chart"></i>
             <span>Laporan</span>
           </li>
@@ -214,9 +215,9 @@
       <div class="sidebar-section">
         <p class="sidebar-section__label">User</p>
         <ul>
-          <li data-menu="user" onclick="selectMenu(event,'user')">
+          <li data-page="user">
             <i data-lucide="users"></i>
-            <span>User</span>
+            <span>Manajemen User</span>
           </li>
         </ul>
       </div>
@@ -227,7 +228,7 @@
       <div class="sidebar-section">
         <p class="sidebar-section__label">Pengaturan</p>
         <ul>
-          <li data-menu="pengaturan" onclick="selectMenu(event,'pengaturan')">
+          <li data-page="pengaturan">
             <i data-lucide="settings"></i>
             <span>Pengaturan</span>
           </li>
@@ -236,1385 +237,12 @@
     </nav>
   </aside>
 
-  <main class="container">
-    <section class="header-card">
-      <div class="page-heading">
-        <p id="pageEyebrow">Sales Monitor</p>
-        <h2 id="pageTitle">Dashboard Penjualan</h2>
-        <span class="page-caption" id="pageCaption">Filter periode aktif akan langsung diterapkan ke menu yang sedang dibuka.</span>
-      </div>
-
-      <div class="header-actions">
-        <div class="filter-bar" id="pageFilters">
-          <label class="filter-control">
-            <span>Bulan</span>
-            <select id="bulan">
-              <option value="1">Januari</option>
-              <option value="2">Februari</option>
-              <option value="3">Maret</option>
-              <option value="4">April</option>
-              <option value="5">Mei</option>
-              <option value="6">Juni</option>
-              <option value="7">Juli</option>
-              <option value="8">Agustus</option>
-              <option value="9">September</option>
-              <option value="10">Oktober</option>
-              <option value="11">November</option>
-              <option value="12">Desember</option>
-            </select>
-          </label>
-
-          <label class="filter-control">
-            <span>Tahun</span>
-            <select id="tahun"></select>
-          </label>
-
-          <label class="filter-control filter-control-wide">
-            <span>Produk</span>
-            <input id="filterProduk" list="produkList" placeholder="Ketik SKU / nama produk">
-            <datalist id="produkList"></datalist>
-          </label>
-        </div>
-
-        <div class="header-tools">
-          <div class="filter-status" id="filterStatus">Periode aktif: -</div>
-          <button type="button" class="btn-secondary" onclick="clearProdukFilter()">Reset Produk</button>
-          <button type="button" class="btn-primary" onclick="printCurrentView()">Print</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- V4 DASHBOARD - SPEC COMPLIANT -->
-    <section id="v3DashboardTab" class="tab-content">
-      <div class="dashboard-v4">
-        <!-- KPI Grid - 4 columns desktop -->
-        <div class="kpi-grid">
-          <!-- 1. Total Produk -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--primary">
-              <i data-lucide="box"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_total_produk">-</span>
-              <span class="kpi-card__label">Total Produk</span>
-            </div>
-          </div>
-          
-          <!-- 2. Total Outlet -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--success">
-              <i data-lucide="store"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_total_outlet">-</span>
-              <span class="kpi-card__label">Total Outlet</span>
-            </div>
-          </div>
-          
-          <!-- 3. Stok Gudang -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--warning">
-              <i data-lucide="warehouse"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_stok_gudang">-</span>
-              <span class="kpi-card__label">Stok Gudang</span>
-            </div>
-          </div>
-          
-          <!-- 4. Stok Outlet -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--primary">
-              <i data-lucide="package"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_stok_outlet">-</span>
-              <span class="kpi-card__label">Stok Outlet</span>
-            </div>
-          </div>
-          
-          <!-- 5. Distribusi Hari Ini -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--success">
-              <i data-lucide="truck"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_distribusi_hari_ini">-</span>
-              <span class="kpi-card__label">Distribusi Hari Ini</span>
-            </div>
-          </div>
-          
-          <!-- 6. Penjualan Hari Ini -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--primary">
-              <i data-lucide="shopping-cart"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_penjualan_hari_ini">-</span>
-              <span class="kpi-card__label">Penjualan Hari Ini</span>
-            </div>
-          </div>
-          
-          <!-- 7. SO Pending -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--warning">
-              <i data-lucide="clipboard-list"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_so_pending">-</span>
-              <span class="kpi-card__label">SO Pending</span>
-            </div>
-          </div>
-          
-          <!-- 8. Stok Kritis -->
-          <div class="kpi-card">
-            <div class="kpi-card__icon kpi-card__icon--danger">
-              <i data-lucide="alert-triangle"></i>
-            </div>
-            <div class="kpi-card__content">
-              <span class="kpi-card__value" id="kpi_stok_kritis">-</span>
-              <span class="kpi-card__label">Stok Kritis</span>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Main Dashboard Grid: Chart + Right Panel -->
-        <div class="dashboard-main-grid">
-          <!-- Left: Chart Section -->
-          <div class="dashboard-chart-area">
-            <div class="chart-card">
-              <div class="chart-card__header">
-                <h3 class="chart-card__title">Distribusi 7 Hari Terakhir</h3>
-                <span class="chart-card__timestamp" id="v3DashboardTimestamp"></span>
-              </div>
-              <div class="chart-container" id="distribusiChartContainer">
-                <canvas id="distribusiChart"></canvas>
-              </div>
-            </div>
-            
-            <!-- Bottom Section: Distribusi & Aktivitas -->
-            <div class="bottom-grid">
-              <!-- Distribusi Terbaru -->
-              <div class="bottom-card">
-                <h3 class="bottom-card__title">
-                  <i data-lucide="send"></i>
-                  Distribusi Terbaru
-                </h3>
-                <div class="activity-list" id="distribusiTerbaruList">
-                  <div class="activity-empty">Belum ada distribusi hari ini</div>
-                </div>
-              </div>
-              
-              <!-- Aktivitas Terbaru -->
-              <div class="bottom-card">
-                <h3 class="bottom-card__title">
-                  <i data-lucide="activity"></i>
-                  Aktivitas Terbaru
-                </h3>
-                <div class="activity-list" id="aktivitasTerbaruList">
-                  <div class="activity-empty">Tidak ada aktivitas terbaru</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Right: Stok Kritis Panel -->
-          <div class="right-panel">
-            <div class="stok-kritis-card">
-              <h3 class="stok-kritis-card__title">
-                <i data-lucide="alert-triangle"></i>
-                Stok Kritis
-              </h3>
-              <div class="stok-kritis-list" id="stokKritisList">
-                <div class="stok-kritis-empty">Tidak ada stok kritis</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="opnameTab" class="tab-content" style="display:none;">
-      <div class="card opname-workspace">
-        <div class="section-header opname-header">
-          <div>
-            <p class="section-eyebrow">Stock Control</p>
-            <h3>Stok Opname Gudang</h3>
-          </div>
-          <div class="opname-filter">
-            <label class="filter-control">
-              <span>Bulan</span>
-              <select id="opnameBulan">
-                <option value="1">Januari</option>
-                <option value="2">Februari</option>
-                <option value="3">Maret</option>
-                <option value="4">April</option>
-                <option value="5">Mei</option>
-                <option value="6">Juni</option>
-                <option value="7">Juli</option>
-                <option value="8">Agustus</option>
-                <option value="9">September</option>
-                <option value="10">Oktober</option>
-                <option value="11">November</option>
-                <option value="12">Desember</option>
-              </select>
-            </label>
-            <label class="filter-control">
-              <span>Tahun</span>
-              <select id="opnameTahun"></select>
-            </label>
-          </div>
-        </div>
-
-        <div class="subtab-menu tab-menu-opname">
-          <button data-opname-tab="opnameKPI" onclick="showOpnameTab(event,'opnameKPI')" class="active-tab"><i data-lucide="layout-dashboard"></i><span>KPI</span></button>
-          <button data-opname-tab="opnamePerintah" onclick="showOpnameTab(event,'opnamePerintah')"><i data-lucide="clipboard-list"></i><span>Perintah SO</span></button>
-          <button data-opname-tab="opnameHasil" onclick="showOpnameTab(event,'opnameHasil')"><i data-lucide="folder-open"></i><span>Hasil SO</span></button>
-          <button data-opname-tab="opnameInput" onclick="showOpnameTab(event,'opnameInput')" id="opnameInputTabBtn"><i data-lucide="scan-line"></i><span>Scan & Input</span></button>
-          <button data-opname-tab="opnameHistory" onclick="showOpnameTab(event,'opnameHistory')"><i data-lucide="history"></i><span>History</span></button>
-          <button data-opname-tab="opnameImport" onclick="showOpnameTab(event,'opnameImport')"><i data-lucide="upload"></i><span>Import</span></button>
-          <button data-opname-tab="opnameBarcode" onclick="showOpnameTab(event,'opnameBarcode')"><i data-lucide="barcode"></i><span>Barcode</span></button>
-        </div>
-
-        <div id="opnameKPI" class="opname-content">
-          <div class="opname-kpi-grid">
-            <div class="opname-metric">
-              <span>Total SKU</span>
-              <h2 id="kpi_opname_total">0</h2>
-              <p>Produk dalam stok sistem periode ini</p>
-            </div>
-            <div class="opname-metric">
-              <span>Sudah Dihitung</span>
-              <h2 id="kpi_opname_counted">0</h2>
-              <p id="kpi_opname_progress">0% progress</p>
-            </div>
-            <div class="opname-metric">
-              <span>Stok Sistem</span>
-              <h2 id="kpi_opname_sistem">0</h2>
-              <p>Akumulasi item yang sudah diinput</p>
-            </div>
-            <div class="opname-metric">
-              <span>Stok Fisik</span>
-              <h2 id="kpi_opname_fisik">0</h2>
-              <p>Hasil hitung fisik sementara</p>
-            </div>
-            <div class="opname-metric metric-alert">
-              <span>Net Selisih</span>
-              <h2 id="kpi_opname_selisih">0</h2>
-              <p>Fisik dikurangi sistem</p>
-            </div>
-            <div class="opname-metric metric-warning">
-              <span>Item Selisih</span>
-              <h2 id="kpi_opname_problem">0</h2>
-              <p id="kpi_opname_remaining">0 belum dihitung</p>
-            </div>
-          </div>
-          <div class="opname-dashboard-grid">
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow">Live Workflow</p>
-                  <h4>Status Hitung</h4>
-                </div>
-                <span id="opnameLastScanBadge" class="opname-pill">Belum ada scan</span>
-              </div>
-              <div class="opname-progress-track">
-                <span id="opnameProgressBar"></span>
-              </div>
-              <div class="opname-summary">
-                <div>Total dihitung: <b id="sum_total">0</b></div>
-                <div>Net selisih: <b id="sum_selisih">0</b></div>
-                <div>Item problem: <b id="sum_problem">0</b></div>
-              </div>
-            </div>
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow">Quick Actions</p>
-                  <h4>Aksi Cepat</h4>
-                </div>
-              </div>
-              <div class="opname-quick-actions">
-                <button class="btn-primary" onclick="showOpnameTab(null,'opnamePerintah')"><i data-lucide="clipboard-list"></i><span>Buat Perintah</span></button>
-                <button class="btn-secondary" onclick="showOpnameTab(null,'opnameHasil')"><i data-lucide="folder-open"></i><span>Hasil SO</span></button>
-                <button class="btn-secondary" onclick="showOpnameTab(null,'opnameBarcode')"><i data-lucide="barcode"></i><span>Barcode</span></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnamePerintah" class="opname-content" style="display:none;">
-          <div class="opname-panel">
-            <div class="opname-panel-heading">
-              <div>
-                <p class="section-eyebrow">SVP / Supervisor</p>
-                <h4 id="perintahFormTitle">Buat Perintah Stok Opname</h4>
-              </div>
-              <span id="perintahFormModeBadge" class="opname-pill" style="display:none;">Mode Edit</span>
-            </div>
-            <p id="perintahFormHelp" class="opname-help-text">Buat atau edit perintah SO. Setelah disimpan, perintah muncul di tab <strong>Hasil SO</strong> untuk dikerjakan pelaksana.</p>
-            <input type="hidden" id="perintahEditId" value="">
-            <div class="print-meta-grid">
-              <label class="filter-control">
-                <span>Kode SO</span>
-                <input type="text" id="perintahKodeSo" placeholder="Contoh: SO001" maxlength="50">
-              </label>
-              <label class="filter-control">
-                <span>Tanggal Perintah</span>
-                <input type="date" id="perintahTanggal">
-              </label>
-              <label class="filter-control">
-                <span>Nama SVP</span>
-                <input type="text" id="perintahSvpNama" placeholder="Nama supervisor">
-              </label>
-              <label class="filter-control">
-                <span>Lokasi / Gudang</span>
-                <input type="text" id="perintahLokasi" placeholder="Gudang utama">
-              </label>
-            </div>
-            <div class="filter-control top-space">
-              <span>Kategori SO</span>
-              <div id="perintahKategoriChoices" class="perintah-kategori-choices">
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="modul" checked> Modul</label>
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="seragam" checked> Seragam</label>
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="poster" checked> Poster</label>
-                <label class="perintah-kategori-choice"><input type="checkbox" name="perintahKategori" value="lain-lain" checked> Lain-lain</label>
-              </div>
-            </div>
-            <label class="filter-control top-space">
-              <span>Keterangan</span>
-              <input type="text" id="perintahKeterangan" placeholder="Catatan perintah (opsional)">
-            </label>
-            <div id="perintahKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-            <div class="section-actions top-space" id="perintahFormActions">
-              <button type="button" class="btn-primary" id="perintahSubmitBtn" onclick="simpanPerintahOpname()"><i data-lucide="plus-circle"></i><span>Tambah Perintah SO</span></button>
-              <button type="button" class="btn-secondary" id="perintahCancelEditBtn" onclick="resetPerintahForm()" style="display:none;"><i data-lucide="x"></i><span>Batal Edit</span></button>
-            </div>
-            <div id="perintahListSection" class="top-space"></div>
-          </div>
-        </div>
-
-        <div id="opnameHasil" class="opname-content" style="display:none;">
-          <div id="opnameHasilList" style="display:block;">
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow">Pelaksana</p>
-                  <h4>Daftar Perintah & Hasil SO</h4>
-                </div>
-              </div>
-              <p class="opname-help-text">Klik kartu SO untuk mulai atau melanjutkan scan. Simpan hanya mencatat hasil; gunakan <strong>Sesuaikan Stok</strong> di detail untuk menerapkan selisih ke gudang. Filter bulan hanya untuk melihat progres.</p>
-              <div id="hasilKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-              <div id="hasilSoList" class="hasil-so-grid"></div>
-            </div>
-          </div>
-          <div id="opnameHasilDetail" style="display:none;">
-            <button type="button" class="btn-secondary" onclick="goBackHasilSoList()" style="margin-bottom: 16px;"><i data-lucide="arrow-left"></i><span>Kembali</span></button>
-            <div class="opname-panel">
-              <div class="opname-panel-heading">
-                <div>
-                  <p class="section-eyebrow"><span id="hasilDetailKode">SO001</span></p>
-                  <h4>Detail Hasil Stok Opname</h4>
-                </div>
-                <span id="hasilDetailStatusBadge" class="opname-pill">-</span>
-              </div>
-              <div id="hasilDetailKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-              <div class="print-meta-grid" style="margin-bottom: 16px;">
-                <div><label>Tanggal</label><p id="hasilDetailDate" style="font-weight:600;margin:0;">-</p></div>
-                <div><label>SVP</label><p id="hasilDetailSvp" style="font-weight:600;margin:0;">-</p></div>
-                <div><label>Pelaksana</label><p id="hasilDetailChecker" style="font-weight:600;margin:0;">-</p></div>
-                <div><label>Lokasi</label><p id="hasilDetailLokasi" style="font-weight:600;margin:0;">-</p></div>
-              </div>
-              <div class="table-shell">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Produk</th>
-                      <th>Stok Sistem</th>
-                      <th>Stok Fisik</th>
-                      <th>Selisih</th>
-                    </tr>
-                  </thead>
-                  <tbody id="hasilDetailBody"></tbody>
-                </table>
-              </div>
-              <p id="hasilSesuaikanNote" class="opname-help-text top-space"></p>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" id="hasilSesuaikanBtn" onclick="sesuaikanHasilSO()" style="display:none;"><i data-lucide="git-compare"></i><span>Sesuaikan Stok</span></button>
-                <button type="button" class="btn-primary" onclick="exportHasilSOcsv()"><i data-lucide="download"></i><span>Download CSV</span></button>
-                <button type="button" class="btn-secondary" id="hasilMulaiScanBtn" onclick="mulaiScanDariHasil()"><i data-lucide="scan-line"></i><span>Mulai / Lanjut Scan</span></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnameInput" style="display:none;" class="opname-content">
-          <div id="opnameInputLocked" class="opname-locked-panel">
-            <i data-lucide="lock"></i>
-            <h4>Scan belum aktif</h4>
-            <p>Pilih perintah SO dari tab <strong>Hasil SO</strong>, lalu klik kartu SO untuk membuka scan & input.</p>
-            <button type="button" class="btn-primary" onclick="showOpnameTab(null,'opnameHasil')"><i data-lucide="folder-open"></i><span>Buka Hasil SO</span></button>
-          </div>
-          <div id="opnameInputActive" style="display:none;">
-            <div class="opname-active-banner">
-              <div>
-                <p class="section-eyebrow">Perintah Aktif</p>
-                <h4 id="activeSoKode">-</h4>
-                <p id="activeSoMeta" class="opname-help-text" style="margin:0;"></p>
-                <div id="activeSoKategoriIndicator" class="kategori-indicator-panel top-space"></div>
-              </div>
-              <button type="button" class="btn-secondary" onclick="clearActivePerintah()"><i data-lucide="x"></i><span>Tutup</span></button>
-            </div>
-            <div class="opname-work-grid top-space">
-              <div class="opname-panel scanner-panel">
-                <div class="opname-panel-heading">
-                  <div>
-                    <p class="section-eyebrow">Input Mode</p>
-                    <h4>Scan & Input Qty Fisik</h4>
-                  </div>
-                  <span id="scanOpnameStatus" class="opname-pill">Siap scan</span>
-                </div>
-                <div id="scannerPreview" class="scanner-preview"></div>
-                <div class="scanner-actions">
-                  <button type="button" class="btn-primary" onclick="startOpnameScanner()"><i data-lucide="camera"></i><span>Mulai Kamera</span></button>
-                  <button type="button" class="btn-secondary" onclick="stopOpnameScanner()"><i data-lucide="camera-off"></i><span>Stop Kamera</span></button>
-                </div>
-                <div class="print-meta-grid top-space">
-                  <input type="text" id="opnameChecker" placeholder="Nama PIC pelaksana" required>
-                  <input type="text" id="opnameGudang" placeholder="Gudang / lokasi" required>
-                </div>
-                <div class="manual-scan-row top-space">
-                  <input type="text" id="manualOpnameScan" placeholder="Scan / Ketik SKU atau barcode" onkeydown="if(event.key==='Enter'){event.preventDefault();applyManualOpnameScan();}">
-                  <button type="button" class="btn-primary" onclick="applyManualOpnameScan()"><i data-lucide="search"></i><span>Cari</span></button>
-                </div>
-                <p class="opname-help-text" style="margin-top: 12px;">Scan atau input qty fisik akan otomatis disimpan ke database. Gunakan tombol <strong>Finalisasi Hasil</strong> untuk menyelesaikan perintah SO dan menutup hasil.</p>
-                <div class="scanner-actions top-space">
-                  <button type="button" onclick="simpanOpname()" class="btn-primary" style="flex:1"><i data-lucide="save"></i><span>Finalisasi Hasil</span></button>
-                  <button type="button" onclick="resetOpnameScanState()" class="btn-secondary" style="flex:1"><i data-lucide="refresh-cw"></i><span>Reset Scan</span></button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="opnameScanResult" class="opname-panel" style="margin-top: 16px; display:none;">
-            <div class="opname-panel-heading">
-              <p class="section-eyebrow">Item Terbaru</p>
-              <h4>Data Scan</h4>
-            </div>
-            <div id="scanResultDetail" style="padding: 16px; background: #2a2e33; border-radius: 8px; color: #f5f7fa;">
-              <!-- Dynamic content -->
-            </div>
-          </div>
-
-          <div class="opname-summary" style="margin-top: 16px;">
-            <h4>Ringkasan Scan</h4>
-            <div>
-              <b>Item Terbaca: </b><span id="scanCount">0</span>
-            </div>
-            <div>
-              <b>Qty Sistem: </b><span id="scanSistem">0</span>
-            </div>
-            <div>
-              <b>Qty Fisik: </b><span id="scanFisik">0</span>
-            </div>
-            <div>
-              <b>Total Selisih: </b><span id="scanSelisih">0</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnameHistory" class="opname-content" style="display:none;">
-          <div class="section-actions">
-            <button type="button" class="btn-secondary" onclick="exportOpnameHistory()"><i data-lucide="download"></i><span>Download CSV Lengkap</span></button>
-          </div>
-          <div class="table-shell top-space">
-            <table class="table history-so-table">
-              <thead>
-                <tr>
-                  <th>Kode SO</th>
-                  <th>Tgl Perintah</th>
-                  <th>Tgl Pelaksanaan</th>
-                  <th>SVP</th>
-                  <th>PIC Pelaksana</th>
-                  <th>Lokasi</th>
-                  <th>Item</th>
-                  <th>Selisih</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="historyBody"></tbody>
-            </table>
-          </div>
-          <div id="historyDetailPanel" class="opname-panel top-space" style="display:none;">
-            <div class="opname-panel-heading">
-              <div>
-                <p class="section-eyebrow">Detail History</p>
-                <h4 id="historyDetailTitle">-</h4>
-              </div>
-              <button type="button" class="btn-secondary" onclick="closeHistoryDetail()"><i data-lucide="x"></i><span>Tutup</span></button>
-            </div>
-            <div class="print-meta-grid" id="historyDetailMeta"></div>
-            <div class="table-shell top-space">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Nama Produk</th>
-                    <th>Stok Sistem</th>
-                    <th>Stok Fisik</th>
-                    <th>Selisih</th>
-                    <th>Waktu Input</th>
-                  </tr>
-                </thead>
-                <tbody id="historyDetailBody"></tbody>
-              </table>
-            </div>
-            <div class="section-actions top-space">
-              <button type="button" class="btn-primary" id="historySesuaikanBtn" onclick="sesuaikanHistoryOpname()" style="display:none;"><i data-lucide="git-compare"></i><span>Sesuaikan Stok</span></button>
-            </div>
-          </div>
-        </div>
-
-        <div id="opnameImport" class="opname-content" style="display:none;">
-          <div class="opname-panel">
-            <div class="opname-panel-heading">
-              <div>
-                <p class="section-eyebrow">Bulk Input</p>
-                <h4>Import CSV Opname</h4>
-              </div>
-              <button class="btn-secondary" onclick="downloadOpnameTemplate()"><i data-lucide="file-down"></i><span>Template</span></button>
-            </div>
-            <div class="opname-import-box">
-              <input type="file" id="opnameImportFile" accept=".csv,text/csv">
-              <button onclick="previewOpnameImport()" class="btn-primary"><i data-lucide="table"></i><span>Preview</span></button>
-            </div>
-            <div id="opnameImportPreview" class="top-space"></div>
-          </div>
-        </div>
-
-        <div id="opnameBarcode" class="opname-content" style="display:none;">
-          <div class="barcode-generator-grid">
-            <div class="barcode-panel barcode-panel--wide">
-              <h4>Barcode Semua Produk</h4>
-              <p>Generate barcode untuk seluruh produk. Unduh dokumen Word (A5, 3 kolom × 10 baris). Ukuran label: 5 cm × 2 cm — nama produk di atas, kode SKU di bawah barcode.</p>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" onclick="downloadAllBarcodeDoc()"><i data-lucide="file-down"></i><span>Download DOC Semua Produk</span></button>
-                <button type="button" class="btn-secondary" onclick="previewAllBarcodeDoc()"><i data-lucide="eye"></i><span>Preview</span></button>
-              </div>
-              <div id="barcodeDocPreview" class="barcode-doc-preview top-space"></div>
-            </div>
-            <div class="barcode-panel">
-              <h4>Barcode Satuan</h4>
-              <p>Preview barcode satu produk atau rak.</p>
-              <label class="filter-control">
-                <span>Produk</span>
-                <input type="text" id="barcodeProductInput" list="produkList" placeholder="Ketik SKU / nama produk">
-              </label>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" onclick="renderProductBarcode()">Generate Produk</button>
-                <button type="button" class="btn-secondary" onclick="downloadBarcodeSvg('productBarcodeSvg','produk')">Download SVG</button>
-              </div>
-              <div class="barcode-output top-space">
-                <p><strong>Nilai:</strong> <span id="productBarcodeValue">-</span></p>
-                <svg id="productBarcodeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-              </div>
-              <label class="filter-control top-space">
-                <span>Kode Rak</span>
-                <input type="text" id="barcodeRackInput" placeholder="Kode rak">
-              </label>
-              <div class="section-actions top-space">
-                <button type="button" class="btn-primary" onclick="renderRackBarcode()">Generate Rak</button>
-                <button type="button" class="btn-secondary" onclick="downloadBarcodeSvg('rackBarcodeSvg','rak')">Download SVG Rak</button>
-              </div>
-              <div class="barcode-output top-space">
-                <p><strong>Nilai:</strong> <span id="rackBarcodeValue">-</span></p>
-                <svg id="rackBarcodeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- KPI/Sales Tab (for Penjualan menu) -->
-    <section id="kpiTab" class="tab-content" style="display:none;">
-      <div class="kpi-page">
-        <div class="kpi-header">
-          <div>
-            <p class="section-eyebrow">Sales Monitor</p>
-            <h2>Penjualan</h2>
-          </div>
-        </div>
-        <!-- KPI content is loaded dynamically -->
-        <div id="kpiContent" class="kpi-content">
-          <div class="loading-indicator">Memuat data penjualan...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Persediaan Tab (for Warehouse > Persediaan) -->
-    <section id="persediaanTab" class="tab-content" style="display:none;">
-      <div class="persediaan-page">
-        <div class="persediaan-header">
-          <div>
-            <p class="section-eyebrow">Inventory Control</p>
-            <h2>Persediaan</h2>
-          </div>
-          <div class="persediaan-actions">
-            <button class="btn-secondary" onclick="exportPersediaan()">
-              <i data-lucide="download"></i> Export
-            </button>
-          </div>
-        </div>
-        <div id="persediaanContent" class="persediaan-content">
-          <div class="loading-indicator">Memuat data persediaan...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Task Center Tab (Admin) -->
-    <section id="taskcenterTab" class="tab-content" style="display:none;">
-      <div class="taskcenter-page">
-        <div class="taskcenter-header">
-          <div>
-            <p class="section-eyebrow">Task Management</p>
-            <h2>Task Center</h2>
-          </div>
-        </div>
-        <div class="taskcenter-tabs">
-          <button class="task-tab active" data-task-view="mine">Tugas Saya</button>
-          <button class="task-tab" data-task-view="queue">Antrian Tugas</button>
-          <button class="task-tab" data-task-view="history">Riwayat</button>
-        </div>
-        <div id="taskcenterContent" class="taskcenter-content">
-          <div class="loading-indicator">Memuat task center...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Approval Center Tab (Admin) -->
-    <section id="approvalcenterTab" class="tab-content" style="display:none;">
-      <div class="approval-page">
-        <div class="approval-header">
-          <div>
-            <p class="section-eyebrow">Workflow</p>
-            <h2>Approval Center</h2>
-          </div>
-        </div>
-        <div class="approval-tabs">
-          <button class="approval-tab active" data-approval-status="pending">
-            <i data-lucide="clock"></i> Pending <span class="badge" id="approvalPendingCount">0</span>
-          </button>
-          <button class="approval-tab" data-approval-status="approved">
-            <i data-lucide="check"></i> Approved
-          </button>
-          <button class="approval-tab" data-approval-status="rejected">
-            <i data-lucide="x"></i> Rejected
-          </button>
-        </div>
-        <div id="approvalcenterContent" class="approval-content">
-          <div class="loading-indicator">Memuat approval center...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Reports Tab (Admin) -->
-    <section id="reportsTab" class="tab-content" style="display:none;">
-      <div class="reports-page">
-        <div class="reports-header">
-          <div>
-            <p class="section-eyebrow">Business Intelligence</p>
-            <h2>Laporan</h2>
-          </div>
-        </div>
-        <div class="reports-grid">
-          <div class="report-card" onclick="showReport('stock')">
-            <i data-lucide="package"></i>
-            <h4>Laporan Stok</h4>
-            <p>Laporan persediaan dan stok gudang</p>
-          </div>
-          <div class="report-card" onclick="showReport('sales')">
-            <i data-lucide="shopping-cart"></i>
-            <h4>Laporan Penjualan</h4>
-            <p>Laporan transaksi penjualan</p>
-          </div>
-          <div class="report-card" onclick="showReport('opname')">
-            <i data-lucide="package-check"></i>
-            <h4>Laporan Opname</h4>
-            <p>Laporan stok opname dan selisih</p>
-          </div>
-          <div class="report-card" onclick="showReport('export')">
-            <i data-lucide="download"></i>
-            <h4>Export Data</h4>
-            <p>Export data ke CSV/Excel</p>
-          </div>
-        </div>
-        <div id="reportDetail" class="report-detail" style="display:none;"></div>
-      </div>
-    </section>
-
-    <!-- Audit Tab (Admin) -->
-    <section id="auditTab" class="tab-content" style="display:none;">
-      <div class="audit-page">
-        <div class="audit-header">
-          <div>
-            <p class="section-eyebrow">Compliance</p>
-            <h2>Audit</h2>
-          </div>
-        </div>
-        <div class="audit-tabs">
-          <button class="audit-tab active" data-audit-view="activity">Log Aktivitas</button>
-          <button class="audit-tab" data-audit-view="stock">Audit Stok</button>
-          <button class="audit-tab" data-audit-view="integrity">Data Integrity</button>
-        </div>
-        <div id="auditContent" class="audit-content">
-          <div class="loading-indicator">Memuat audit logs...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Operator/User Dashboard Tab -->
-    <section id="operatorTab" class="tab-content" style="display:none;">
-      <div class="operator-page">
-        <div class="operator-header">
-          <div>
-            <p class="section-eyebrow">My Workspace</p>
-            <h2>Dasbor Saya</h2>
-          </div>
-        </div>
-        <div class="operator-stats">
-          <div class="stat-card">
-            <i data-lucide="clipboard-list"></i>
-            <div class="stat-info">
-              <span class="stat-value" id="myPendingTasks">0</span>
-              <span class="stat-label">Tugas Pending</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <i data-lucide="check-circle"></i>
-            <div class="stat-info">
-              <span class="stat-value" id="myCompletedTasks">0</span>
-              <span class="stat-label">Tugas Selesai</span>
-            </div>
-          </div>
-        </div>
-        <div id="operatorContent" class="operator-content">
-          <div class="loading-indicator">Memuat dashboard...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- User Tasks Tab (SOTasks) -->
-    <section id="sotasksTab" class="tab-content" style="display:none;">
-      <div class="sotasks-page">
-        <div class="sotasks-header">
-          <div>
-            <p class="section-eyebrow">My Tasks</p>
-            <h2>Tugas Opname</h2>
-          </div>
-        </div>
-        <div class="sotasks-tabs">
-          <button class="sotask-tab active" data-sotask-view="active">Tugas Aktif</button>
-          <button class="sotask-tab" data-sotask-view="completed">Tugas Selesai</button>
-        </div>
-        <div id="sotasksContent" class="sotasks-content">
-          <div class="loading-indicator">Memuat tugas...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- User History Tab (SOHistory) -->
-    <section id="sohistoryTab" class="tab-content" style="display:none;">
-      <div class="sohistory-page">
-        <div class="sohistory-header">
-          <div>
-            <p class="section-eyebrow">My Activity</p>
-            <h2>Riwayat Saya</h2>
-          </div>
-        </div>
-        <div id="sohistoryContent" class="sohistory-content">
-          <div class="loading-indicator">Memuat riwayat...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- User Profile Tab -->
-    <section id="profileTab" class="tab-content" style="display:none;">
-      <div class="profile-page">
-        <div class="profile-header">
-          <div>
-            <p class="section-eyebrow">Account</p>
-            <h2>Profil Saya</h2>
-          </div>
-        </div>
-        <div class="profile-content">
-          <div class="profile-info">
-            <div class="profile-avatar" id="profileAvatar">?</div>
-            <div class="profile-details">
-              <h3 id="profileName">-</h3>
-              <p id="profileRole">-</p>
-              <p id="profileEmail">-</p>
-            </div>
-          </div>
-          <div class="profile-form">
-            <label class="form-control">
-              <span>Nama Lengkap</span>
-              <input type="text" id="profileFullName" placeholder="Nama lengkap">
-            </label>
-            <label class="form-control">
-              <span>Email</span>
-              <input type="email" id="profileEmailInput" placeholder="Email">
-            </label>
-            <button class="btn-primary" onclick="updateProfile()">Simpan Perubahan</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Users Management -->
-    <section id="usersTab" class="tab-content" style="display:none;">
-      <div class="users-page">
-        <!-- Header -->
-        <div class="users-header">
-          <div class="users-header__left">
-            <p class="section-eyebrow">User Management</p>
-            <h2>Pengguna</h2>
-            <span class="page-caption" id="userCount">Memuat...</span>
-          </div>
-          <div class="users-header__right">
-            <div class="users-search">
-              <i data-lucide="search"></i>
-              <input type="text" id="userSearch" placeholder="Cari pengguna..." oninput="loadUsersList()">
-            </div>
-            <button type="button" class="btn-primary" onclick="openAddUserModal()">
-              <i data-lucide="user-plus"></i>
-              Tambah User
-            </button>
-          </div>
-        </div>
-
-        <!-- Filter Bar -->
-        <div class="users-filters">
-          <div class="filter-bar">
-            <label class="filter-control">
-              <span>Role</span>
-              <select id="roleFilter" onchange="loadUsersList()">
-                <option value="">Semua Role</option>
-                <option value="admin">Admin</option>
-                <option value="staff_gudang">Staff Gudang</option>
-                <option value="checker_opname">Checker Opname</option>
-              </select>
-            </label>
-            <label class="filter-control">
-              <span>Status</span>
-              <select id="statusFilter" onchange="loadUsersList()">
-                <option value="">Semua Status</option>
-                <option value="true">Aktif</option>
-                <option value="false">Nonaktif</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <!-- Users Table -->
-        <div class="users-table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody">
-              <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted);">
-                  <div style="padding: 20px;">Memuat...</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- User Modal -->
-    <div id="userModal" class="modal" style="display: none;">
-      <div class="modal__content modal__content--sm">
-        <div class="modal__header">
-          <h3 id="userModalTitle">Tambah User Baru</h3>
-          <button class="modal__close" onclick="closeUserModal()">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
-        <form id="userForm" class="modal__body">
-          <div class="form-group">
-            <label for="userUsername">Username</label>
-            <input type="text" id="userUsername" name="username" required>
-          </div>
-          <div class="form-group">
-            <label for="userEmail">Email</label>
-            <input type="email" id="userEmail" name="email">
-          </div>
-          <div class="form-group">
-            <label for="userNamaLengkap">Nama Lengkap</label>
-            <input type="text" id="userNamaLengkap" name="nama_lengkap" required>
-          </div>
-          <div class="form-group">
-            <label for="userRole">Role</label>
-            <select id="userRole" name="role" required>
-              <option value="staff_gudang">Staff Gudang</option>
-              <option value="checker_opname">Checker Opname</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="userPassword">Password <span id="passwordHint">(kosongkan jika tidak diubah)</span></label>
-            <input type="password" id="userPassword" name="password">
-          </div>
-          <div class="form-group form-group--checkbox">
-            <input type="checkbox" id="userStatus" name="is_active" checked>
-            <label for="userStatus">User Aktif</label>
-          </div>
-        </form>
-        <div class="modal__footer">
-          <button type="button" class="btn-secondary" onclick="closeUserModal()">Batal</button>
-          <button type="button" class="btn-primary" onclick="saveUser()">
-            <i data-lucide="save"></i>
-            Simpan
-          </button>
-        </div>
-      </div>
+  <!-- Main Content Container -->
+  <main class="main-content">
+    <div id="page-container" class="content-area">
+      <!-- Page content will be loaded here via router -->
     </div>
-
-    <!-- Settings Tab -->
-    <section id="settingsTab" class="tab-content" style="display:none;">
-      <div class="settings-page">
-        <!-- Header -->
-        <div class="settings-header">
-          <div class="settings-header__left">
-            <p class="section-eyebrow">System Configuration</p>
-            <h2>Pengaturan</h2>
-          </div>
-        </div>
-
-        <!-- Settings Navigation -->
-        <div class="settings-nav">
-          <button class="settings-nav__item active" data-section="profile">
-            <i data-lucide="user"></i>
-            <span>Profil</span>
-          </button>
-          <button class="settings-nav__item" data-section="security">
-            <i data-lucide="shield"></i>
-            <span>Keamanan</span>
-          </button>
-          <button class="settings-nav__item" data-section="system">
-            <i data-lucide="monitor"></i>
-            <span>Sistem</span>
-          </button>
-          <button class="settings-nav__item" data-section="database">
-            <i data-lucide="database"></i>
-            <span>Database</span>
-          </button>
-        </div>
-
-        <!-- Settings Content -->
-        <div class="settings-content">
-          <!-- Profile Section -->
-          <div id="settingsProfile" class="settings-section" style="display: block;">
-            <div class="settings-card">
-              <h3>Informasi Profil</h3>
-              <div class="form-group">
-                <label>Nama Lengkap</label>
-                <input type="text" id="profileName" class="form-input" placeholder="Nama lengkap">
-              </div>
-              <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="profileUsername" class="form-input" disabled>
-              </div>
-              <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="profileEmail" class="form-input" placeholder="Email">
-              </div>
-              <div class="form-group">
-                <label>Role</label>
-                <input type="text" id="profileRole" class="form-input" disabled>
-              </div>
-              <button type="button" class="btn-primary" onclick="updateProfile()">
-                <i data-lucide="save"></i>
-                Simpan Perubahan
-              </button>
-            </div>
-          </div>
-
-          <!-- Security Section -->
-          <div id="settingsSecurity" class="settings-section" style="display: none;">
-            <div class="settings-card">
-              <h3>Ubah Password</h3>
-              <div class="form-group">
-                <label>Password Lama</label>
-                <input type="password" id="oldPassword" class="form-input" placeholder="Password lama">
-              </div>
-              <div class="form-group">
-                <label>Password Baru</label>
-                <input type="password" id="newPassword" class="form-input" placeholder="Password baru (min. 8 karakter)">
-              </div>
-              <div class="form-group">
-                <label>Konfirmasi Password Baru</label>
-                <input type="password" id="confirmPassword" class="form-input" placeholder="Konfirmasi password baru">
-              </div>
-              <button type="button" class="btn-primary" onclick="changePassword()">
-                <i data-lucide="lock"></i>
-                Ubah Password
-              </button>
-            </div>
-          </div>
-
-          <!-- System Section -->
-          <div id="settingsSystem" class="settings-section" style="display: none;">
-            <div class="settings-card">
-              <h3>Informasi Sistem</h3>
-              <div class="settings-info-grid">
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Nama Aplikasi</span>
-                  <span class="settings-info-value">CV EPIC Warehouse</span>
-                </div>
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Versi</span>
-                  <span class="settings-info-value">3.0.0</span>
-                </div>
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Environment</span>
-                  <span class="settings-info-value">Production</span>
-                </div>
-                <div class="settings-info-item">
-                  <span class="settings-info-label">Fitur</span>
-                  <span class="settings-info-value">User Management, Opname Approval, Forecast, Multi Outlet</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Database Section -->
-          <div id="settingsDatabase" class="settings-section" style="display: none;">
-            <div class="settings-card">
-              <h3>Status Database</h3>
-              <div id="databaseStatusContent">
-                <div class="settings-loading">Memuat status database...</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
-
-  <div id="toast"></div>
-
-  <footer class="app-footer">
-    <div>© CV EPIC Warehouse</div>
-    <div class="credit">Design & UI enhancements: Mr.Wid</div>
-  </footer>
-
-  <!-- Legacy Loader (for backwards compatibility) -->
-  <div id="loader">
-    <div class="loader-content">
-      <img src="/assets/logo.png" class="loader-logo" alt="CV EPIC Warehouse">
-      <p>Memuat...</p>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="/js/loader.js"></script>
-  <script src="/js/dashboard.js?v=opname-history-20260521e"></script>
-  <script src="/js/user-management.js"></script>
-  <script>
-    // Safe lucide initialization - wait for lucide to be available
-    function initLucide() {
-      if (window.lucide) {
-        lucide.createIcons();
-        console.log('Lucide icons initialized');
-      } else {
-        // Retry after a short delay if not yet loaded
-        setTimeout(initLucide, 100);
-      }
-    }
-    // Initialize with small delay to ensure lucide is loaded
-    setTimeout(initLucide, 200);
-  </script>
-  <script>
-    let loginMode = 'user';
-
-    // Token expiration check (24 hours)
-    const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
-
-    function getStoredAuth() {
-      try {
-        return JSON.parse(window.localStorage.getItem('auth_user') || 'null');
-      } catch {
-        return null;
-      }
-    }
-
-    // Check if stored token is expired
-    function isTokenExpired(auth) {
-      if (!auth?.access_token) return true;
-      try {
-        const parts = auth.access_token.split('.');
-        if (parts.length !== 2) return true;
-        const payload = JSON.parse(atob(parts[0]));
-        if (!payload.iat) return true;
-        const expiresAt = payload.iat + TOKEN_EXPIRY_MS;
-        return Date.now() > expiresAt;
-      } catch {
-        return true;
-      }
-    }
-
-    // Clear expired auth and show login
-    function handleExpiredSession() {
-      window.localStorage.removeItem('auth_user');
-      showToast('Sesi Anda telah berakhir. Silakan login kembali.', false);
-      showLogin();
-    }
-
-    // Validate session on startup
-    function validateSession() {
-      const auth = getStoredAuth();
-      if (auth?.access_token && isTokenExpired(auth)) {
-        handleExpiredSession();
-        return false;
-      }
-      return true;
-    }
-
-    function setLoginMode(mode) {
-      loginMode = mode === 'admin' ? 'admin' : 'user';
-      document.getElementById('loginModeUser')?.classList.toggle('active-tab', loginMode === 'user');
-      document.getElementById('loginModeAdmin')?.classList.toggle('active-tab', loginMode === 'admin');
-      const caption = document.getElementById('loginModeCaption');
-      if (caption) {
-        caption.textContent = loginMode === 'admin'
-          ? 'Login admin khusus untuk pengaturan penuh dan kontrol semua modul.'
-          : 'Login user operasional untuk staff gudang/checker sesuai role masing-masing.';
-      }
-    }
-
-    function updateAuthHeader() {
-      const auth = getStoredAuth();
-      const userInfo = document.getElementById('authUserBadge');
-      const userAvatar = document.getElementById('userAvatar');
-      const userName = document.getElementById('userName');
-      const userRole = document.getElementById('userRole');
-      const loginButton = document.getElementById('loginButton');
-      const logoutButton = document.getElementById('logoutButton');
-      const adminMenuItem = document.getElementById('adminMenuItem');
-      if (auth?.access_token) {
-        const roleLabel = auth.role === 'admin' ? 'Admin' : 'User';
-        const displayName = auth.nama_lengkap || auth.username || 'User';
-        const initial = displayName.charAt(0).toUpperCase();
-        if (userInfo) userInfo.style.display = 'flex';
-        if (userAvatar) userAvatar.textContent = initial;
-        if (userName) userName.textContent = displayName;
-        if (userRole) {
-          userRole.textContent = roleLabel;
-          userRole.className = `user-role role-${auth.role || 'user'}`;
-        }
-        if (loginButton) loginButton.style.display = 'none';
-        if (logoutButton) logoutButton.style.display = 'inline-flex';
-        // Show admin menu item only for admin role
-        if (adminMenuItem) {
-          adminMenuItem.style.display = auth.role === 'admin' ? 'flex' : 'none';
-        }
-      } else {
-        if (userInfo) userInfo.style.display = 'none';
-        if (loginButton) loginButton.style.display = 'inline-flex';
-        if (logoutButton) logoutButton.style.display = 'none';
-        if (adminMenuItem) adminMenuItem.style.display = 'none';
-      }
-    }
-
-    function applyAuthState() {
-      // Check for expired token
-      const auth = getStoredAuth();
-      if (auth?.access_token && isTokenExpired(auth)) {
-        handleExpiredSession();
-        return;
-      }
-      
-      const hasAuth = Boolean(auth?.access_token);
-      const userRole = auth?.role || null;
-      const isAdmin = userRole === 'admin';
-      
-      document.body.classList.toggle('auth-locked', !hasAuth);
-      document.getElementById('loginModal')?.removeAttribute('style');
-      updateAuthHeader();
-      
-      // V3: Switch sidebar based on role
-      const adminSidebar = document.getElementById('adminSidebar');
-      const userSidebar = document.getElementById('userSidebar');
-      if (adminSidebar && userSidebar) {
-        if (isAdmin) {
-          adminSidebar.style.display = 'block';
-          userSidebar.style.display = 'none';
-        } else {
-          adminSidebar.style.display = 'none';
-          userSidebar.style.display = 'block';
-        }
-      }
-      
-      // Update sidebar database status indicator
-      const dbStatus = document.getElementById('sidebarDbStatus');
-      if (dbStatus) {
-        dbStatus.textContent = hasAuth ? 'Database Terhubung' : 'Menghubungkan...';
-      }
-      
-      // Legacy sidebar sections (keep for compatibility)
-      const sistemSection = document.getElementById('sistemSection');
-      if (sistemSection) {
-        sistemSection.style.display = isAdmin ? 'block' : 'none';
-      }
-      
-      // Update mobile menu sistem section
-      const mobileSistemSection = document.getElementById('mobileSistemSection');
-      if (mobileSistemSection) {
-        mobileSistemSection.style.display = isAdmin ? 'block' : 'none';
-      }
-      
-      // Update mobile user info
-      const mobileUserAvatar = document.getElementById('mobileUserAvatar');
-      const mobileUserName = document.getElementById('mobileUserName');
-      const mobileUserRole = document.getElementById('mobileUserRole');
-      
-      if (mobileUserAvatar) {
-        mobileUserAvatar.textContent = userRole ? userRole.charAt(0).toUpperCase() : '?';
-      }
-      if (mobileUserName) {
-        mobileUserName.textContent = getStoredAuth()?.username || 'Guest';
-      }
-      if (mobileUserRole) {
-        mobileUserRole.textContent = userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : '-';
-      }
-      
-      if (!hasAuth) {
-        setLoginMode(loginMode);
-        setTimeout(() => document.getElementById('loginUsername')?.focus(), 50);
-      }
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function openLogin(mode = 'user') {
-      setLoginMode(mode);
-      document.body.classList.add('auth-locked');
-      document.getElementById('loginModal')?.removeAttribute('style');
-      setTimeout(() => document.getElementById('loginUsername')?.focus(), 50);
-    }
-
-    function closeLogin() {
-      applyAuthState();
-    }
-
-    // Toggle submenu visibility
-    function toggleSubmenu(event, submenuId) {
-      if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-      
-      const submenu = document.getElementById(submenuId);
-      const parentItem = event?.currentTarget?.closest('.has-submenu') || document.querySelector(`[onclick*="${submenuId}"]`);
-      
-      if (!submenu) return;
-      
-      // Close all other submenus
-      document.querySelectorAll('.sidebar-submenu').forEach(sm => {
-        if (sm.id !== submenuId) {
-          sm.classList.remove('open');
-        }
-      });
-      document.querySelectorAll('.has-submenu').forEach(item => {
-        if (item !== parentItem) {
-          item.classList.remove('open');
-        }
-      });
-      
-      // Toggle current submenu
-      submenu.classList.toggle('open');
-      parentItem?.classList.toggle('open');
-    }
-
-    // Close submenus when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.sidebar-submenu') && !e.target.closest('.has-submenu')) {
-        document.querySelectorAll('.sidebar-submenu').forEach(sm => sm.classList.remove('open'));
-        document.querySelectorAll('.has-submenu').forEach(item => item.classList.remove('open'));
-      }
-    });
-
-    window.applyAuthState = applyAuthState;
-
-    async function performLogin() {
-      const user = document.getElementById('loginUsername').value.trim();
-      const pass = document.getElementById('loginPassword').value;
-      if (!user || !pass) {
-        showToast('Masukkan username dan password', false);
-        return;
-      }
-
-      const endpoint = loginMode === 'admin' ? '/api/v1/auth/login/admin' : '/api/v1/auth/login/user';
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: user, password: pass })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          showToast(data.message || 'Login gagal', false);
-          return;
-        }
-
-        const authData = data.data || data;
-        window.localStorage.setItem('auth_user', JSON.stringify(authData));
-        document.getElementById('loginPassword').value = '';
-        applyAuthState();
-        showToast(`Login ${loginMode === 'admin' ? 'admin' : 'user'} berhasil`, true);
-        closeLogin();
-        if (typeof selectMenu === 'function') selectMenu(null, typeof getSavedMenu === 'function' ? getSavedMenu() : 'penjualan');
-        applyCurrentFilters();
-      } catch (err) {
-        console.error(err);
-        showToast('Gagal menghubungi server auth', false);
-      }
-    }
-
-    async function performLogout() {
-      const auth = getStoredAuth();
-      try {
-        if (auth?.access_token) {
-          await fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${auth.access_token}` }
-          });
-        }
-      } catch (err) {
-        console.warn('Logout server gagal, sesi lokal tetap dihapus', err);
-      } finally {
-        window.localStorage.removeItem('auth_user');
-        applyAuthState();
-        showToast('Anda sudah keluar', true);
-      }
-    }
-
-    applyAuthState();
-  </script>
 
   <!-- Login Modal -->
   <div id="loginModal" class="modal-overlay" style="display:none;">
@@ -1623,7 +251,7 @@
         <div class="modal__logo">
           <img src="/assets/logo.png" alt="CV EPIC Warehouse" onerror="this.style.display='none'">
         </div>
-        <h2 class="modal__title">CV EPIC Warehouse</h3>
+        <h2 class="modal__title">CV EPIC Warehouse</h2>
         <p class="modal__subtitle">Sistem Kontrol Inventaris V3</p>
       </div>
       
@@ -1688,147 +316,226 @@
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- 
-    Data Validation: All dashboard data is now fetched from real database APIs.
-    No mock data or dummy content is rendered. Charts and KPIs are populated
-    only after successful API responses from /api/kpi, /api/chart, etc.
-  -->
+  <!-- Scripts -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/js/app-router.js"></script>
   <script>
-    // CRITICAL: Define hideAppLoader immediately to ensure it's available
-    // This prevents ReferenceError when dashboard.js tries to call it
-    window.hideAppLoader = function() {
-      const loader = document.getElementById('appLoader');
-      if (loader) {
-        loader.classList.add('hidden');
-        setTimeout(() => {
-          if (loader.parentElement) loader.parentElement.removeChild(loader);
-        }, 500);
+    // ============================================
+    // Core Application Functions
+    // ============================================
+
+    // Mobile sidebar toggle
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('mainSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+
+    function closeMobileSidebar() {
+      const sidebar = document.getElementById('mainSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+    }
+
+    // Sidebar submenu toggle
+    function toggleSubmenu(event, submenuId) {
+      if (event) event.stopPropagation();
+      const submenu = document.getElementById(submenuId);
+      const parent = event.target.closest('li');
+      
+      // Toggle current submenu
+      submenu.classList.toggle('open');
+      parent.classList.toggle('active');
+    }
+
+    // Theme toggle
+    function toggleTheme() {
+      console.log('Theme toggle clicked');
+    }
+
+    // User dropdown
+    function toggleUserDropdown() {
+      const menu = document.getElementById('userDropdownMenu');
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Close user dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('userDropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        const menu = document.getElementById('userDropdownMenu');
+        if (menu) menu.style.display = 'none';
       }
-      // Also set AppLoader.isReady if it exists
-      if (window.AppLoader) window.AppLoader.isReady = true;
-      console.log('Global hideAppLoader called');
-    };
-    
+    });
+
+    // Login modal functions
+    function openLogin(mode) {
+      document.getElementById('loginModal').style.display = 'flex';
+      if (mode === 'admin') {
+        setLoginMode('admin');
+      }
+    }
+
+    function setLoginMode(mode) {
+      document.getElementById('loginModeUser').classList.toggle('active-tab', mode === 'user');
+      document.getElementById('loginModeAdmin').classList.toggle('active-tab', mode === 'admin');
+      const caption = document.getElementById('loginModeCaption');
+      caption.textContent = mode === 'admin' 
+        ? 'Login administrator untuk akses penuh ke semua fitur sistem.'
+        : 'Login user operasional untuk staff gudang/checker sesuai role masing-masing.';
+    }
+
+    async function performLogin() {
+      const user = document.getElementById('loginUsername').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      const mode = document.getElementById('loginModeAdmin').classList.contains('active-tab') ? 'admin' : 'user';
+      
+      if (!user || !pass) {
+        showToast('Masukkan username dan password', false);
+        return;
+      }
+
+      const endpoint = mode === 'admin' ? '/api/v1/auth/login/admin' : '/api/v1/auth/login/user';
+      
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user, password: pass })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          showToast(data.message || 'Login gagal', false);
+          return;
+        }
+
+        const authData = data.data || data;
+        localStorage.setItem('auth_user', JSON.stringify(authData));
+        showToast(`Login ${mode === 'admin' ? 'admin' : 'user'} berhasil!`, true);
+        applyAuthState();
+        
+        setTimeout(() => {
+          document.getElementById('loginModal').style.display = 'none';
+        }, 500);
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal menghubungi server', false);
+      }
+    }
+
+    function performLogout() {
+      localStorage.removeItem('auth_user');
+      showToast('Anda sudah keluar', true);
+      applyAuthState();
+    }
+
+    function applyAuthState() {
+      const authUser = localStorage.getItem('auth_user');
+      const userName = document.getElementById('userName');
+      const userRole = document.getElementById('userRole');
+      const logoutItem = document.getElementById('logoutMenuItem');
+      const loginItem = document.getElementById('loginMenuItem');
+      
+      if (authUser) {
+        const user = JSON.parse(authUser);
+        userName.textContent = user.nama || user.username || 'User';
+        userRole.textContent = user.role || '';
+        logoutItem.style.display = 'flex';
+        loginItem.style.display = 'none';
+      } else {
+        userName.textContent = 'Login';
+        userRole.textContent = '';
+        logoutItem.style.display = 'none';
+        loginItem.style.display = 'flex';
+      }
+    }
+
+    function showProfile() {
+      AppRouter.navigateTo('pengaturan');
+    }
+
+    function showSettings() {
+      AppRouter.navigateTo('pengaturan');
+    }
+
+    // Toast notification
+    function showToast(message, isSuccess = true) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
+      toast.innerHTML = `<i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      if (window.lucide) lucide.createIcons({ nodes: [toast] });
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     // App loading state manager
     const AppLoader = {
       isReady: false,
       checkInterval: null,
-      maxWaitTime: 3000, // Max 3 seconds, then force hide
+      maxWaitTime: 3000,
       
       init() {
-        console.log('AppLoader: Initializing...');
-        
-        // Immediately try to hide if elements exist
         this.checkReady();
-        
-        // Start checking if app is ready (poll every 100ms)
         this.checkInterval = setInterval(() => this.checkReady(), 100);
-        
-        // Force hide after max wait time (safety fallback)
         setTimeout(() => {
-          if (!this.isReady) {
-            console.log('AppLoader: Force hiding after timeout');
-            this.hide();
-          }
+          if (!this.isReady) this.hide();
         }, this.maxWaitTime);
       },
       
       checkReady() {
-        console.log('AppLoader: checkReady called, isReady=', this.isReady);
-        
-        // Only check once
         if (this.isReady) {
-          if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-            this.checkInterval = null;
-          }
+          clearInterval(this.checkInterval);
           return;
         }
-        
-        // Check if main content or sidebar exists in DOM
-        const mainContent = document.querySelector('main.container');
-        const sidebar = document.getElementById('mainSidebar');
-        const appHeader = document.querySelector('.app-header');
-        
-        console.log('AppLoader: DOM checks - mainContent:', !!mainContent, 'sidebar:', !!sidebar, 'appHeader:', !!appHeader);
-        
-        // Also check for auth-related elements
-        const loginModal = document.getElementById('loginModal');
-        const authUserBadge = document.getElementById('authUserBadge');
-        
-        // App is ready when critical elements exist
-        const hasMainContent = mainContent !== null;
-        const hasSidebar = sidebar !== null;
-        const hasAppHeader = appHeader !== null;
-        
-        // Also ready if login modal or auth badge exists (for non-logged in state)
-        const hasAuthUI = (loginModal !== null) || (authUserBadge !== null);
-        
-        console.log('AppLoader: hasMainContent:', hasMainContent, 'hasSidebar:', hasSidebar, 'hasAppHeader:', hasAppHeader, 'hasAuthUI:', hasAuthUI);
-        
-        if (hasMainContent || hasSidebar || (hasAppHeader && hasAuthUI)) {
-          console.log('AppLoader: App is ready, hiding loader');
+        const mainContent = document.getElementById('page-container');
+        if (mainContent && mainContent.children.length > 0) {
           this.hide();
         }
       },
       
       hide() {
-        console.log('AppLoader: hide() called, current isReady=', this.isReady);
         if (this.isReady) return;
         this.isReady = true;
-        
-        if (this.checkInterval) {
-          clearInterval(this.checkInterval);
-          this.checkInterval = null;
-        }
-        
+        clearInterval(this.checkInterval);
         const appLoader = document.getElementById('appLoader');
-        console.log('AppLoader: Found loader element:', !!appLoader);
         if (appLoader) {
-          console.log('AppLoader: Hiding...');
           appLoader.classList.add('hidden');
           setTimeout(() => {
             if (appLoader.parentElement) {
               appLoader.parentElement.removeChild(appLoader);
-              console.log('AppLoader: Removed from DOM');
             }
           }, 500);
         }
       }
     };
-    
-    // Initialize on DOM ready - combined handler
+
+    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      console.log('AppLoader: DOMContentLoaded fired');
-      
-      // Initialize Lucide icons
       if (window.lucide) {
         lucide.createIcons();
-        console.log('AppLoader: Lucide icons initialized');
       }
-      
-      // Start AppLoader after small delay - give dashboard.js time to initialize first
-      setTimeout(() => {
-        AppLoader.init();
-      }, 100);
+      applyAuthState();
+      AppLoader.init();
+      console.log('✅ App initialized');
     });
-    
-    // hideAppLoader already defined at top of script
-    
-    // ULTIMATE FALLBACK: Ensure loader is hidden on window.load (last resort)
-    window.addEventListener('load', () => {
-      console.log('AppLoader: window.load fired - ULTIMATE FALLBACK');
-      setTimeout(() => {
-        // Always try to hide the loader, even if AppLoader.isReady is true
-        const loader = document.getElementById('appLoader');
-        if (loader && !loader.classList.contains('hidden')) {
-          console.log('AppLoader: ULTIMATE FALLBACK - Force hiding loader');
-          loader.classList.add('hidden');
-          setTimeout(() => {
-            if (loader.parentElement) loader.parentElement.removeChild(loader);
-          }, 500);
-        }
-      }, 300);
+
+    // Close login modal on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('loginModal');
+        if (modal) modal.style.display = 'none';
+      }
+    });
+
+    // Close login modal when clicking outside
+    document.getElementById('loginModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'loginModal') {
+        e.target.style.display = 'none';
+      }
     });
   </script>
 </body>
