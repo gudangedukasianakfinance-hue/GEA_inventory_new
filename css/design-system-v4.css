@@ -3,6 +3,15 @@
    CV EPIC Warehouse V4 - Design System
    
    Modern SaaS | Warehouse Enterprise | Premium Dashboard
+   
+   Design Spec:
+   - Background: #070B14
+   - Surface: #0D1321
+   - Card: #101827
+   - Primary: #FF4D3A
+   - Border: rgba(255,255,255,0.08)
+   - Border-radius: 20px for cards
+   - Sidebar: 280px width
    ============================================ */
 
 /* Google Font Import */
@@ -17,6 +26,7 @@
   --bg: #070B14;
   --surface: #0D1321;
   --card: #101827;
+  --kpi-card-bg: rgba(255, 255, 255, 0.02);
   
   /* Border */
   --border: rgba(255, 255, 255, 0.08);
@@ -1185,7 +1195,7 @@ img {
 @media print {
   .sidebar,
   .app-header,
-  .theme-toggle,
+  .header-icon-btn,
   .btn {
     display: none !important;
   }
@@ -1199,4 +1209,587 @@ img {
   .kpi-card {
     break-inside: avoid;
   }
+}
+
+/* ============================================
+   HEADER ICON BUTTONS
+   ============================================ */
+
+.header-icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.header-icon-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.header-icon-btn i {
+  width: 20px;
+  height: 20px;
+}
+
+.theme-icon-light { display: none; }
+.theme-icon-dark { display: block; }
+
+[data-theme="light"] .theme-icon-light { display: block; }
+[data-theme="light"] .theme-icon-dark { display: none; }
+
+/* Notification Badge */
+.notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--danger);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   USER DROPDOWN
+   ============================================ */
+
+.user-dropdown {
+  position: relative;
+}
+
+.user-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.user-dropdown-trigger:hover {
+  border-color: var(--primary);
+}
+
+.user-dropdown-trigger .user-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.user-dropdown-trigger .user-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.user-dropdown-trigger .user-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text);
+}
+
+.user-dropdown-trigger .user-role {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.user-dropdown-trigger .dropdown-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.user-dropdown.open .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 180px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  overflow: hidden;
+}
+
+.user-dropdown.open .user-dropdown-menu {
+  display: block;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dropdown-item:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.dropdown-item i {
+  width: 16px;
+  height: 16px;
+}
+
+.dropdown-item--danger {
+  color: var(--danger);
+}
+
+.dropdown-item--danger:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-2) 0;
+}
+
+/* ============================================
+   DASHBOARD V4 LAYOUT
+   ============================================ */
+
+.dashboard-v4 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--space-6);
+}
+
+.dashboard-chart-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ============================================
+   CHART SECTION - 420px Height
+   ============================================ */
+
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  backdrop-filter: blur(16px);
+}
+
+.chart-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.chart-card__title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chart-card__timestamp {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.chart-container {
+  position: relative;
+  height: 420px;
+}
+
+.chart-container canvas {
+  max-width: 100%;
+}
+
+/* Chart Colors - Using primary #FF4D3A */
+.chart-bar {
+  background: var(--primary);
+}
+
+.chart-line {
+  stroke: var(--primary);
+}
+
+.chart-area {
+  fill: rgba(255, 77, 58, 0.1);
+}
+
+/* ============================================
+   RIGHT PANEL - STOK KRITIS
+   ============================================ */
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stok-kritis-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  backdrop-filter: blur(16px);
+}
+
+.stok-kritis-card__title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stok-kritis-card__title i {
+  width: 20px;
+  height: 20px;
+  color: var(--danger);
+}
+
+.stok-kritis-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.stok-kritis-empty {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.stok-kritis-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.stok-kritis-item:last-child {
+  border-bottom: none;
+}
+
+.stok-kritis-item__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.stok-kritis-item__nama {
+  font-weight: 500;
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stok-kritis-item__stok {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.stok-kritis-item__min {
+  color: var(--text-muted);
+}
+
+.stok-kritis-item__status {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stok-kritis-item__status--critical {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ============================================
+   BOTTOM SECTION - Distribusi & Aktivitas
+   ============================================ */
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.bottom-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  backdrop-filter: blur(16px);
+}
+
+.bottom-card__title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bottom-card__title i {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-empty {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-item__icon i {
+  width: 16px;
+  height: 16px;
+}
+
+.activity-item__icon--primary {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.activity-item__icon--success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.activity-item__icon--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.activity-item__icon--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.activity-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-item__text {
+  font-size: var(--font-size-sm);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.activity-item__meta {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ============================================
+   MOBILE DRAWER SIDEBAR
+   ============================================ */
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: calc(var(--z-sidebar) - 1);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+}
+
+.sidebar-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: var(--sidebar-width);
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    z-index: var(--z-sidebar);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar.open ~ .sidebar-overlay {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Mobile - ensure labels always visible, no icon-only */
+  .sidebar-section li {
+    justify-content: flex-start;
+    padding: var(--space-3) var(--space-4);
+  }
+  
+  .sidebar-section li span {
+    display: block !important;
+  }
+  
+  .sidebar-section__label {
+    display: block !important;
+  }
+  
+  /* Dashboard grid adjustments */
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .right-panel {
+    order: -1;
+  }
+  
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .header-right {
+    gap: var(--space-2);
+  }
+  
+  .user-dropdown-trigger {
+    padding: var(--space-1) var(--space-2);
+  }
+  
+  .user-dropdown-trigger .user-info-text {
+    display: none;
+  }
+  
+  .chart-container {
+    height: 220px;
+  }
+  
+  .kpi-grid {
+    gap: var(--space-3);
+  }
+  
+  .kpi-card {
+    padding: var(--space-4);
+  }
+}
+
+/* ============================================
+   PREVENT HORIZONTAL OVERFLOW
+   ============================================ */
+
+body {
+  overflow-x: hidden;
+}
+
+* {
+  max-width: 100%;
 }

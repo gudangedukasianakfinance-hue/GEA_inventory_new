@@ -34,7 +34,7 @@
   </div>
   <header class="app-header">
     <div class="header-left">
-      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="Buka menu">
+      <button class="mobile-menu-toggle" type="button" onclick="toggleMobileSidebar()" aria-label="Buka menu">
         <i data-lucide="menu"></i>
       </button>
       <div class="brand">
@@ -44,28 +44,53 @@
     </div>
     <div class="header-right">
       <!-- Theme Toggle -->
-      <button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <button type="button" class="header-icon-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
         <i data-lucide="sun" class="theme-icon-light"></i>
         <i data-lucide="moon" class="theme-icon-dark"></i>
       </button>
-      <div id="authUserBadge" class="user-info" style="display:none;">
-        <div class="user-avatar" id="userAvatar"></div>
-        <div class="user-details">
-          <span class="user-name" id="userName"></span>
-          <span class="user-role" id="userRole"></span>
+      
+      <!-- Notification -->
+      <button type="button" class="header-icon-btn notification-btn" aria-label="Notifikasi">
+        <i data-lucide="bell"></i>
+        <span class="notification-badge" id="notificationBadge" style="display:none;"></span>
+      </button>
+      
+      <!-- User Dropdown -->
+      <div class="user-dropdown" id="userDropdown">
+        <button type="button" class="user-dropdown-trigger" onclick="toggleUserDropdown()">
+          <div class="user-avatar" id="userAvatar"></div>
+          <div class="user-info-text" id="userInfoText">
+            <span class="user-name" id="userName">Login</span>
+            <span class="user-role" id="userRole"></span>
+          </div>
+          <i data-lucide="chevron-down" class="dropdown-icon"></i>
+        </button>
+        <div class="user-dropdown-menu" id="userDropdownMenu" style="display:none;">
+          <div class="dropdown-item" onclick="showProfile()">
+            <i data-lucide="user"></i>
+            <span>Profil</span>
+          </div>
+          <div class="dropdown-item" onclick="showSettings()">
+            <i data-lucide="settings"></i>
+            <span>Pengaturan</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item dropdown-item--danger" onclick="performLogout()" id="logoutMenuItem" style="display:none;">
+            <i data-lucide="log-out"></i>
+            <span>Keluar</span>
+          </div>
+          <div class="dropdown-item" onclick="openLogin('user')" id="loginMenuItem">
+            <i data-lucide="log-in"></i>
+            <span>Masuk</span>
+          </div>
         </div>
       </div>
-      <button id="logoutButton" class="btn-logout" onclick="performLogout()" style="display:none;">
-        <i data-lucide="log-out"></i>
-        <span>Keluar</span>
-      </button>
-      <button id="loginButton" class="btn-login" onclick="openLogin('user')">
-        <i data-lucide="log-in"></i>
-        <span>Masuk</span>
-      </button>
     </div>
   </header>
 <aside class="sidebar" id="mainSidebar">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+    
     <div class="sidebar-brand">
       <div class="sidebar-brand__logo">
         <img src="/assets/logo.png" alt="CV EPIC Warehouse">
@@ -73,352 +98,141 @@
       <div class="sidebar-brand__text">
         <p class="sidebar-brand__tag">Rangkaian Kontrol Inventaris</p>
         <h1 class="sidebar-brand__title">CV EPIC Warehouse</h1>
-        <span class="sidebar-brand__version">Versi 3</span>
       </div>
     </div>
 
     <nav class="sidebar-nav" id="sidebarNav">
-      <!-- ADMIN SIDEBAR -->
-      <div class="sidebar-role-section" id="adminSidebar">
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Dasbor</p>
-          <ul>
-            <li data-menu="dashboard" onclick="selectMenu(event,'dashboard')" class="active">
-              <i data-lucide="layout-dashboard"></i>
-              <span>Dasbor</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- TASK CENTER -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Tugas</p>
-          <ul>
-            <li data-submenu="taskcenter" class="has-submenu" onclick="toggleSubmenu(event,'taskcenter-submenu')">
-              <i data-lucide="clipboard-list"></i>
-              <span>Task Center</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="taskcenter-submenu">
-            <li data-menu="taskcenter" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
-              <span>Tugas Saya</span>
-            </li>
-            <li data-menu="taskcenter-queue" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
-              <span>Antrian Tugas</span>
-            </li>
-            <li data-menu="taskcenter-history" onclick="selectMenu(event,'taskcenter')" class="submenu-item">
-              <span>Riwayat</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- WAREHOUSE -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Warehouse</p>
-          <ul>
-            <li data-submenu="warehouse" class="has-submenu" onclick="toggleSubmenu(event,'warehouse-submenu')">
-              <i data-lucide="warehouse"></i>
-              <span>Warehouse</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="warehouse-submenu">
-            <li data-menu="persediaan" onclick="selectMenu(event,'persediaan')" class="submenu-item">
-              <i data-lucide="package"></i>
-              <span>Persediaan</span>
-            </li>
-            <li data-menu="produk" onclick="selectMenu(event,'produk')" class="submenu-item">
-              <i data-lucide="box"></i>
-              <span>Produk</span>
-            </li>
-            <li data-menu="outlet" onclick="selectMenu(event,'outlet')" class="submenu-item">
-              <i data-lucide="store"></i>
-              <span>Outlet</span>
-            </li>
-            <li data-menu="penjualan" onclick="selectMenu(event,'penjualan')" class="submenu-item">
-              <i data-lucide="shopping-cart"></i>
-              <span>Penjualan</span>
-            </li>
-            <li data-menu="pembelian" onclick="selectMenu(event,'pembelian')" class="submenu-item">
-              <i data-lucide="package-plus"></i>
-              <span>Pembelian</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- STOCK OPNAME -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Stock Opname</p>
-          <ul>
-            <li data-submenu="opname" class="has-submenu" onclick="toggleSubmenu(event,'opname-submenu')">
-              <i data-lucide="package-check"></i>
-              <span>Stok Opname</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="opname-submenu">
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="perintah">
-              <i data-lucide="file-text"></i>
-              <span>Perintah Opname</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="input">
-              <i data-lucide="scan-line"></i>
-              <span>Input / Scan</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="hasil">
-              <i data-lucide="clipboard-check"></i>
-              <span>Hasil</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="history">
-              <i data-lucide="history"></i>
-              <span>History</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item" data-opname-view="export">
-              <i data-lucide="download"></i>
-              <span>Export</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- APPROVAL CENTER -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Persetujuan</p>
-          <ul>
-            <li data-submenu="approval" class="has-submenu" onclick="toggleSubmenu(event,'approval-submenu')">
-              <i data-lucide="check-circle"></i>
-              <span>Approval Center</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="approval-submenu">
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="pending">
-              <i data-lucide="clock"></i>
-              <span>Pending</span>
-              <span class="badge badge-warning" id="approvalPendingBadge" style="display:none;">0</span>
-            </li>
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="approved">
-              <i data-lucide="check"></i>
-              <span>Approved</span>
-            </li>
-            <li data-menu="approvalcenter" onclick="selectMenu(event,'approvalcenter')" class="submenu-item" data-approval-status="rejected">
-              <i data-lucide="x"></i>
-              <span>Rejected</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- REPORTS -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Laporan</p>
-          <ul>
-            <li data-submenu="reports" class="has-submenu" onclick="toggleSubmenu(event,'reports-submenu')">
-              <i data-lucide="bar-chart-2"></i>
-              <span>Laporan</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="reports-submenu">
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="stock">
-              <i data-lucide="package"></i>
-              <span>Laporan Stok</span>
-            </li>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="sales">
-              <i data-lucide="shopping-cart"></i>
-              <span>Laporan Penjualan</span>
-            </li>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="opname">
-              <i data-lucide="package-check"></i>
-              <span>Laporan Opname</span>
-            </li>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')" class="submenu-item" data-report-type="export">
-              <i data-lucide="download"></i>
-              <span>Export Data</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- AUDIT -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Audit</p>
-          <ul>
-            <li data-submenu="audit" class="has-submenu" onclick="toggleSubmenu(event,'audit-submenu')">
-              <i data-lucide="search"></i>
-              <span>Audit</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="audit-submenu">
-            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="activity">
-              <i data-lucide="activity"></i>
-              <span>Log Aktivitas</span>
-            </li>
-            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="stock">
-              <i data-lucide="package"></i>
-              <span>Audit Stok</span>
-            </li>
-            <li data-menu="audit" onclick="selectMenu(event,'audit')" class="submenu-item" data-audit-type="integrity">
-              <i data-lucide="shield"></i>
-              <span>Data Integrity</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- PENGATURAN -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Pengaturan</p>
-          <ul>
-            <li data-submenu="settings" class="has-submenu" onclick="toggleSubmenu(event,'settings-submenu')">
-              <i data-lucide="settings"></i>
-              <span>Pengaturan</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="settings-submenu">
-            <li data-menu="users" onclick="selectMenu(event,'users')" class="submenu-item">
-              <i data-lucide="users"></i>
-              <span>Manajemen User</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="company">
-              <i data-lucide="building"></i>
-              <span>Profil Perusahaan</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="roles">
-              <i data-lucide="shield"></i>
-              <span>Roles & Permission</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="security">
-              <i data-lucide="lock"></i>
-              <span>Keamanan</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="database">
-              <i data-lucide="database"></i>
-              <span>Status Database</span>
-            </li>
-            <li data-menu="settings" onclick="selectMenu(event,'settings')" class="submenu-item" data-settings-view="audit">
-              <i data-lucide="file-text"></i>
-              <span>Log Audit</span>
-            </li>
-          </ul>
-        </div>
+      <!-- SIDEBAR PER SPEC: Dashboard V4 -->
+      
+      <!-- Dashboard -->
+      <div class="sidebar-section">
+        <ul>
+          <li data-menu="dashboard" onclick="selectMenu(event,'dashboard')" class="active">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+          </li>
+        </ul>
       </div>
 
-      <!-- USER SIDEBAR -->
-      <div class="sidebar-role-section" id="userSidebar" style="display:none;">
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Dasbor Saya</p>
-          <ul>
-            <li data-menu="mydashboard" onclick="selectMenu(event,'mydashboard')" class="active">
-              <i data-lucide="layout-dashboard"></i>
-              <span>Dasbor Saya</span>
-            </li>
-          </ul>
-        </div>
+      <div class="sidebar-divider"></div>
 
-        <div class="sidebar-divider"></div>
+      <!-- WAREHOUSE -->
+      <div class="sidebar-section">
+        <p class="sidebar-section__label">Warehouse</p>
+        <ul>
+          <li data-submenu="warehouse" class="has-submenu" onclick="toggleSubmenu(event,'warehouse-submenu')">
+            <i data-lucide="warehouse"></i>
+            <span>Warehouse</span>
+            <i data-lucide="chevron-down" class="submenu-icon"></i>
+          </li>
+        </ul>
+        <ul class="sidebar-submenu" id="warehouse-submenu">
+          <li data-menu="produk" onclick="selectMenu(event,'produk')" class="submenu-item">
+            <i data-lucide="box"></i>
+            <span>Produk</span>
+          </li>
+          <li data-menu="stok-gudang" onclick="selectMenu(event,'stok-gudang')" class="submenu-item">
+            <i data-lucide="package"></i>
+            <span>Stok Gudang</span>
+          </li>
+          <li data-menu="pembelian" onclick="selectMenu(event,'pembelian')" class="submenu-item">
+            <i data-lucide="package-plus"></i>
+            <span>Pembelian</span>
+          </li>
+        </ul>
+      </div>
 
-        <!-- MY TASKS -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Tugas</p>
-          <ul>
-            <li data-submenu="mytasks" class="has-submenu" onclick="toggleSubmenu(event,'mytasks-submenu')">
-              <i data-lucide="clipboard-list"></i>
-              <span>Tugas Saya</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="mytasks-submenu">
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
-              <i data-lucide="list-check"></i>
-              <span>Tugas Aktif</span>
-            </li>
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
-              <i data-lucide="check-circle"></i>
-              <span>Tugas Selesai</span>
-            </li>
-            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')" class="submenu-item">
-              <i data-lucide="history"></i>
-              <span>Riwayat</span>
-            </li>
-          </ul>
-        </div>
+      <div class="sidebar-divider"></div>
 
-        <div class="sidebar-divider"></div>
+      <!-- DISTRIBUSI -->
+      <div class="sidebar-section">
+        <p class="sidebar-section__label">Distribusi</p>
+        <ul>
+          <li data-submenu="distribusi" class="has-submenu" onclick="toggleSubmenu(event,'distribusi-submenu')">
+            <i data-lucide="truck"></i>
+            <span>Distribusi</span>
+            <i data-lucide="chevron-down" class="submenu-icon"></i>
+          </li>
+        </ul>
+        <ul class="sidebar-submenu" id="distribusi-submenu">
+          <li data-menu="distribusi-outlet" onclick="selectMenu(event,'distribusi-outlet')" class="submenu-item">
+            <i data-lucide="send"></i>
+            <span>Distribusi Outlet</span>
+          </li>
+          <li data-menu="monitoring-outlet" onclick="selectMenu(event,'monitoring-outlet')" class="submenu-item">
+            <i data-lucide="activity"></i>
+            <span>Monitoring Outlet</span>
+          </li>
+        </ul>
+      </div>
 
-        <!-- STOCK OPNAME -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Stock Opname</p>
-          <ul>
-            <li data-submenu="opname-user" class="has-submenu" onclick="toggleSubmenu(event,'opname-user-submenu')">
-              <i data-lucide="package-check"></i>
-              <span>Stock Opname</span>
-              <i data-lucide="chevron-down" class="submenu-icon"></i>
-            </li>
-          </ul>
-          <ul class="sidebar-submenu" id="opname-user-submenu">
-            <li data-menu="sotasks" onclick="selectMenu(event,'sotasks')" class="submenu-item">
-              <i data-lucide="clipboard-list"></i>
-              <span>Tugas Opname</span>
-            </li>
-            <li data-menu="opname" onclick="selectMenu(event,'opname')" class="submenu-item">
-              <i data-lucide="scan-line"></i>
-              <span>Scan & Input</span>
-            </li>
-            <li data-menu="sohistory" onclick="selectMenu(event,'sohistory')" class="submenu-item">
-              <i data-lucide="history"></i>
-              <span>Riwayat Saya</span>
-            </li>
-          </ul>
-        </div>
+      <div class="sidebar-divider"></div>
 
-        <div class="sidebar-divider"></div>
+      <!-- STOCK OPNAME -->
+      <div class="sidebar-section">
+        <p class="sidebar-section__label">Stock Opname</p>
+        <ul>
+          <li data-submenu="opname" class="has-submenu" onclick="toggleSubmenu(event,'opname-submenu')">
+            <i data-lucide="package-check"></i>
+            <span>Stock Opname</span>
+            <i data-lucide="chevron-down" class="submenu-icon"></i>
+          </li>
+        </ul>
+        <ul class="sidebar-submenu" id="opname-submenu">
+          <li data-menu="perintah-so" onclick="selectMenu(event,'perintah-so')" class="submenu-item">
+            <i data-lucide="file-text"></i>
+            <span>Perintah SO</span>
+          </li>
+          <li data-menu="pelaksanaan-so" onclick="selectMenu(event,'pelaksanaan-so')" class="submenu-item">
+            <i data-lucide="clipboard-check"></i>
+            <span>Pelaksanaan SO</span>
+          </li>
+          <li data-menu="riwayat-so" onclick="selectMenu(event,'riwayat-so')" class="submenu-item">
+            <i data-lucide="history"></i>
+            <span>Riwayat</span>
+          </li>
+        </ul>
+      </div>
 
-        <!-- MY REPORTS -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Laporan</p>
-          <ul>
-            <li data-menu="reports" onclick="selectMenu(event,'reports')">
-              <i data-lucide="bar-chart-2"></i>
-              <span>Laporan Saya</span>
-            </li>
-          </ul>
-        </div>
+      <div class="sidebar-divider"></div>
 
-        <div class="sidebar-divider"></div>
+      <!-- LAPORAN -->
+      <div class="sidebar-section">
+        <p class="sidebar-section__label">Laporan</p>
+        <ul>
+          <li data-menu="laporan" onclick="selectMenu(event,'laporan')">
+            <i data-lucide="file-bar-chart"></i>
+            <span>Laporan</span>
+          </li>
+        </ul>
+      </div>
 
-        <!-- PROFILE -->
-        <div class="sidebar-section">
-          <p class="sidebar-section__label">Akun</p>
-          <ul>
-            <li data-menu="profile" onclick="selectMenu(event,'profile')">
-              <i data-lucide="user"></i>
-              <span>Profil</span>
-            </li>
-          </ul>
-        </div>
+      <div class="sidebar-divider"></div>
+
+      <!-- USER -->
+      <div class="sidebar-section">
+        <p class="sidebar-section__label">User</p>
+        <ul>
+          <li data-menu="user" onclick="selectMenu(event,'user')">
+            <i data-lucide="users"></i>
+            <span>User</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- PENGATURAN -->
+      <div class="sidebar-section">
+        <p class="sidebar-section__label">Pengaturan</p>
+        <ul>
+          <li data-menu="pengaturan" onclick="selectMenu(event,'pengaturan')">
+            <i data-lucide="settings"></i>
+            <span>Pengaturan</span>
+          </li>
+        </ul>
       </div>
     </nav>
-
-    <div class="sidebar-footer">
-      <div class="sidebar-footer__info">
-        <i data-lucide="database"></i>
-        <span id="sidebarDbStatus">Menghubungkan...</span>
-      </div>
-    </div>
   </aside>
 
   <main class="container">
@@ -469,103 +283,150 @@
       </div>
     </section>
 
-    <!-- V3 ERP DASHBOARD - MODERN WAREHOUSE -->
+    <!-- V4 DASHBOARD - SPEC COMPLIANT -->
     <section id="v3DashboardTab" class="tab-content">
-      <div class="erp-dashboard">
-        <!-- Header -->
-        <div class="erp-dashboard__header">
-          <div class="erp-dashboard__title">
-            <p class="section-eyebrow">ERP Warehouse · Real-time</p>
-            <h2>Dashboard Operasional</h2>
+      <div class="dashboard-v4">
+        <!-- KPI Grid - 4 columns desktop -->
+        <div class="kpi-grid">
+          <!-- 1. Total Produk -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--primary">
+              <i data-lucide="box"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_total_produk">-</span>
+              <span class="kpi-card__label">Total Produk</span>
+            </div>
           </div>
-          <div class="erp-dashboard__tools">
-            <span class="erp-dashboard__ts" id="v3DashboardTimestamp"></span>
-            <button class="btn-primary" onclick="loadV3Dashboard()">
-              <i data-lucide="refresh-cw"></i> Refresh
-            </button>
+          
+          <!-- 2. Total Outlet -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--success">
+              <i data-lucide="store"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_total_outlet">-</span>
+              <span class="kpi-card__label">Total Outlet</span>
+            </div>
+          </div>
+          
+          <!-- 3. Stok Gudang -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--warning">
+              <i data-lucide="warehouse"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_stok_gudang">-</span>
+              <span class="kpi-card__label">Stok Gudang</span>
+            </div>
+          </div>
+          
+          <!-- 4. Stok Outlet -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--primary">
+              <i data-lucide="package"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_stok_outlet">-</span>
+              <span class="kpi-card__label">Stok Outlet</span>
+            </div>
+          </div>
+          
+          <!-- 5. Distribusi Hari Ini -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--success">
+              <i data-lucide="truck"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_distribusi_hari_ini">-</span>
+              <span class="kpi-card__label">Distribusi Hari Ini</span>
+            </div>
+          </div>
+          
+          <!-- 6. Penjualan Hari Ini -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--primary">
+              <i data-lucide="shopping-cart"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_penjualan_hari_ini">-</span>
+              <span class="kpi-card__label">Penjualan Hari Ini</span>
+            </div>
+          </div>
+          
+          <!-- 7. SO Pending -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--warning">
+              <i data-lucide="clipboard-list"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_so_pending">-</span>
+              <span class="kpi-card__label">SO Pending</span>
+            </div>
+          </div>
+          
+          <!-- 8. Stok Kritis -->
+          <div class="kpi-card">
+            <div class="kpi-card__icon kpi-card__icon--danger">
+              <i data-lucide="alert-triangle"></i>
+            </div>
+            <div class="kpi-card__content">
+              <span class="kpi-card__value" id="kpi_stok_kritis">-</span>
+              <span class="kpi-card__label">Stok Kritis</span>
+            </div>
           </div>
         </div>
-
-        <!-- 10 KPI Cards -->
-        <div class="erp-kpi-grid">
-          <!-- 1. Penjualan Hari Ini -->
-          <div class="erp-kpi erp-kpi--sale">
-            <div class="erp-kpi__icon"><i data-lucide="shopping-cart"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_penjualan">-</span>
-              <span class="erp-kpi__label">Penjualan Hari Ini</span>
+        
+        <!-- Main Dashboard Grid: Chart + Right Panel -->
+        <div class="dashboard-main-grid">
+          <!-- Left: Chart Section -->
+          <div class="dashboard-chart-area">
+            <div class="chart-card">
+              <div class="chart-card__header">
+                <h3 class="chart-card__title">Distribusi 7 Hari Terakhir</h3>
+                <span class="chart-card__timestamp" id="v3DashboardTimestamp"></span>
+              </div>
+              <div class="chart-container" id="distribusiChartContainer">
+                <canvas id="distribusiChart"></canvas>
+              </div>
+            </div>
+            
+            <!-- Bottom Section: Distribusi & Aktivitas -->
+            <div class="bottom-grid">
+              <!-- Distribusi Terbaru -->
+              <div class="bottom-card">
+                <h3 class="bottom-card__title">
+                  <i data-lucide="send"></i>
+                  Distribusi Terbaru
+                </h3>
+                <div class="activity-list" id="distribusiTerbaruList">
+                  <div class="activity-empty">Belum ada distribusi hari ini</div>
+                </div>
+              </div>
+              
+              <!-- Aktivitas Terbaru -->
+              <div class="bottom-card">
+                <h3 class="bottom-card__title">
+                  <i data-lucide="activity"></i>
+                  Aktivitas Terbaru
+                </h3>
+                <div class="activity-list" id="aktivitasTerbaruList">
+                  <div class="activity-empty">Tidak ada aktivitas terbaru</div>
+                </div>
+              </div>
             </div>
           </div>
-          <!-- 2. Pembelian Hari Ini -->
-          <div class="erp-kpi erp-kpi--purchase">
-            <div class="erp-kpi__icon"><i data-lucide="package-plus"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_pembelian">-</span>
-              <span class="erp-kpi__label">Pembelian Hari Ini</span>
-            </div>
-          </div>
-          <!-- 3. Produk Aktif -->
-          <div class="erp-kpi erp-kpi--product">
-            <div class="erp-kpi__icon"><i data-lucide="box"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_produk_aktif">-</span>
-              <span class="erp-kpi__label">Produk Aktif</span>
-            </div>
-          </div>
-          <!-- 4. Customer Aktif -->
-          <div class="erp-kpi erp-kpi--customer">
-            <div class="erp-kpi__icon"><i data-lucide="store"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_customer">-</span>
-              <span class="erp-kpi__label">Customer Aktif Hari Ini</span>
-            </div>
-          </div>
-          <!-- 5. Stok Kritis -->
-          <div class="erp-kpi erp-kpi--danger" id="kpi_stok_kritis_card">
-            <div class="erp-kpi__icon"><i data-lucide="alert-triangle"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_stok_kritis">-</span>
-              <span class="erp-kpi__label">Stok Kritis</span>
-            </div>
-          </div>
-          <!-- 6. SO Berjalan -->
-          <div class="erp-kpi erp-kpi--warning">
-            <div class="erp-kpi__icon"><i data-lucide="clipboard-list"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_so_berjalan">-</span>
-              <span class="erp-kpi__label">SO Berjalan</span>
-            </div>
-          </div>
-          <!-- 7. Pending Approval -->
-          <div class="erp-kpi erp-kpi--warning" id="kpi_pending_card">
-            <div class="erp-kpi__icon"><i data-lucide="clock"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_pending">-</span>
-              <span class="erp-kpi__label">Pending Approval</span>
-            </div>
-          </div>
-          <!-- 8. SO Selesai -->
-          <div class="erp-kpi erp-kpi--success">
-            <div class="erp-kpi__icon"><i data-lucide="check-circle"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_so_selesai">-</span>
-              <span class="erp-kpi__label">SO Selesai Bulan Ini</span>
-            </div>
-          </div>
-          <!-- 9. User Aktif -->
-          <div class="erp-kpi erp-kpi--user">
-            <div class="erp-kpi__icon"><i data-lucide="users"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_users">-</span>
-              <span class="erp-kpi__label">User Aktif</span>
-            </div>
-          </div>
-          <!-- 10. Outlet Aktif -->
-          <div class="erp-kpi erp-kpi--outlet">
-            <div class="erp-kpi__icon"><i data-lucide="building-2"></i></div>
-            <div class="erp-kpi__body">
-              <span class="erp-kpi__value" id="kpi_outlet">-</span>
-              <span class="erp-kpi__label">Outlet Aktif Bulan Ini</span>
+          
+          <!-- Right: Stok Kritis Panel -->
+          <div class="right-panel">
+            <div class="stok-kritis-card">
+              <h3 class="stok-kritis-card__title">
+                <i data-lucide="alert-triangle"></i>
+                Stok Kritis
+              </h3>
+              <div class="stok-kritis-list" id="stokKritisList">
+                <div class="stok-kritis-empty">Tidak ada stok kritis</div>
+              </div>
             </div>
           </div>
         </div>

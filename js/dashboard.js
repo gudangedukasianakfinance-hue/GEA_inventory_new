@@ -5220,3 +5220,140 @@ function initSettingsPage() {
   loadSettingsProfile();
   initSettingsNav();
 }
+
+/* ============================================
+   MOBILE SIDEBAR FUNCTIONS (V4 SPEC)
+   ============================================ */
+
+let isSidebarOpen = false;
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (!sidebar) return;
+  
+  isSidebarOpen = !isSidebarOpen;
+  
+  if (isSidebarOpen) {
+    sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('open');
+    document.body.classList.add('mobile-sidebar-open');
+    document.body.style.overflow = 'hidden';
+  } else {
+    sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    document.body.classList.remove('mobile-sidebar-open');
+    document.body.style.overflow = '';
+  }
+  
+  // Re-initialize Lucide icons
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  
+  if (!sidebar) return;
+  
+  isSidebarOpen = false;
+  sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+  document.body.classList.remove('mobile-sidebar-open');
+  document.body.style.overflow = '';
+}
+
+// Handle escape key to close sidebar
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && isSidebarOpen) {
+    closeMobileSidebar();
+  }
+});
+
+/* ============================================
+   USER DROPDOWN FUNCTIONS
+   ============================================ */
+
+let isUserDropdownOpen = false;
+
+function toggleUserDropdown() {
+  const dropdown = document.getElementById('userDropdown');
+  
+  if (!dropdown) return;
+  
+  isUserDropdownOpen = !isUserDropdownOpen;
+  
+  if (isUserDropdownOpen) {
+    dropdown.classList.add('open');
+    const menu = document.getElementById('userDropdownMenu');
+    if (menu) menu.style.display = 'block';
+  } else {
+    dropdown.classList.remove('open');
+    const menu = document.getElementById('userDropdownMenu');
+    if (menu) menu.style.display = 'none';
+  }
+}
+
+function closeUserDropdown() {
+  const dropdown = document.getElementById('userDropdown');
+  
+  if (!dropdown) return;
+  
+  isUserDropdownOpen = false;
+  dropdown.classList.remove('open');
+  const menu = document.getElementById('userDropdownMenu');
+  if (menu) menu.style.display = 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('userDropdown');
+  if (dropdown && !dropdown.contains(e.target)) {
+    closeUserDropdown();
+  }
+});
+
+// Stub functions for dropdown items
+function showProfile() {
+  closeUserDropdown();
+  selectMenu(null, 'profile');
+}
+
+function showSettings() {
+  closeUserDropdown();
+  selectMenu(null, 'pengaturan');
+}
+
+/* ============================================
+   SUBMENU TOGGLE (V4 SPEC)
+   ============================================ */
+
+function toggleSubmenu(event, submenuId) {
+  if (event) {
+    event.stopPropagation();
+  }
+  
+  const submenu = document.getElementById(submenuId);
+  const parentLi = submenu?.previousElementSibling;
+  
+  if (!submenu || !parentLi) return;
+  
+  const isOpen = submenu.classList.contains('open');
+  
+  // Close all submenus first
+  document.querySelectorAll('.sidebar-submenu').forEach(sm => {
+    sm.classList.remove('open');
+  });
+  document.querySelectorAll('.has-submenu').forEach(li => {
+    li.classList.remove('active');
+  });
+  
+  // Open clicked submenu if it was closed
+  if (!isOpen) {
+    submenu.classList.add('open');
+    parentLi.classList.add('active');
+  }
+}
