@@ -219,21 +219,49 @@ const pageMeta = {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-  initTahun("tahun");
-  initTahun("opnameTahun");
-  setInitialPeriod();
-  bindGlobalFilters();
-  await loadProdukOptions();
-  initOpnameQtyModal();
+  console.log('[STARTUP] DOMContentLoaded fired');
+  
+  try {
+    // Initialize basic UI components
+    initTahun("tahun");
+    initTahun("opnameTahun");
+    setInitialPeriod();
+    bindGlobalFilters();
+    initOpnameQtyModal();
+    
+    console.log('[STARTUP] Basic UI initialized');
+    
+    // Load produk options ONCE
+    console.log('[STARTUP] Loading produk options...');
+    await loadProdukOptions();
+    console.log('[STARTUP] Produk loaded, count:', state.produkOptions.length);
+    
+    // Check authentication
+    if (!isAuthenticated()) {
+      console.log('[STARTUP] Not authenticated, showing login');
+      window.applyAuthState?.();
+      return;
+    }
 
-  if (!isAuthenticated()) {
+    // Authenticated - apply auth state and load dashboard
+    console.log('[STARTUP] Authenticated, applying auth state...');
     window.applyAuthState?.();
-    return;
+    
+    // Navigate to saved menu or default dashboard
+    const savedMenu = getSavedMenu();
+    console.log('[STARTUP] Navigating to menu:', savedMenu);
+    selectMenu(null, savedMenu);
+    
+    console.log('[STARTUP] Startup complete');
+    
+  } catch (error) {
+    console.error('[STARTUP] Error during initialization:', error);
+    window.applyAuthState?.();
+  } finally {
+    // ALWAYS hide the app loader
+    console.log('[STARTUP] Final cleanup');
+    hideAppLoader();
   }
-
-  await loadProdukOptions();
-  window.applyAuthState?.();
-  selectMenu(null, getSavedMenu());
 });
 
 function getSavedMenu() {
@@ -418,32 +446,45 @@ function getAuthHeaders() {
 }
 
 async function fetchJson(url, options = {}) {
-  const headers = {
-    ...getAuthHeaders(),
-    ...(options.headers || {})
-  };
-  const response = await fetch(url, { ...options, headers });
-  const text = await response.text();
-  let data = null;
-
   try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = { error: text || "Response bukan JSON yang valid" };
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.message || data?.error || `HTTP ${response.status}`);
-  }
-
-  if (data && typeof data === 'object' && data.hasOwnProperty('success')) {
-    if (data.hasOwnProperty('data') && data.data !== undefined) {
-      return data.data;
+    const headers = {
+      ...getAuthHeaders(),
+      ...(options.headers || {})
+    };
+    const response = await fetch(url, { ...options, headers });
+    
+    // Handle non-OK responses gracefully - don't throw, return null
+    if (!response.ok) {
+      console.warn(`[API] ${url} returned ${response.status}`);
+      return null;
     }
-    return data;
+    
+    const text = await response.text();
+    
+    if (!text) {
+      return null;
+    }
+    
+    try {
+      const data = JSON.parse(text);
+      
+      // Handle {success, data} wrapper
+      if (data && typeof data === 'object' && data.hasOwnProperty('success')) {
+        if (data.hasOwnProperty('data')) {
+          return data.data;
+        }
+        return data;
+      }
+      
+      return data;
+    } catch {
+      console.warn(`[API] ${url} - Failed to parse JSON response`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`[API] ${url} - Network error:`, error.message);
+    return null;
   }
-
-  return data;
 }
 
 function toArray(data) {
@@ -1037,38 +1078,45 @@ async function loadV3Dashboard() {
   try {
     const data = await fetchJson('/api/v3-dashboard');
     
+    // Handle null data gracefully
+    if (!data) {
+      console.warn('[Dashboard] No data received from API');
+      return;
+    }
+    
     // Update timestamp
     const ts = document.getElementById('v3DashboardTimestamp');
     if (ts) ts.textContent = data.generated_at ? new Date(data.generated_at).toLocaleString('id-ID') : '-';
     
-    // Update KPI values
-    setText("kpi_penjualan", formatNumber(data.today?.penjualan || 0));
-    setText("kpi_pembelian", formatNumber(data.today?.pembelian || 0));
-    setText("kpi_produk_aktif", formatNumber(data.produk?.aktif || 0));
-    setText("kpi_customer", formatNumber(data.today?.customer_count || 0));
-    setText("kpi_stok_kritis", formatNumber(Number(data.stok?.kritis || 0)));
-    setText("kpi_so_berjalan", formatNumber(data.opname?.berjalan || 0));
-    setText("kpi_pending", formatNumber(Number(data.opname?.pending_approval || 0)));
-    setText("kpi_so_selesai", formatNumber(data.opname?.selesai_bulan_ini || 0));
-    setText("kpi_users", formatNumber(data.users?.total || 0));
+    // Update KPI values with safe access
+    setText("kpi_penjualan", formatNumber(data.today?.penjualan ?? 0));
+    setText("kpi_pembelian", formatNumber(data.today?.pembelian ?? 0));
+    setText("kpi_produk_aktif", formatNumber(data.produk?.aktif ?? 0));
+    setText("kpi_customer", formatNumber(data.today?.customer_count ?? 0));
+    setText("kpi_stok_kritis", formatNumber(Number(data.stok?.kritis ?? 0)));
+    setText("kpi_so_berjalan", formatNumber(data.opname?.berjalan ?? 0));
+    setText("kpi_pending", formatNumber(Number(data.opname?.pending_approval ?? 0)));
+    setText("kpi_so_selesai", formatNumber(data.opname?.selesai_bulan_ini ?? 0));
+    setText("kpi_users", formatNumber(data.users?.total ?? 0));
     
-    const outletAktif = formatNumber(data.outlet?.aktif || 0);
-    const outletTotal = formatNumber(data.outlet?.total || 0);
+    const outletAktif = formatNumber(data.outlet?.aktif ?? 0);
+    const outletTotal = formatNumber(data.outlet?.total ?? 0);
     setText("kpi_outlet", `${outletAktif} / ${outletTotal}`);
     
     // Update alert states
-    const kritis = Number(data.stok?.kritis || 0);
+    const kritis = Number(data.stok?.kritis ?? 0);
     const kritisCard = document.getElementById('kpi_stok_kritis_card');
     if (kritisCard) kritisCard.classList.toggle('erp-kpi--danger', kritis > 0);
     if (kritisCard) kritisCard.classList.toggle('erp-kpi--alert', kritis > 0);
 
-    const pending = Number(data.opname?.pending_approval || 0);
+    const pending = Number(data.opname?.pending_approval ?? 0);
     const pendingCard = document.getElementById('kpi_pending_card');
     if (pendingCard) pendingCard.classList.toggle('erp-kpi--warning', pending > 0);
     if (pendingCard) pendingCard.classList.toggle('erp-kpi--alert', pending > 0);
 
+    console.log('[Dashboard] Loaded successfully');
   } catch (error) {
-    console.error("Dashboard load error:", error);
+    console.error('[Dashboard] Load error:', error);
   }
 }
 
