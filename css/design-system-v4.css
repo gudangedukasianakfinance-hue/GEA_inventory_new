@@ -590,96 +590,47 @@ img {
 }
 
 /* ============================================
-   KPI Cards - 4 Column Grid
+   KPI Cards - Auto-fit Grid
    ============================================ */
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .kpi-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  background: #101827;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 18px;
+  padding: 18px;
+  min-height: 120px;
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  transition: all var(--transition-normal);
-  backdrop-filter: blur(16px);
+  flex-direction: column;
+  justify-content: center;
 }
 
-.kpi-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--primary);
-}
-
-.kpi-card__icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
+.kpi-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  margin-bottom: 12px;
 }
 
-.kpi-card__icon i {
-  width: 24px;
-  height: 24px;
+.kpi-label {
+  font-size: 13px;
+  color: #94A3B8;
 }
 
-.kpi-card__icon--primary {
-  background: var(--primary-soft);
-  color: var(--primary);
-}
-
-.kpi-card__icon--success {
-  background: var(--success-soft);
-  color: var(--success);
-}
-
-.kpi-card__icon--warning {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-
-.kpi-card__icon--danger {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
-.kpi-card__content {
-  flex: 1;
-  min-width: 0;
-}
-
-.kpi-card__value {
-  font-size: var(--font-size-2xl);
+.kpi-value {
+  font-size: 28px;
   font-weight: 700;
-  color: var(--text);
-  line-height: 1.2;
-}
-
-.kpi-card__label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  margin-top: var(--space-1);
-}
-
-.kpi-card__change {
-  font-size: var(--font-size-xs);
-  margin-top: var(--space-1);
-}
-
-.kpi-card__change--up {
-  color: var(--success);
-}
-
-.kpi-card__change--down {
-  color: var(--danger);
+  color: #FFF;
+  margin-top: 8px;
 }
 
 /* ============================================
