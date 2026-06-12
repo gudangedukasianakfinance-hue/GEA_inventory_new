@@ -1479,12 +1479,47 @@
   <script>
     let loginMode = 'user';
 
+    // Token expiration check (24 hours)
+    const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
     function getStoredAuth() {
       try {
         return JSON.parse(window.localStorage.getItem('auth_user') || 'null');
       } catch {
         return null;
       }
+    }
+
+    // Check if stored token is expired
+    function isTokenExpired(auth) {
+      if (!auth?.access_token) return true;
+      try {
+        const parts = auth.access_token.split('.');
+        if (parts.length !== 2) return true;
+        const payload = JSON.parse(atob(parts[0]));
+        if (!payload.iat) return true;
+        const expiresAt = payload.iat + TOKEN_EXPIRY_MS;
+        return Date.now() > expiresAt;
+      } catch {
+        return true;
+      }
+    }
+
+    // Clear expired auth and show login
+    function handleExpiredSession() {
+      window.localStorage.removeItem('auth_user');
+      showToast('Sesi Anda telah berakhir. Silakan login kembali.', false);
+      showLogin();
+    }
+
+    // Validate session on startup
+    function validateSession() {
+      const auth = getStoredAuth();
+      if (auth?.access_token && isTokenExpired(auth)) {
+        handleExpiredSession();
+        return false;
+      }
+      return true;
     }
 
     function setLoginMode(mode) {
@@ -1534,8 +1569,15 @@
     }
 
     function applyAuthState() {
-      const hasAuth = Boolean(getStoredAuth()?.access_token);
-      const userRole = getStoredAuth()?.role || null;
+      // Check for expired token
+      const auth = getStoredAuth();
+      if (auth?.access_token && isTokenExpired(auth)) {
+        handleExpiredSession();
+        return;
+      }
+      
+      const hasAuth = Boolean(auth?.access_token);
+      const userRole = auth?.role || null;
       const isAdmin = userRole === 'admin';
       
       document.body.classList.toggle('auth-locked', !hasAuth);

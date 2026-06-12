@@ -133,12 +133,41 @@ function getStoredAuth() {
   }
 }
 
+// Token expiration check (24 hours)
+const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
+function isTokenExpired(auth) {
+  if (!auth?.access_token) return true;
+  try {
+    const parts = auth.access_token.split('.');
+    if (parts.length !== 2) return true;
+    const payload = JSON.parse(atob(parts[0]));
+    if (!payload.iat) return true;
+    const expiresAt = payload.iat + TOKEN_EXPIRY_MS;
+    return Date.now() > expiresAt;
+  } catch {
+    return true;
+  }
+}
+
 function isAuthenticated() {
-  return Boolean(getStoredAuth()?.access_token);
+  const auth = getStoredAuth();
+  if (!auth?.access_token) return false;
+  if (isTokenExpired(auth)) {
+    // Clear expired token
+    window.localStorage.removeItem('auth_user');
+    return false;
+  }
+  return true;
 }
 
 function getCurrentUserRole() {
-  return getStoredAuth()?.role || null;
+  const auth = getStoredAuth();
+  if (auth?.access_token && isTokenExpired(auth)) {
+    window.localStorage.removeItem('auth_user');
+    return null;
+  }
+  return auth?.role || null;
 }
 
 function getAllowedMenus() {
@@ -438,7 +467,12 @@ function escapeHtml(value = "") {
 function getAuthHeaders() {
   try {
     const auth = JSON.parse(window.localStorage.getItem('auth_user') || 'null');
-    return auth?.access_token ? { Authorization: `Bearer ${auth.access_token}` } : {};
+    if (!auth?.access_token) return {};
+    if (isTokenExpired(auth)) {
+      window.localStorage.removeItem('auth_user');
+      return {};
+    }
+    return { Authorization: `Bearer ${auth.access_token}` };
   } catch {
     return {};
   }

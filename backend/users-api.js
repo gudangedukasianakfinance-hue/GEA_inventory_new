@@ -5,6 +5,7 @@
 
 import crypto from "crypto";
 import pool from "../services/db.js";
+import { authenticate, authorize, VALID_ROLES } from "../services/auth.js";
 
 // Helper to send JSON responses
 function send(res, status, payload) {
@@ -48,37 +49,16 @@ function extractAction(path) {
   return match ? match[1] : null;
 }
 
-// Check if request has admin authorization
+// Check if request has admin authorization (using auth service)
 async function isAdminUser(req) {
-  const authHeader = req.headers?.authorization;
-  if (!authHeader?.startsWith("Bearer ")) return false;
-
-  try {
-    const token = authHeader.slice(7);
-    const parts = token.split(".");
-    if (parts.length !== 2) return false;
-
-    const payload = JSON.parse(Buffer.from(parts[0], "base64url").toString());
-    return payload.role === "admin";
-  } catch {
-    return false;
-  }
+  const auth = authenticate(req);
+  return auth.authorized && auth.user.role === "admin";
 }
 
-// Get current user from token
+// Get current user from token (using auth service)
 async function getCurrentUser(req) {
-  const authHeader = req.headers?.authorization;
-  if (!authHeader?.startsWith("Bearer ")) return null;
-
-  try {
-    const token = authHeader.slice(7);
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
-
-    return JSON.parse(Buffer.from(parts[0], "base64url").toString());
-  } catch {
-    return null;
-  }
+  const auth = authenticate(req);
+  return auth.authorized ? auth.user : null;
 }
 
 // List all users
@@ -185,7 +165,7 @@ async function createUser(req, res) {
     return send(res, 400, { success: false, message: "Password minimal 6 karakter" });
   }
 
-  const validRoles = ["admin", "staff_gudang", "checker_opname"];
+  const validRoles = VALID_ROLES;
   if (role && !validRoles.includes(role)) {
     return send(res, 400, { success: false, message: "Role tidak valid" });
   }
@@ -270,7 +250,7 @@ async function updateUser(req, res, userId) {
     }
 
     if (role !== undefined) {
-      const validRoles = ["admin", "staff_gudang", "checker_opname"];
+      const validRoles = VALID_ROLES;
       if (!validRoles.includes(role)) {
         return send(res, 400, { success: false, message: "Role tidak valid" });
       }

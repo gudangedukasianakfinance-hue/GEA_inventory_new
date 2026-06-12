@@ -5,6 +5,7 @@
    ============================================ */
 
 import pool from "../services/db.js";
+import { authenticate } from "../services/auth.js";
 
 // Helper to send JSON responses
 function send(res, status, payload) {
@@ -25,34 +26,24 @@ function normalizeRoute(routePath) {
   return routePath.replace(/^\/+/, "");
 }
 
-// Get current user from token
+// Get current user from token (using auth service)
 async function getCurrentUser(req) {
-  const authHeader = req.headers?.authorization;
-  if (!authHeader?.startsWith("Bearer ")) return null;
-
-  try {
-    const token = authHeader.slice(7);
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
-
-    return JSON.parse(Buffer.from(parts[0], "base64url").toString());
-  } catch {
-    return null;
-  }
+  const auth = authenticate(req);
+  return auth.authorized ? auth.user : null;
 }
 
-// Check admin authorization
+// Check admin authorization (using auth service)
 async function requireAdmin(req, res) {
-  const user = await getCurrentUser(req);
-  if (!user) {
-    send(res, 401, { success: false, message: "Unauthorized" });
+  const auth = authenticate(req);
+  if (!auth.authorized) {
+    send(res, 401, { success: false, message: "Unauthorized - Silakan login" });
     return null;
   }
-  if (user.role !== "admin") {
+  if (auth.user.role !== "admin") {
     send(res, 403, { success: false, message: "Admin access required" });
     return null;
   }
-  return user;
+  return auth.user;
 }
 
 // Map database status to UI status

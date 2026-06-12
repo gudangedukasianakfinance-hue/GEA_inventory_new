@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import pool from "../services/db.js";
+import { buildToken as createSignedToken } from "../services/auth.js";
 
 function send(res, status, payload) {
   return res.status(status).json(payload);
@@ -38,15 +39,8 @@ function verifyPassword(password, storedHash) {
 }
 
 function buildToken(user, portal) {
-  const payload = {
-    sub: String(user.id),
-    username: user.username,
-    role: user.role,
-    portal,
-    iat: Date.now()
-  };
-  return Buffer.from(JSON.stringify(payload)).toString("base64url")
-    + "." + crypto.randomBytes(32).toString("base64url");
+  // Use signed token builder from auth service
+  return createSignedToken(user, portal);
 }
 
 async function login(req, res, portal = null) {

@@ -6,6 +6,7 @@
 
 import crypto from "crypto";
 import pool from "../services/db.js";
+import { authenticate } from "../services/auth.js";
 
 // Helper to send JSON responses
 function send(res, status, payload) {
@@ -26,30 +27,20 @@ function normalizeRoute(routePath) {
   return routePath.replace(/^\/+/, "");
 }
 
-// Get current user from token
+// Get current user from token (using auth service)
 async function getCurrentUser(req) {
-  const authHeader = req.headers?.authorization;
-  if (!authHeader?.startsWith("Bearer ")) return null;
-
-  try {
-    const token = authHeader.slice(7);
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
-
-    return JSON.parse(Buffer.from(parts[0], "base64url").toString());
-  } catch {
-    return null;
-  }
+  const auth = authenticate(req);
+  return auth.authorized ? auth.user : null;
 }
 
-// Check admin authorization
+// Check authentication (using auth service)
 async function requireAuth(req, res) {
-  const user = await getCurrentUser(req);
-  if (!user) {
-    send(res, 401, { success: false, message: "Unauthorized" });
+  const auth = authenticate(req);
+  if (!auth.authorized) {
+    send(res, 401, { success: false, message: "Unauthorized - Silakan login" });
     return null;
   }
-  return user;
+  return auth.user;
 }
 
 // Get current user's profile
