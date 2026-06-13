@@ -216,6 +216,9 @@
 </section>
 
 <script>
+  // Dashboard Data Cache
+  let dashboardCache = null;
+
   // Update date display
   function updateDateDisplay() {
     const now = new Date();
@@ -229,6 +232,12 @@
   // Dashboard Data Loading
   async function loadDashboardData() {
     try {
+      // Fetch dashboard data once and cache it
+      const response = await fetch('/api/v3-dashboard');
+      if (!response.ok) throw new Error('API Error');
+      dashboardCache = await response.json();
+      
+      // Use cached data for all components
       await Promise.all([
         loadKPIData(),
         loadDistributionChart(),
@@ -247,12 +256,11 @@
     }
   }
   
-  // KPI Data
+  // KPI Data - uses cached response
   async function loadKPIData() {
+    if (!dashboardCache) return;
     try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
+      const data = dashboardCache;
       
       document.getElementById('kpi-total-produk').textContent = formatNumber(data.produk?.total || 0);
       document.getElementById('kpi-total-outlet').textContent = formatNumber(data.outlet?.total || 0);
@@ -307,12 +315,11 @@
     }
   }
   
-  // Recent Distribution
+  // Recent Distribution - uses cached response
   async function loadRecentDistribution() {
+    if (!dashboardCache) return;
     try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
+      const data = dashboardCache;
       
       const container = document.getElementById('recentDistribution');
       if (data.distribusi?.recent && data.distribusi.recent.length > 0) {
@@ -358,12 +365,11 @@
     }
   }
   
-  // Recent Activity
+  // Recent Activity - uses cached response
   async function loadRecentActivity() {
+    if (!dashboardCache) return;
     try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
+      const data = dashboardCache;
       
       const container = document.getElementById('recentActivity');
       if (data.aktivitas && data.aktivitas.length > 0) {
