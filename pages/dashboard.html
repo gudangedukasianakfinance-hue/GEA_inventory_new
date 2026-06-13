@@ -5,11 +5,33 @@
   <div class="welcome">
     <div class="welcome__content">
       <h1 class="welcome__title" id="welcomeTitle">Selamat Datang, Admin</h1>
-      <p class="welcome__subtitle">Ringkasan operasional warehouse hari ini</p>
+      <p class="welcome__subtitle">Ringkasan operasional warehouse</p>
     </div>
     <div class="welcome__datetime">
       <div class="welcome__date" id="currentDate">-</div>
       <div class="welcome__time" id="currentTime">--:--:--</div>
+    </div>
+    <div class="welcome__filters">
+      <div class="filter-group">
+        <select id="filterBulan" class="filter-select">
+          <option value="1">Januari</option>
+          <option value="2">Februari</option>
+          <option value="3">Maret</option>
+          <option value="4">April</option>
+          <option value="5">Mei</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">Agustus</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <select id="filterTahun" class="filter-select">
+        </select>
+      </div>
     </div>
   </div>
 
@@ -63,7 +85,7 @@
         <i data-lucide="send"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Distribusi Hari Ini</div>
+        <div class="kpi-card__label">Distribusi Periode</div>
         <div class="kpi-card__value" id="kpi-distribusi">0</div>
       </div>
     </div>
@@ -73,7 +95,7 @@
         <i data-lucide="shopping-cart"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Penjualan Hari Ini</div>
+        <div class="kpi-card__label">Penjualan Periode</div>
         <div class="kpi-card__value" id="kpi-penjualan">0</div>
       </div>
     </div>
@@ -113,11 +135,11 @@
     
     <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--warning">
-        <i data-lucide="clock"></i>
+        <i data-lucide="wallet"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Approval Pending</div>
-        <div class="kpi-card__value" id="kpi-approval-pending">0</div>
+        <div class="kpi-card__label">Profit</div>
+        <div class="kpi-card__value" id="kpi-profit">Rp 0</div>
       </div>
     </div>
     
@@ -133,18 +155,18 @@
     
     <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--success">
-        <i data-lucide="target"></i>
+        <i data-lucide="graduation-cap"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Akurasi Stok</div>
-        <div class="kpi-card__value" id="kpi-akurasi">0%</div>
+        <div class="kpi-card__label">Total Siswa Aktif</div>
+        <div class="kpi-card__value" id="kpi-siswa-aktif">0</div>
       </div>
     </div>
   </div>
 
   <!-- Charts Grid -->
   <div class="charts-grid">
-    <div class="chart-card">
+    <div class="chart-card chart-card--full">
       <div class="chart-card__header">
         <h3 class="chart-card__title">
           <i data-lucide="bar-chart-2"></i>
@@ -156,22 +178,6 @@
         <div class="chart-card__empty" id="chartPenjualanEmpty" style="display:none;">
           <i data-lucide="bar-chart-2"></i>
           <p class="chart-card__empty-text">Tidak ada data penjualan</p>
-        </div>
-      </div>
-    </div>
-    
-    <div class="chart-card">
-      <div class="chart-card__header">
-        <h3 class="chart-card__title">
-          <i data-lucide="send"></i>
-          Distribusi Bulanan
-        </h3>
-      </div>
-      <div class="chart-card__body">
-        <canvas id="chartDistribusi"></canvas>
-        <div class="chart-card__empty" id="chartDistribusiEmpty" style="display:none;">
-          <i data-lucide="send"></i>
-          <p class="chart-card__empty-text">Tidak ada data distribusi</p>
         </div>
       </div>
     </div>
@@ -205,6 +211,23 @@
           <i data-lucide="store"></i>
           <p class="chart-card__empty-text">Tidak ada data outlet</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modul Terjual Per Level -->
+  <div class="table-card table-card--modul-level">
+    <div class="table-card__header">
+      <h3 class="table-card__title">
+        <i data-lucide="book-open"></i>
+        Modul Terjual Per Level
+      </h3>
+    </div>
+    <div class="table-card__body" id="modulLevelList">
+      <div class="table-card__loading">
+        <div class="skeleton skeleton--table-row"></div>
+        <div class="skeleton skeleton--table-row"></div>
+        <div class="skeleton skeleton--table-row"></div>
       </div>
     </div>
   </div>

@@ -8,54 +8,60 @@ export default async function handler(req, res) {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    // 1. Penjualan Hari Ini
-    const penjualanHarian = await pool.query(`
+    // Get filter parameters from query
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const filterBulan = parseInt(url.searchParams.get('bulan')) || currentMonth;
+    const filterTahun = parseInt(url.searchParams.get('tahun')) || currentYear;
+
+    // Helper function for date range
+    const getMonthDateRange = (bulan, tahun) => {
+      const startDate = `${tahun}-${String(bulan).padStart(2, '0')}-01`;
+      const endDate = new Date(tahun, bulan, 0).toISOString().split('T')[0];
+      return { startDate, endDate };
+    };
+
+    const { startDate, endDate } = getMonthDateRange(filterBulan, filterTahun);
+
+    // 1. Penjualan Periode (based on filter)
+    const penjualanPeriode = await pool.query(`
       SELECT 
         COALESCE(SUM(qty), 0) AS total_qty,
         COUNT(DISTINCT nama_outlet) AS customer_count
       FROM penjualan 
-      WHERE tanggal = $1
-    `, [today]);
+      WHERE tanggal >= $1 AND tanggal <= $2
+    `, [startDate, endDate]);
 
-    // 2. Pembelian Hari Ini
-    const pembelianHarian = await pool.query(`
+    // 2. Pembelian Periode
+    const pembelianPeriode = await pool.query(`
       SELECT COALESCE(SUM(qty), 0) AS total_qty
       FROM pembelian 
-      WHERE tanggal = $1
-    `, [today]);
+      WHERE tanggal >= $1 AND tanggal <= $2
+    `, [startDate, endDate]);
 
     // 3. Produk Aktif (yang memiliki transaksi di periode ini)
     const produkAktif = await pool.query(`
       SELECT COUNT(DISTINCT sku) AS total
       FROM penjualan
-      WHERE date_trunc('month', tanggal) = date_trunc('month', CURRENT_DATE)
-    `);
+      WHERE tanggal >= $1 AND tanggal <= $2
+    `, [startDate, endDate]);
 
-    // 4. Customer Aktif (outlet yang transaksi hari ini)
-    const customerAktif = await pool.query(`
-      SELECT COUNT(DISTINCT nama_outlet) AS total
-      FROM penjualan
-      WHERE tanggal = $1
-    `, [today]);
-
-    // 5. Outlet Aktif (outlet yang transaksi di periode ini)
+    // 4. Outlet Aktif (outlet yang transaksi di periode ini)
     const outletAktif = await pool.query(`
       SELECT COUNT(DISTINCT nama_outlet) AS total
       FROM penjualan
-      WHERE date_trunc('month', tanggal) = date_trunc('month', CURRENT_DATE)
-    `);
+      WHERE tanggal >= $1 AND tanggal <= $2
+    `, [startDate, endDate]);
 
-    // 6. Total Produk
+    // 5. Total Produk
     const totalProduk = await pool.query(`SELECT COUNT(*) AS total FROM produk`);
 
-    // 7. Total Outlet/Gerai
+    // 6. Total Outlet/Gerai
     const totalOutlet = await pool.query(`SELECT COUNT(*) AS total FROM outlet`);
 
     // 7. Stok Kritis - Produk dengan stok akhir <= min_stok atau stok = 0
-    // Using rolling stock calculation
     const stokKritis = await pool.query(`
       WITH params AS (
-        SELECT CURRENT_DATE AS end_date
+        SELECT $2 AS end_date
       ),
       base_stock AS (
         SELECT sku, COALESCE(SUM(qty_awal), 0) AS stok_awal
@@ -84,6 +90,8 @@ export default async function handler(req, res) {
         SELECT 
           p.sku,
           p.nama_produk,
+          p.harga_beli,
+          p.harga_jual,
           COALESCE(bs.stok_awal, 0) + COALESCE(pb.total_beli, 0) - COALESCE(pj.total_jual, 0) + COALESCE(pa.total_adjust, 0) AS stok_akhir
         FROM produk p
         LEFT JOIN base_stock bs ON bs.sku = p.sku
@@ -94,43 +102,38 @@ export default async function handler(req, res) {
       SELECT COUNT(*) AS kritis_count
       FROM rolling_stok
       WHERE stok_akhir <= 0 OR stok_akhir < 10
-    `);
+    `, [startDate, endDate]);
 
-    // 8. SO Berjalan
-    const soBerjalan = await pool.query(`
+    // 8. SO Progress - Real counts from stok_opname_perintah
+    const soMenunggu = await pool.query(`
       SELECT COUNT(*) AS total
       FROM stok_opname_perintah
-      WHERE status IN ('menunggu', 'proses')
+      WHERE status = 'menunggu'
     `);
 
-    // 9. SO Selesai Bulan Ini
+    const soProses = await pool.query(`
+      SELECT COUNT(*) AS total
+      FROM stok_opname_perintah
+      WHERE status = 'proses'
+    `);
+
     const soSelesai = await pool.query(`
       SELECT COUNT(*) AS total
       FROM stok_opname_perintah
       WHERE status = 'selesai'
-        AND bulan = $1
-        AND tahun = $2
-    `, [currentMonth, currentYear]);
-
-    // 10. Pending Approval (menunggu_approval status)
-    const pendingApproval = await pool.query(`
-      SELECT COUNT(*) AS total
-      FROM stok_opname_perintah
-      WHERE status = 'menunggu_approval'
     `);
 
-    // 12. Total Users
+    // 9. Total Users
     const totalUsers = await pool.query(`
       SELECT COUNT(*) AS total
       FROM users
       WHERE is_active = true
     `);
 
-    // 13. STOK GUDANG AKTUAL (REAL)
-    // Formula: STOK_AWAL + PEMBELIAN - PENJUALAN + PENYESUAIAN
+    // 10. STOK GUDANG AKTUAL (REAL) - up to end of period
     const stokGudang = await pool.query(`
       WITH params AS (
-        SELECT CURRENT_DATE AS end_date
+        SELECT $1 AS end_date
       ),
       base_stock AS (
         SELECT COALESCE(SUM(qty_awal), 0) AS total FROM stok_awal
@@ -151,25 +154,40 @@ export default async function handler(req, res) {
         pen.total AS penyesuaian,
         bs.total + pt.total - pj.total + pen.total AS stok_akhir
       FROM base_stock bs, pembelian_total pt, penjualan_total pj, penyesuaian_total pen
-    `);
+    `, [endDate]);
 
-    // 14. DISTRIBUSI HARI INI (REAL)
-    // From outlet_stok_masuk table (warehouse transfers to outlets)
-    const distribusiHariIni = await pool.query(`
+    // 11. DISTRIBUSI PERIODE (REAL) - From outlet_stok_masuk table
+    const distribusiPeriode = await pool.query(`
       SELECT 
         COUNT(*) AS distribusi_count,
         COALESCE(SUM(qty), 0) AS total_qty,
         COUNT(DISTINCT outlet_id) AS outlet_count
       FROM outlet_stok_masuk
-      WHERE tanggal = CURRENT_DATE
+      WHERE tanggal >= $1 AND tanggal <= $2
         AND sumber = 'warehouse_transfer'
-    `);
+    `, [startDate, endDate]);
+
+    // 12. PROFIT - Calculate from penjualan (harga_jual - harga_beli) * qty
+    const profitData = await pool.query(`
+      SELECT 
+        COALESCE(SUM(p.qty * (pr.harga_jual - pr.harga_beli)), 0) AS total_profit
+      FROM penjualan p
+      JOIN produk pr ON pr.sku = p.sku
+      WHERE p.tanggal >= $1 AND p.tanggal <= $2
+    `, [startDate, endDate]);
+
+    // 13. Total Siswa Aktif - Sum from outlet_siswa_level_bulanan
+    const siswaAktif = await pool.query(`
+      SELECT COALESCE(SUM(jumlah_siswa), 0) AS total_siswa
+      FROM outlet_siswa_level_bulanan
+      WHERE periode >= $1 AND periode <= $2
+    `, [startDate, endDate]);
 
     const result = {
       today: {
-        penjualan: Number(penjualanHarian.rows[0]?.total_qty || 0),
-        customer_count: Number(penjualanHarian.rows[0]?.customer_count || 0),
-        pembelian: Number(pembelianHarian.rows[0]?.total_qty || 0)
+        penjualan: Number(penjualanPeriode.rows[0]?.total_qty || 0),
+        customer_count: Number(penjualanPeriode.rows[0]?.customer_count || 0),
+        pembelian: Number(pembelianPeriode.rows[0]?.total_qty || 0)
       },
       produk: {
         aktif: Number(produkAktif.rows[0]?.total || 0),
@@ -190,19 +208,26 @@ export default async function handler(req, res) {
         }
       },
       distribusi: {
-        hari_ini: {
-          count: Number(distribusiHariIni.rows[0]?.distribusi_count || 0),
-          qty: Number(distribusiHariIni.rows[0]?.total_qty || 0),
-          outlet_count: Number(distribusiHariIni.rows[0]?.outlet_count || 0)
+        periode: {
+          count: Number(distribusiPeriode.rows[0]?.distribusi_count || 0),
+          qty: Number(distribusiPeriode.rows[0]?.total_qty || 0),
+          outlet_count: Number(distribusiPeriode.rows[0]?.outlet_count || 0)
         }
       },
       opname: {
-        berjalan: Number(soBerjalan.rows[0]?.total || 0),
-        selesai_bulan_ini: Number(soSelesai.rows[0]?.total || 0),
-        pending_approval: Number(pendingApproval.rows[0]?.total || 0)
+        menunggu: Number(soMenunggu.rows[0]?.total || 0),
+        proses: Number(soProses.rows[0]?.total || 0),
+        selesai: Number(soSelesai.rows[0]?.total || 0),
+        berjalan: Number(soMenunggu.rows[0]?.total || 0) + Number(soProses.rows[0]?.total || 0)
       },
       users: {
         total: Number(totalUsers.rows[0]?.total || 0)
+      },
+      profit: Number(profitData.rows[0]?.total_profit || 0),
+      siswa_aktif: Number(siswaAktif.rows[0]?.total_siswa || 0),
+      filter: {
+        bulan: filterBulan,
+        tahun: filterTahun
       },
       generated_at: new Date().toISOString()
     };

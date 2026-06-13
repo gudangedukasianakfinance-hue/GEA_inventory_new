@@ -180,6 +180,117 @@ export default async function handler(req, res) {
         `, [targetBulan, targetTahun]);
         break;
 
+      case 'modul_level':
+        // Modul Terjual Per Level - with grouping
+        result = await pool.query(`
+          WITH start_date AS (
+            SELECT make_date($2::int, $1::int, 1)::date AS tgl
+          ),
+          end_date AS (
+            SELECT (make_date($2::int, $1::int, 1) + interval '1 month')::date AS tgl
+          ),
+          modul_data AS (
+            SELECT 
+              plm.level_code,
+              COALESCE(SUM(op.qty), 0) AS qty_sold,
+              COUNT(DISTINCT plm.sku) AS sku_count
+            FROM produk_level_mapping plm
+            LEFT JOIN outlet_penjualan op ON op.sku = plm.sku
+              AND op.tanggal >= (SELECT tgl FROM start_date)
+              AND op.tanggal < (SELECT tgl FROM end_date)
+            WHERE plm.is_active = true
+            GROUP BY plm.level_code
+          )
+          SELECT 
+            CASE
+              WHEN level_code LIKE 'membaca_level_1%' THEN 'Membaca'
+              WHEN level_code LIKE 'membaca_level_2%' THEN 'Membaca'
+              WHEN level_code LIKE 'membaca_level_3%' THEN 'Membaca'
+              WHEN level_code LIKE 'ekspro_pu_level_1%' THEN 'Ekspro PU'
+              WHEN level_code LIKE 'ekspro_pu_level_2%' THEN 'Ekspro PU'
+              WHEN level_code LIKE 'ekspro_md_level_1%' THEN 'Ekspro MD'
+              WHEN level_code LIKE 'ekspro_md_level_2%' THEN 'Ekspro MD'
+              WHEN level_code LIKE 'ekspro_md_level_3%' THEN 'Ekspro MD'
+              WHEN level_code LIKE 'ekspro_md_level_4%' THEN 'Ekspro MD'
+              ELSE 'Lainnya'
+            END AS jenis_modul,
+            CASE
+              WHEN level_code LIKE '%_level_1' THEN 'Level 1'
+              WHEN level_code LIKE '%_level_2' THEN 'Level 2'
+              WHEN level_code LIKE '%_level_3' THEN 'Level 3'
+              WHEN level_code LIKE '%_level_4' THEN 'Level 4'
+              ELSE 'Level 1'
+            END AS level,
+            SUM(sku_count)::int AS jumlah_sku,
+            SUM(qty_sold)::int AS qty_terjual
+          FROM modul_data
+          WHERE level_code NOT LIKE '%_0'
+          GROUP BY 
+            CASE
+              WHEN level_code LIKE 'membaca_level_1%' THEN 'Membaca'
+              WHEN level_code LIKE 'membaca_level_2%' THEN 'Membaca'
+              WHEN level_code LIKE 'membaca_level_3%' THEN 'Membaca'
+              WHEN level_code LIKE 'ekspro_pu_level_1%' THEN 'Ekspro PU'
+              WHEN level_code LIKE 'ekspro_pu_level_2%' THEN 'Ekspro PU'
+              WHEN level_code LIKE 'ekspro_md_level_1%' THEN 'Ekspro MD'
+              WHEN level_code LIKE 'ekspro_md_level_2%' THEN 'Ekspro MD'
+              WHEN level_code LIKE 'ekspro_md_level_3%' THEN 'Ekspro MD'
+              WHEN level_code LIKE 'ekspro_md_level_4%' THEN 'Ekspro MD'
+              ELSE 'Lainnya'
+            END,
+            CASE
+              WHEN level_code LIKE '%_level_1' THEN 'Level 1'
+              WHEN level_code LIKE '%_level_2' THEN 'Level 2'
+              WHEN level_code LIKE '%_level_3' THEN 'Level 3'
+              WHEN level_code LIKE '%_level_4' THEN 'Level 4'
+              ELSE 'Level 1'
+            END
+          ORDER BY qty_terjual DESC
+        `, [targetBulan, targetTahun]);
+        
+        // If no data from level_mapping, fall back to old method
+        if (result.rows.length === 0) {
+          result = await pool.query(`
+            SELECT 
+              CASE
+                WHEN UPPER(nama_produk) LIKE '%MEMBACA%' THEN 'Membaca'
+                WHEN UPPER(nama_produk) LIKE '%EKSPRO%PU%' THEN 'Ekspro PU'
+                WHEN UPPER(nama_produk) LIKE '%EKSPRO%MD%' THEN 'Ekspro MD'
+                ELSE 'Lainnya'
+              END AS jenis_modul,
+              CASE
+                WHEN nama_produk ILIKE '%level 1%' THEN 'Level 1'
+                WHEN nama_produk ILIKE '%level 2%' THEN 'Level 2'
+                WHEN nama_produk ILIKE '%level 3%' THEN 'Level 3'
+                WHEN nama_produk ILIKE '%level 4%' THEN 'Level 4'
+                ELSE 'Level 1'
+              END AS level,
+              COUNT(DISTINCT sku) AS jumlah_sku,
+              COALESCE(SUM(j.qty), 0)::int AS qty_terjual
+            FROM produk p
+            LEFT JOIN penjualan j ON j.sku = p.sku
+              AND EXTRACT(MONTH FROM j.tanggal) = $1
+              AND EXTRACT(YEAR FROM j.tanggal) = $2
+            WHERE UPPER(nama_produk) LIKE '%MODUL%'
+            GROUP BY 
+              CASE
+                WHEN UPPER(nama_produk) LIKE '%MEMBACA%' THEN 'Membaca'
+                WHEN UPPER(nama_produk) LIKE '%EKSPRO%PU%' THEN 'Ekspro PU'
+                WHEN UPPER(nama_produk) LIKE '%EKSPRO%MD%' THEN 'Ekspro MD'
+                ELSE 'Lainnya'
+              END,
+              CASE
+                WHEN nama_produk ILIKE '%level 1%' THEN 'Level 1'
+                WHEN nama_produk ILIKE '%level 2%' THEN 'Level 2'
+                WHEN nama_produk ILIKE '%level 3%' THEN 'Level 3'
+                WHEN nama_produk ILIKE '%level 4%' THEN 'Level 4'
+                ELSE 'Level 1'
+              END
+            ORDER BY qty_terjual DESC
+          `, [targetBulan, targetTahun]);
+        }
+        break;
+
       default:
         // Overview - ringkasan chart
         result = await pool.query(`

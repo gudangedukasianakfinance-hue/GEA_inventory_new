@@ -26,6 +26,11 @@
 </head>
 <body class="app-page">
   
+  <!-- Global Loading Overlay -->
+  <div class="global-loading" id="globalLoading">
+    <div class="global-loading__spinner"></div>
+  </div>
+
   <!-- Page Loader -->
   <div class="page-loader" id="pageLoader">
     <div class="page-loader__bar"></div>
@@ -448,11 +453,18 @@
     }
     
     function handleLogout() {
+      // Remove all auth tokens and session data
       localStorage.removeItem('auth_user');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+      sessionStorage.clear();
+      
       showToast('Anda telah keluar', 'success');
       applyAuthState();
       document.getElementById('profileMenu')?.classList.remove('open');
-      navigateTo('dashboard');
+      
+      // Redirect to index.html
+      window.location.href = '/index.html';
     }
     
     document.getElementById('loginModal')?.addEventListener('click', (e) => {
@@ -494,6 +506,26 @@
       if (loader) {
         loader.classList.add('hidden');
         setTimeout(() => loader.parentElement?.removeChild(loader), 500);
+      }
+    }
+    
+    // ============================================
+    // GLOBAL LOADING
+    // ============================================
+    
+    let globalLoadingTimeout = null;
+    
+    function showGlobalLoading() {
+      const loader = document.getElementById('globalLoading');
+      if (loader) {
+        loader.classList.add('active');
+      }
+    }
+    
+    function hideGlobalLoading() {
+      const loader = document.getElementById('globalLoading');
+      if (loader) {
+        loader.classList.remove('active');
       }
     }
     
