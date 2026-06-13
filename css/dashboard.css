@@ -1,6 +1,13 @@
 /* ============================================
+   PHASE 1 - DASHBOARD PREMIUM REDESIGN
    CV EPIC Warehouse - Dashboard Styles
-   Extends Design System - Dashboard Specific
+   
+   Design Spec:
+   - Background: #050b17
+   - Card: #0f172a
+   - Border: rgba(255,255,255,.06)
+   - Border-radius: 20px
+   - Padding: 8/16/24/32 system
    ============================================ */
 
 /* ============================================
@@ -9,18 +16,377 @@
 .dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 24px;
 }
 
-/* KPI Grid - ONLY unique responsive overrides here */
-/* .kpi-grid, .kpi-card, .chart-card, .chart-container */
-/* are now defined in design-system-v4.css as MASTER */
+/* ============================================
+   Welcome Card
+   ============================================ */
+.welcome-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+}
 
-/* Analytics Grid */
+.welcome-card__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.welcome-card__subtitle {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.welcome-card__date {
+  text-align: right;
+}
+
+.welcome-card__date-main {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.welcome-card__date-day {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* ============================================
+   KPI Grid - 8 Cards
+   ============================================ */
+.kpi-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   KPI Card - Premium Design
+   ============================================ */
+.kpi-card {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent, #FF4D3A);
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* KPI Card Colors */
+.kpi-card--blue { --accent: #3b82f6; }
+.kpi-card--green { --accent: #22c55e; }
+.kpi-card--purple { --accent: #a855f7; }
+.kpi-card--orange { --accent: #f59e0b; }
+.kpi-card--cyan { --accent: #06b6d4; }
+.kpi-card--pink { --accent: #ec4899; }
+.kpi-card--blue2 { --accent: #3b82f6; }
+.kpi-card--red { --accent: #ef4444; }
+
+.kpi-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-card__icon i {
+  width: 20px;
+  height: 20px;
+}
+
+.kpi-card--blue .kpi-card__icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.kpi-card--green .kpi-card__icon { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.kpi-card--purple .kpi-card__icon { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+.kpi-card--orange .kpi-card__icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.kpi-card--cyan .kpi-card__icon { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+.kpi-card--pink .kpi-card__icon { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.kpi-card--blue2 .kpi-card__icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.kpi-card--red .kpi-card__icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+.kpi-card__body {
+  flex: 1;
+}
+
+.kpi-card__label {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.kpi-card__value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.kpi-card__meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ============================================
+   Content Grid
+   ============================================ */
+.content-grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Card Component
+   ============================================ */
+.card {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card__header {
+  margin-bottom: 16px;
+}
+
+.card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card__title i {
+  width: 20px;
+  height: 20px;
+  color: #FF4D3A;
+}
+
+.card__body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ============================================
+   Chart Area
+   ============================================ */
+.chart-area {
+  position: relative;
+  height: 250px;
+}
+
+.chart-area canvas {
+  max-width: 100%;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #64748b;
+}
+
+.empty-state i {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}
+
+.empty-state__content {
+  text-align: center;
+}
+
+.empty-state__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.empty-state__desc {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ============================================
+   Stok List
+   ============================================ */
+.stok-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stok-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.stok-item:last-child {
+  border-bottom: none;
+}
+
+.stok-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stok-item__sku {
+  font-size: 11px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.stok-item__nama {
+  font-size: 14px;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stok-item__qty {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+/* ============================================
+   Activity List
+   ============================================ */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-item__icon i {
+  width: 16px;
+  height: 16px;
+}
+
+.activity-item__icon--primary { background: rgba(255, 77, 58, 0.15); color: #FF4D3A; }
+.activity-item__icon--success { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.activity-item__icon--warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.activity-item__icon--danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+.activity-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-item__text {
+  font-size: 14px;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+.activity-item__meta {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* ============================================
+   Analytics Grid (for data tables)
+   ============================================ */
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
+  gap: 24px;
 }
 
 /* ============================================
@@ -33,9 +399,9 @@
 
 .data-table th,
 .data-table td {
-  padding: var(--space-4);
+  padding: 16px;
   text-align: left;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .data-table th {
@@ -43,17 +409,17 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
-  background: var(--card);
+  color: #64748b;
+  background: #0f172a;
 }
 
 .data-table td {
   font-size: 13px;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .data-table tr:hover td {
-  background: var(--card);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* ============================================
@@ -61,75 +427,88 @@
    ============================================ */
 .user-table-actions {
   display: flex;
-  gap: var(--space-2);
+  gap: 8px;
 }
 
 .user-name-cell {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 12px;
 }
 
 .role-badge {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
 }
 
-.role-badge.role-admin {
-  background: var(--red-soft);
-  color: var(--red);
-}
-
-.role-badge.role-staff_gudang {
-  background: var(--orange-soft);
-  color: var(--orange);
-}
-
-.role-badge.role-checker_opname {
-  background: var(--blue-soft);
-  color: var(--blue);
-}
+.role-badge.role-admin { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.role-badge.role-staff_gudang { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.role-badge.role-checker_opname { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
 }
 
-.status-badge.status-active {
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.status-badge.status-inactive {
-  background: var(--muted);
-  color: var(--muted);
-  opacity: 0.6;
-}
+.status-badge.status-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.status-badge.status-inactive { background: rgba(100, 116, 139, 0.15); color: #64748b; }
 
 /* ============================================
-   Dashboard Responsive
+   Responsive
    ============================================ */
-@media (max-width: 1200px) {
-  .analytics-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 768px) {
+  .welcome-card {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .welcome-card__date {
+    text-align: center;
+  }
+  
+  .kpi-card {
+    padding: 16px;
+  }
+  
+  .kpi-card__value {
+    font-size: 24px;
+  }
+  
+  .card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+  
+  .chart-area {
+    height: 200px;
+  }
+  
   .analytics-grid {
     grid-template-columns: 1fr;
   }
-
+  
   .data-table {
     display: block;
     overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-card__icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .kpi-card__value {
+    font-size: 20px;
   }
 }

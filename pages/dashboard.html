@@ -1,15 +1,15 @@
-<!-- Dashboard Page - PHASE 2 UI REBUILD -->
-<section class="dashboard-v4">
+<!-- Dashboard Page - PHASE 1 PREMIUM -->
+<section class="dashboard-page">
   
   <!-- Welcome Section -->
-  <div class="welcome-section">
-    <div class="welcome-text">
-      <h2>Selamat datang, Admin 👋</h2>
-      <p>Berikut ringkasan kondisi warehouse hari ini.</p>
+  <div class="welcome-card">
+    <div class="welcome-card__content">
+      <h2 class="welcome-card__title">Selamat datang, Admin 👋</h2>
+      <p class="welcome-card__subtitle">Ringkasan kondisi warehouse hari ini</p>
     </div>
-    <div class="welcome-date">
-      <div class="welcome-date__day" id="currentDate">12 Juni 2026</div>
-      <div class="welcome-date__info" id="currentDay">Kamis</div>
+    <div class="welcome-card__date">
+      <div class="welcome-card__date-main" id="currentDate">12 Juni 2026</div>
+      <div class="welcome-card__date-day" id="currentDay">Kamis</div>
     </div>
   </div>
   
@@ -17,162 +17,184 @@
   <div class="kpi-grid">
     
     <!-- KPI 1: Total Produk - Blue -->
-    <div class="kpi-card" style="--card-accent: var(--blue);">
-      <div class="kpi-card__icon kpi-card__icon--blue">
+    <div class="kpi-card kpi-card--blue">
+      <div class="kpi-card__icon">
         <i data-lucide="package"></i>
       </div>
-      <div>
-        <div class="kpi-label">Total Produk</div>
-        <div class="kpi-value" id="kpi-total-produk">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Total Produk</div>
+        <div class="kpi-card__value" id="kpi-total-produk">0</div>
       </div>
-      <div class="kpi-sub">SKU Aktif</div>
+      <div class="kpi-card__meta">SKU Aktif</div>
     </div>
     
     <!-- KPI 2: Total Outlet - Green -->
-    <div class="kpi-card" style="--card-accent: var(--green);">
-      <div class="kpi-card__icon kpi-card__icon--green">
+    <div class="kpi-card kpi-card--green">
+      <div class="kpi-card__icon">
         <i data-lucide="store"></i>
       </div>
-      <div>
-        <div class="kpi-label">Total Outlet</div>
-        <div class="kpi-value" id="kpi-total-outlet">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Total Outlet</div>
+        <div class="kpi-card__value" id="kpi-total-outlet">0</div>
       </div>
-      <div class="kpi-sub">Outlet Terdaftar</div>
+      <div class="kpi-card__meta">Outlet Terdaftar</div>
     </div>
     
     <!-- KPI 3: Stok Gudang - Purple -->
-    <div class="kpi-card" style="--card-accent: var(--purple);">
-      <div class="kpi-card__icon kpi-card__icon--purple">
+    <div class="kpi-card kpi-card--purple">
+      <div class="kpi-card__icon">
         <i data-lucide="warehouse"></i>
       </div>
-      <div>
-        <div class="kpi-label">Stok Gudang</div>
-        <div class="kpi-value" id="kpi-stok-gudang">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Stok Gudang</div>
+        <div class="kpi-card__value" id="kpi-stok-gudang">0</div>
       </div>
-      <div class="kpi-sub">Total Unit</div>
+      <div class="kpi-card__meta">Total Unit</div>
     </div>
     
     <!-- KPI 4: Stok Outlet - Orange -->
-    <div class="kpi-card" style="--card-accent: var(--orange);">
-      <div class="kpi-card__icon kpi-card__icon--orange">
+    <div class="kpi-card kpi-card--orange">
+      <div class="kpi-card__icon">
         <i data-lucide="box"></i>
       </div>
-      <div>
-        <div class="kpi-label">Stok Outlet</div>
-        <div class="kpi-value" id="kpi-stok-outlet">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Stok Outlet</div>
+        <div class="kpi-card__value" id="kpi-stok-outlet">0</div>
       </div>
-      <div class="kpi-sub">Total Unit</div>
+      <div class="kpi-card__meta">Total Unit</div>
     </div>
     
     <!-- KPI 5: Distribusi - Cyan -->
-    <div class="kpi-card" style="--card-accent: var(--cyan);">
-      <div class="kpi-card__icon kpi-card__icon--cyan">
+    <div class="kpi-card kpi-card--cyan">
+      <div class="kpi-card__icon">
         <i data-lucide="truck"></i>
       </div>
-      <div>
-        <div class="kpi-label">Distribusi Hari Ini</div>
-        <div class="kpi-value" id="kpi-distribusi">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Distribusi Hari Ini</div>
+        <div class="kpi-card__value" id="kpi-distribusi">0</div>
       </div>
-      <div class="kpi-sub">Unit Dikirim</div>
+      <div class="kpi-card__meta">Unit Dikirim</div>
     </div>
     
     <!-- KPI 6: Penjualan - Pink -->
-    <div class="kpi-card" style="--card-accent: var(--pink);">
-      <div class="kpi-card__icon kpi-card__icon--pink">
+    <div class="kpi-card kpi-card--pink">
+      <div class="kpi-card__icon">
         <i data-lucide="shopping-cart"></i>
       </div>
-      <div>
-        <div class="kpi-label">Penjualan Hari Ini</div>
-        <div class="kpi-value" id="kpi-penjualan">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Penjualan Hari Ini</div>
+        <div class="kpi-card__value" id="kpi-penjualan">0</div>
       </div>
-      <div class="kpi-sub">Unit Terjual</div>
+      <div class="kpi-card__meta">Unit Terjual</div>
     </div>
     
     <!-- KPI 7: SO Pending - Blue -->
-    <div class="kpi-card" style="--card-accent: var(--blue);">
-      <div class="kpi-card__icon kpi-card__icon--blue">
+    <div class="kpi-card kpi-card--blue2">
+      <div class="kpi-card__icon">
         <i data-lucide="clipboard-list"></i>
       </div>
-      <div>
-        <div class="kpi-label">SO Pending</div>
-        <div class="kpi-value" id="kpi-so-pending">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">SO Pending</div>
+        <div class="kpi-card__value" id="kpi-so-pending">0</div>
       </div>
-      <div class="kpi-sub">Perintah</div>
+      <div class="kpi-card__meta">Perintah</div>
     </div>
     
     <!-- KPI 8: Stok Kritis - Red -->
-    <div class="kpi-card" style="--card-accent: var(--red);">
-      <div class="kpi-card__icon kpi-card__icon--red">
+    <div class="kpi-card kpi-card--red">
+      <div class="kpi-card__icon">
         <i data-lucide="alert-triangle"></i>
       </div>
-      <div>
-        <div class="kpi-label">Stok Kritis</div>
-        <div class="kpi-value" id="kpi-stok-kritis">0</div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Stok Kritis</div>
+        <div class="kpi-card__value" id="kpi-stok-kritis">0</div>
       </div>
-      <div class="kpi-sub">SKU - Perlu perhatian</div>
+      <div class="kpi-card__meta">SKU - Perlu perhatian</div>
     </div>
     
   </div>
   
-  <!-- Dashboard Row 2: Chart + Stok Kritis -->
-  <div class="dashboard-row">
+  <!-- Content Grid -->
+  <div class="content-grid">
     
-    <!-- Left: Distribusi Chart -->
-    <div class="chart-card">
-      <div class="chart-card__header">
-        <h3 class="chart-card__title">Distribusi 7 Hari Terakhir</h3>
+    <!-- Chart Card -->
+    <div class="card card--chart">
+      <div class="card__header">
+        <h3 class="card__title">Distribusi 7 Hari Terakhir</h3>
       </div>
-      <div class="chart-container">
-        <canvas id="distributionChart"></canvas>
-        <div class="chart-empty" id="chartEmpty">
-          <i data-lucide="bar-chart-2"></i>
-          <span>Belum ada data distribusi</span>
+      <div class="card__body">
+        <div class="chart-area">
+          <canvas id="distributionChart"></canvas>
+          <div class="empty-state" id="chartEmpty">
+            <i data-lucide="bar-chart-2"></i>
+            <div class="empty-state__content">
+              <div class="empty-state__title">Tidak ada data distribusi</div>
+              <div class="empty-state__desc">Data distribusi akan muncul setelah transaksi pertama</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     
-    <!-- Right: Stok Kritis Table -->
-    <div class="stok-kritis-card">
-      <h3 class="stok-kritis-card__title">
-        <i data-lucide="alert-triangle"></i>
-        Stok Kritis
-      </h3>
-      <div class="stok-kritis-list" id="stokKritisList">
-        <div class="stok-kritis-empty">Tidak ada stok kritis</div>
+    <!-- Stok Kritis Card -->
+    <div class="card card--stok">
+      <div class="card__header">
+        <h3 class="card__title">
+          <i data-lucide="alert-triangle"></i>
+          Stok Kritis
+        </h3>
       </div>
-    </div>
-    
-  </div>
-  
-  <!-- Dashboard Row 3: Activity Lists -->
-  <div class="dashboard-row">
-    
-    <!-- Left: Distribusi Terbaru -->
-    <div class="bottom-card">
-      <h3 class="bottom-card__title">
-        <i data-lucide="send"></i>
-        Distribusi Terbaru
-      </h3>
-      <div class="activity-list" id="recentDistribution">
-        <div class="activity-empty">
-          <i data-lucide="inbox"></i>
-          <span>Belum ada data distribusi</span>
-          <small>Data distribusi akan muncul di sini</small>
+      <div class="card__body">
+        <div class="stok-list" id="stokKritisList">
+          <div class="empty-state">
+            <i data-lucide="check-circle"></i>
+            <div class="empty-state__content">
+              <div class="empty-state__title">Tidak ada stok kritis</div>
+              <div class="empty-state__desc">Semua produk dalam kondisi aman</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     
-    <!-- Right: Aktivitas Terbaru -->
-    <div class="bottom-card">
-      <h3 class="bottom-card__title">
-        <i data-lucide="activity"></i>
-        Aktivitas Terbaru
-      </h3>
-      <div class="activity-list" id="recentActivity">
-        <div class="activity-empty">
-          <i data-lucide="clock"></i>
-          <span>Belum ada aktivitas</span>
-          <small>Aktivitas terbaru akan muncul di sini</small>
+    <!-- Distribusi Terbaru -->
+    <div class="card card--activity">
+      <div class="card__header">
+        <h3 class="card__title">
+          <i data-lucide="send"></i>
+          Distribusi Terbaru
+        </h3>
+      </div>
+      <div class="card__body">
+        <div class="activity-list" id="recentDistribution">
+          <div class="empty-state">
+            <i data-lucide="inbox"></i>
+            <div class="empty-state__content">
+              <div class="empty-state__title">Belum ada distribusi</div>
+              <div class="empty-state__desc">Data distribusi akan muncul di sini</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Aktivitas Terbaru -->
+    <div class="card card--activity">
+      <div class="card__header">
+        <h3 class="card__title">
+          <i data-lucide="activity"></i>
+          Aktivitas Terbaru
+        </h3>
+      </div>
+      <div class="card__body">
+        <div class="activity-list" id="recentActivity">
+          <div class="empty-state">
+            <i data-lucide="clock"></i>
+            <div class="empty-state__content">
+              <div class="empty-state__title">Belum ada aktivitas</div>
+              <div class="empty-state__desc">Aktivitas terbaru akan muncul di sini</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -192,7 +214,7 @@
   }
   updateDateDisplay();
   
-  // Dashboard Data Loading - Using /api/v3-dashboard endpoint
+  // Dashboard Data Loading
   async function loadDashboardData() {
     try {
       await Promise.all([
@@ -206,7 +228,6 @@
       console.error('Dashboard load error:', error);
     }
     
-    // Hide app loader
     const loader = document.getElementById('appLoader');
     if (loader) {
       loader.classList.add('hidden');
@@ -214,34 +235,12 @@
     }
   }
   
-  // KPI Data - REAL DATA from v3-dashboard
+  // KPI Data
   async function loadKPIData() {
     try {
       const response = await fetch('/api/v3-dashboard');
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
-      
-      console.log('KPI RESPONSE:', JSON.stringify(data, null, 2));
-      
-      // KPI Mapping (REAL):
-      // total_produk = produk.total
-      // total_outlet = outlet.total
-      // stok_gudang = stok.gudang.akhir (STOK_AWAL + PEMBELIAN - PENJUALAN + PENYESUAIAN)
-      // stok_outlet = outlet.aktif
-      // distribusi = distribusi.hari_ini.qty (warehouse transfers to outlets)
-      // penjualan = today.penjualan
-      // so_pending = opname.berjalan
-      // stok_kritis = stok.kritis
-      console.log('KPI MAPPING:', {
-        'total_produk': data.produk?.total,
-        'total_outlet': data.outlet?.total,
-        'stok_gudang': data.stok?.gudang?.akhir,
-        'stok_outlet': data.outlet?.aktif,
-        'distribusi': data.distribusi?.hari_ini?.qty,
-        'penjualan': data.today?.penjualan,
-        'so_pending': data.opname?.berjalan,
-        'stok_kritis': data.stok?.kritis
-      });
       
       document.getElementById('kpi-total-produk').textContent = formatNumber(data.produk?.total || 0);
       document.getElementById('kpi-total-outlet').textContent = formatNumber(data.outlet?.total || 0);
@@ -251,181 +250,135 @@
       document.getElementById('kpi-penjualan').textContent = formatNumber(data.today?.penjualan || 0);
       document.getElementById('kpi-so-pending').textContent = formatNumber(data.opname?.berjalan || 0);
       document.getElementById('kpi-stok-kritis').textContent = formatNumber(data.stok?.kritis || 0);
-      
     } catch (error) {
-      console.error('KPI Error:', error);
-      // Show 0 on error
-      document.getElementById('kpi-total-produk').textContent = '0';
-      document.getElementById('kpi-total-outlet').textContent = '0';
-      document.getElementById('kpi-stok-gudang').textContent = '0';
-      document.getElementById('kpi-stok-outlet').textContent = '0';
-      document.getElementById('kpi-distribusi').textContent = '0';
-      document.getElementById('kpi-penjualan').textContent = '0';
-      document.getElementById('kpi-so-pending').textContent = '0';
-      document.getElementById('kpi-stok-kritis').textContent = '0';
+      console.error('KPI load error:', error);
     }
   }
   
   // Distribution Chart
   async function loadDistributionChart() {
-    const chartEmpty = document.getElementById('chartEmpty');
-    if (!chartEmpty) return;
-    
     try {
-      const response = await fetch('/api/v1/dashboard/distribution-chart');
+      const response = await fetch('/api/v3-chart');
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (!data.labels || !data.labels.length) {
-        chartEmpty.style.display = 'flex';
-        return;
+      if (data.distribusi && data.distribusi.labels && data.distribusi.labels.length > 0) {
+        document.getElementById('chartEmpty').style.display = 'none';
+        const ctx = document.getElementById('distributionChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.distribusi.labels,
+            datasets: [{
+              label: 'Distribusi',
+              data: data.distribusi.values,
+              backgroundColor: 'rgba(255, 77, 58, 0.8)',
+              borderRadius: 8,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } },
+              x: { grid: { display: false }, ticks: { color: '#94A3B8' } }
+            }
+          }
+        });
+      } else {
+        document.getElementById('chartEmpty').style.display = 'flex';
       }
-      
-      chartEmpty.style.display = 'none';
-      
-      // Render chart with Chart.js if available
-      if (typeof Chart !== 'undefined') {
-        renderChart(data);
-      }
-      
     } catch (error) {
-      console.error('Chart Error:', error);
-      chartEmpty.style.display = 'flex';
+      console.error('Chart load error:', error);
+      document.getElementById('chartEmpty').style.display = 'flex';
     }
   }
   
   // Recent Distribution
   async function loadRecentDistribution() {
-    const container = document.getElementById('recentDistribution');
-    if (!container) return;
-    
     try {
-      const response = await fetch('/api/v1/dashboard/recent-distribution');
+      const response = await fetch('/api/v3-dashboard');
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (!data.length) {
-        container.innerHTML = '<div class="activity-empty">Belum ada distribusi</div>';
-        return;
+      const container = document.getElementById('recentDistribution');
+      if (data.distribusi?.recent && data.distribusi.recent.length > 0) {
+        container.innerHTML = data.distribusi.recent.map(item => `
+          <div class="activity-item">
+            <div class="activity-item__icon activity-item__icon--primary">
+              <i data-lucide="truck"></i>
+            </div>
+            <div class="activity-item__content">
+              <div class="activity-item__text">${item.outlet || 'Outlet'}</div>
+              <div class="activity-item__meta">${item.qty || 0} unit • ${item.waktu || 'Baru'}</div>
+            </div>
+          </div>
+        `).join('');
+        lucide.createIcons();
       }
-      
-      container.innerHTML = data.slice(0, 5).map(item => `
-        <div class="activity-item">
-          <div class="activity-item__icon activity-item__icon--primary">
-            <i data-lucide="send"></i>
-          </div>
-          <div class="activity-item__content">
-            <div class="activity-item__text">${item.outlet || 'Distribusi Outlet'}</div>
-            <div class="activity-item__meta">${formatTime(item.waktu)}</div>
-          </div>
-        </div>
-      `).join('');
-      
-      if (window.lucide) lucide.createIcons({ nodes: [container] });
-      
     } catch (error) {
-      console.error('Distribution Error:', error);
-      container.innerHTML = '<div class="activity-empty">Gagal memuat data</div>';
+      console.error('Distribution load error:', error);
     }
   }
   
   // Stok Kritis
   async function loadStokKritis() {
-    const container = document.getElementById('stokKritisList');
-    if (!container) return;
-    
     try {
-      const response = await fetch('/api/v1/dashboard/stok-kritis');
+      const response = await fetch('/api/v3-persediaan');
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (!data.length) {
-        container.innerHTML = '<div class="stok-kritis-empty">Tidak ada stok kritis</div>';
-        return;
-      }
-      
-      container.innerHTML = data.slice(0, 5).map(item => `
-        <div class="stok-kritis-item">
-          <div class="stok-kritis-item__info">
-            <div class="stok-kritis-item__sku">${item.sku}</div>
-            <div class="stok-kritis-item__nama">${item.nama_produk}</div>
-            <div class="stok-kritis-item__stok">
-              Stok: ${item.stok} | Min: ${item.stok_minimum}
+      const container = document.getElementById('stokKritisList');
+      if (data.kritis && data.kritis.length > 0) {
+        container.innerHTML = data.kritis.slice(0, 5).map(item => `
+          <div class="stok-item">
+            <div class="stok-item__info">
+              <div class="stok-item__sku">${item.sku || '-'}</div>
+              <div class="stok-item__nama">${item.nama || '-'}</div>
             </div>
+            <div class="stok-item__qty">${item.stok || 0}</div>
           </div>
-          <span class="stok-kritis-item__status stok-kritis-item__status--critical">Kritis</span>
-        </div>
-      `).join('');
-      
+        `).join('');
+      }
     } catch (error) {
-      console.error('Stok Kritis Error:', error);
-      container.innerHTML = '<div class="stok-kritis-empty">Gagal memuat data</div>';
+      console.error('Stok kritis load error:', error);
     }
   }
   
   // Recent Activity
   async function loadRecentActivity() {
-    const container = document.getElementById('recentActivity');
-    if (!container) return;
-    
     try {
-      const response = await fetch('/api/v1/dashboard/recent-activity');
+      const response = await fetch('/api/v3-dashboard');
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (!data.length) {
-        container.innerHTML = '<div class="activity-empty">Belum ada aktivitas</div>';
-        return;
-      }
-      
-      container.innerHTML = data.slice(0, 5).map(item => {
-        const iconClass = item.tipe === 'success' ? 'activity-item__icon--success' : 
-                         item.tipe === 'warning' ? 'activity-item__icon--warning' : 
-                         item.tipe === 'danger' ? 'activity-item__icon--danger' : 
-                         'activity-item__icon--primary';
-        return `
+      const container = document.getElementById('recentActivity');
+      if (data.aktivitas && data.aktivitas.length > 0) {
+        container.innerHTML = data.aktivitas.map(item => `
           <div class="activity-item">
-            <div class="activity-item__icon ${iconClass}">
+            <div class="activity-item__icon activity-item__icon--${item.type || 'primary'}">
               <i data-lucide="${item.icon || 'activity'}"></i>
             </div>
             <div class="activity-item__content">
-              <div class="activity-item__text">${item.deskripsi}</div>
-              <div class="activity-item__meta">${formatTime(item.waktu)}</div>
+              <div class="activity-item__text">${item.text || ''}</div>
+              <div class="activity-item__meta">${item.waktu || ''}</div>
             </div>
           </div>
-        `;
-      }).join('');
-      
-      if (window.lucide) lucide.createIcons({ nodes: [container] });
-      
+        `).join('');
+        lucide.createIcons();
+      }
     } catch (error) {
-      console.error('Activity Error:', error);
-      container.innerHTML = '<div class="activity-empty">Gagal memuat data</div>';
+      console.error('Activity load error:', error);
     }
   }
   
-  // Helper: Format Number
+  // Format number helper
   function formatNumber(num) {
     if (num === null || num === undefined) return '0';
-    return num.toLocaleString('id-ID');
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
   
-  // Helper: Format Time
-  function formatTime(timeStr) {
-    if (!timeStr) return '';
-    const date = new Date(timeStr);
-    return date.toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-  
-  // Initialize
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadDashboardData);
-  } else {
-    loadDashboardData();
-  }
+  // Load on page ready
+  document.addEventListener('DOMContentLoaded', loadDashboardData);
 </script>
