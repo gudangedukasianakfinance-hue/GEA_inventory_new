@@ -1,93 +1,88 @@
 <!-- Dashboard Page -->
 <section class="dashboard-v4">
-  <!-- KPI Cards -->
-  <div class="kpi-grid" id="kpiGrid">
+  
+  <!-- STEP 3: KPI SECTION - 8 Cards -->
+  <div class="kpi-grid">
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(255, 77, 58, 0.12); color: #FF4D3A;">
-        <i data-lucide="box"></i>
-      </div>
       <div class="kpi-label">Total Produk</div>
-      <div class="kpi-value" id="kpiProduk">-</div>
+      <div class="kpi-value" id="kpi-total-produk">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(34, 197, 94, 0.12); color: #22C55E;">
-        <i data-lucide="store"></i>
-      </div>
       <div class="kpi-label">Total Outlet</div>
-      <div class="kpi-value" id="kpiOutlet">-</div>
+      <div class="kpi-value" id="kpi-total-outlet">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
-        <i data-lucide="warehouse"></i>
-      </div>
       <div class="kpi-label">Stok Gudang</div>
-      <div class="kpi-value" id="kpiStokGudang">-</div>
+      <div class="kpi-value" id="kpi-stok-gudang">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
-        <i data-lucide="truck"></i>
-      </div>
       <div class="kpi-label">Stok Outlet</div>
-      <div class="kpi-value" id="kpiStokOutlet">-</div>
+      <div class="kpi-value" id="kpi-stok-outlet">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(168, 85, 247, 0.12); color: #A855F7;">
-        <i data-lucide="send"></i>
-      </div>
       <div class="kpi-label">Distribusi Hari Ini</div>
-      <div class="kpi-value" id="kpiDistribusi">-</div>
+      <div class="kpi-value" id="kpi-distribusi">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.12); color: #EC4899;">
-        <i data-lucide="shopping-cart"></i>
-      </div>
       <div class="kpi-label">Penjualan Hari Ini</div>
-      <div class="kpi-value" id="kpiPenjualan">-</div>
+      <div class="kpi-value" id="kpi-penjualan">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.12); color: #F59E0B;">
-        <i data-lucide="clipboard-list"></i>
-      </div>
       <div class="kpi-label">SO Pending</div>
-      <div class="kpi-value" id="kpiSOPending">-</div>
+      <div class="kpi-value" id="kpi-so-pending">0</div>
     </div>
+    
     <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.12); color: #EF4444;">
-        <i data-lucide="alert-triangle"></i>
-      </div>
       <div class="kpi-label">Stok Kritis</div>
-      <div class="kpi-value" id="kpiStokKritis">-</div>
+      <div class="kpi-value" id="kpi-stok-kritis">0</div>
     </div>
+    
   </div>
-
-  <!-- Main Grid: Chart Area + Right Panel -->
-  <div class="dashboard-main-grid">
-    <div class="dashboard-chart-area">
-      <!-- Distribution Chart -->
+  
+  <!-- STEP 4-6: MAIN CONTENT ROW -->
+  <div class="dashboard-row">
+    
+    <!-- LEFT COLUMN: Grafik & Aktivitas -->
+    <div class="dashboard-col-left">
+      
+      <!-- STEP 4: GRAFIK DISTRIBUSI -->
       <div class="chart-card">
         <div class="chart-card__header">
           <h3 class="chart-card__title">Distribusi 7 Hari Terakhir</h3>
-          <span class="chart-card__timestamp" id="chartTimestamp"></span>
         </div>
-        <div class="chart-container">
+        <div class="chart-container" id="chartContainer">
           <canvas id="distributionChart"></canvas>
+          <div class="chart-empty" id="chartEmpty">
+            <i data-lucide="bar-chart-2"></i>
+            <span>Belum ada data distribusi</span>
+          </div>
         </div>
       </div>
-
-      <!-- Recent Distribution -->
+      
+      <!-- STEP 6: AKTIVITAS DISTRIBUSI -->
       <div class="bottom-card">
         <h3 class="bottom-card__title">
           <i data-lucide="send"></i>
           Distribusi Terbaru
         </h3>
         <div class="activity-list" id="recentDistribution">
-          <div class="activity-empty">Belum ada distribusi hari ini</div>
+          <div class="activity-empty">Belum ada distribusi</div>
         </div>
       </div>
+      
     </div>
-
-    <!-- Right Panel: Critical Stock -->
-    <div class="right-panel">
+    
+    <!-- RIGHT COLUMN: Stok Kritis & Aktivitas -->
+    <div class="dashboard-col-right">
+      
+      <!-- STEP 5: STOK KRITIS -->
       <div class="stok-kritis-card">
         <h3 class="stok-kritis-card__title">
           <i data-lucide="alert-triangle"></i>
@@ -97,29 +92,377 @@
           <div class="stok-kritis-empty">Tidak ada stok kritis</div>
         </div>
       </div>
-
-      <!-- Recent Activity -->
+      
+      <!-- STEP 6: AKTIVITAS TERBARU -->
       <div class="bottom-card">
         <h3 class="bottom-card__title">
           <i data-lucide="activity"></i>
           Aktivitas Terbaru
         </h3>
         <div class="activity-list" id="recentActivity">
-          <div class="activity-empty">Tidak ada aktivitas terbaru</div>
+          <div class="activity-empty">Belum ada aktivitas</div>
         </div>
       </div>
+      
     </div>
+    
   </div>
+  
 </section>
 
+<style>
+  /* Dashboard Layout */
+  .dashboard-v4 {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  /* KPI Grid - STEP 3 */
+  .kpi-grid {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  @media (min-width: 1200px) {
+    .kpi-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 767px) {
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+  }
+  
+  .kpi-card {
+    background: #101827;
+    border: 1px solid rgba(255, 255, 255, .06);
+    border-radius: 20px;
+    padding: 20px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-top: 8px;
+  }
+  
+  .kpi-label {
+    color: #94A3B8;
+    font-size: 13px;
+  }
+  
+  /* Dashboard Row - STEP 4 */
+  .dashboard-row {
+    display: grid;
+    gap: 16px;
+  }
+  
+  @media (min-width: 1024px) {
+    .dashboard-row {
+      grid-template-columns: 2fr 1fr;
+    }
+  }
+  
+  @media (max-width: 1023px) {
+    .dashboard-row {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Dashboard Columns */
+  .dashboard-col-left,
+  .dashboard-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Chart Card */
+  .chart-card {
+    background: #101827;
+    border: 1px solid rgba(255, 255, 255, .06);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  
+  .chart-card__header {
+    margin-bottom: 16px;
+  }
+  
+  .chart-card__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 280px;
+  }
+  
+  .chart-container canvas {
+    max-width: 100%;
+  }
+  
+  .chart-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #94A3B8;
+  }
+  
+  .chart-empty i {
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+  }
+  
+  /* Bottom Card */
+  .bottom-card {
+    background: #101827;
+    border: 1px solid rgba(255, 255, 255, .06);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  
+  .bottom-card__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 16px;
+  }
+  
+  .bottom-card__title i {
+    width: 20px;
+    height: 20px;
+    color: #FF4D3A;
+  }
+  
+  /* Stok Kritis Card */
+  .stok-kritis-card {
+    background: #101827;
+    border: 1px solid rgba(255, 255, 255, .06);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  
+  .stok-kritis-card__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 16px;
+  }
+  
+  .stok-kritis-card__title i {
+    width: 20px;
+    height: 20px;
+    color: #EF4444;
+  }
+  
+  .stok-kritis-list {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .stok-kritis-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+  }
+  
+  .stok-kritis-item:last-child {
+    border-bottom: none;
+  }
+  
+  .stok-kritis-item__info {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .stok-kritis-item__sku {
+    font-size: 11px;
+    color: #94A3B8;
+    font-family: monospace;
+  }
+  
+  .stok-kritis-item__nama {
+    font-weight: 500;
+    color: #FFFFFF;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .stok-kritis-item__stok {
+    font-size: 12px;
+    color: #94A3B8;
+    margin-top: 4px;
+  }
+  
+  .stok-kritis-item__status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  
+  .stok-kritis-item__status--critical {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+  }
+  
+  .stok-kritis-empty {
+    padding: 24px;
+    text-align: center;
+    color: #94A3B8;
+    font-size: 13px;
+  }
+  
+  /* Activity List */
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+  }
+  
+  .activity-item:last-child {
+    border-bottom: none;
+  }
+  
+  .activity-item__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .activity-item__icon i {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .activity-item__icon--primary {
+    background: rgba(255, 77, 58, 0.12);
+    color: #FF4D3A;
+  }
+  
+  .activity-item__icon--success {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22C55E;
+  }
+  
+  .activity-item__icon--warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #F59E0B;
+  }
+  
+  .activity-item__icon--danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #EF4444;
+  }
+  
+  .activity-item__content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .activity-item__text {
+    font-size: 14px;
+    color: #FFFFFF;
+    line-height: 1.4;
+  }
+  
+  .activity-item__meta {
+    font-size: 12px;
+    color: #94A3B8;
+    margin-top: 4px;
+  }
+  
+  .activity-empty {
+    padding: 24px;
+    text-align: center;
+    color: #94A3B8;
+    font-size: 13px;
+  }
+  
+  /* Mobile Fix - STEP 7 */
+  @media (max-width: 767px) {
+    .kpi-card {
+      padding: 16px;
+      min-height: 100px;
+    }
+    
+    .kpi-value {
+      font-size: 24px;
+    }
+    
+    .kpi-label {
+      font-size: 12px;
+    }
+    
+    .chart-card,
+    .bottom-card,
+    .stok-kritis-card {
+      padding: 16px;
+      border-radius: 16px;
+    }
+    
+    .chart-container {
+      height: 200px;
+    }
+  }
+</style>
+
 <script>
-  // Dashboard initialization
-  async function initDashboard() {
-    await loadKPIData();
-    await loadDistributionChart();
-    await loadRecentDistribution();
-    await loadStokKritis();
-    await loadRecentActivity();
+  // Dashboard Data Loading - STEP 8
+  async function loadDashboardData() {
+    await Promise.all([
+      loadKPIData(),
+      loadDistributionChart(),
+      loadRecentDistribution(),
+      loadStokKritis(),
+      loadRecentActivity()
+    ]);
     
     // Hide app loader
     const loader = document.getElementById('appLoader');
@@ -128,68 +471,78 @@
       setTimeout(() => loader.remove(), 500);
     }
   }
-
-  // Load KPI Data
+  
+  // KPI Data
   async function loadKPIData() {
     try {
       const response = await fetch('/api/v1/dashboard/kpi');
-      if (!response.ok) throw new Error('Failed to load KPI');
+      if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      document.getElementById('kpiProduk').textContent = data.total_produk || 0;
-      document.getElementById('kpiOutlet').textContent = data.total_outlet || 0;
-      document.getElementById('kpiStokGudang').textContent = data.stok_gudang || 0;
-      document.getElementById('kpiStokOutlet').textContent = data.stok_outlet || 0;
-      document.getElementById('kpiDistribusi').textContent = data.distribusi_hari_ini || 0;
-      document.getElementById('kpiPenjualan').textContent = data.penjualan_hari_ini || 0;
-      document.getElementById('kpiSOPending').textContent = data.so_pending || 0;
-      document.getElementById('kpiStokKritis').textContent = data.stok_kritis || 0;
+      // Update KPI values
+      document.getElementById('kpi-total-produk').textContent = formatNumber(data.total_produk);
+      document.getElementById('kpi-total-outlet').textContent = formatNumber(data.total_outlet);
+      document.getElementById('kpi-stok-gudang').textContent = formatNumber(data.stok_gudang);
+      document.getElementById('kpi-stok-outlet').textContent = formatNumber(data.stok_outlet);
+      document.getElementById('kpi-distribusi').textContent = formatNumber(data.distribusi_hari_ini);
+      document.getElementById('kpi-penjualan').textContent = formatNumber(data.penjualan_hari_ini);
+      document.getElementById('kpi-so-pending').textContent = formatNumber(data.so_pending);
+      document.getElementById('kpi-stok-kritis').textContent = formatNumber(data.stok_kritis);
+      
     } catch (error) {
-      console.error('Error loading KPI:', error);
-      // Show placeholder data for demo
-      document.getElementById('kpiProduk').textContent = '0';
-      document.getElementById('kpiOutlet').textContent = '0';
-      document.getElementById('kpiStokGudang').textContent = '0';
-      document.getElementById('kpiStokOutlet').textContent = '0';
-      document.getElementById('kpiDistribusi').textContent = '0';
-      document.getElementById('kpiPenjualan').textContent = '0';
-      document.getElementById('kpiSOPending').textContent = '0';
-      document.getElementById('kpiStokKritis').textContent = '0';
+      console.error('KPI Error:', error);
+      // Show 0 on error
+      document.getElementById('kpi-total-produk').textContent = '0';
+      document.getElementById('kpi-total-outlet').textContent = '0';
+      document.getElementById('kpi-stok-gudang').textContent = '0';
+      document.getElementById('kpi-stok-outlet').textContent = '0';
+      document.getElementById('kpi-distribusi').textContent = '0';
+      document.getElementById('kpi-penjualan').textContent = '0';
+      document.getElementById('kpi-so-pending').textContent = '0';
+      document.getElementById('kpi-stok-kritis').textContent = '0';
     }
   }
-
-  // Load Distribution Chart
+  
+  // Distribution Chart
   async function loadDistributionChart() {
-    const ctx = document.getElementById('distributionChart');
-    if (!ctx) return;
+    const chartEmpty = document.getElementById('chartEmpty');
+    if (!chartEmpty) return;
     
     try {
       const response = await fetch('/api/v1/dashboard/distribution-chart');
-      if (!response.ok) throw new Error('Failed to load chart');
+      if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      // Update timestamp
-      document.getElementById('chartTimestamp').textContent = new Date().toLocaleString('id-ID');
+      if (!data.labels || !data.labels.length) {
+        chartEmpty.style.display = 'flex';
+        return;
+      }
       
-      // Chart rendering would go here with Chart.js
-      // For now, just show empty state
+      chartEmpty.style.display = 'none';
+      
+      // Render chart with Chart.js if available
+      if (typeof Chart !== 'undefined') {
+        renderChart(data);
+      }
+      
     } catch (error) {
-      console.error('Error loading chart:', error);
+      console.error('Chart Error:', error);
+      chartEmpty.style.display = 'flex';
     }
   }
-
-  // Load Recent Distribution
+  
+  // Recent Distribution
   async function loadRecentDistribution() {
     const container = document.getElementById('recentDistribution');
     if (!container) return;
     
     try {
       const response = await fetch('/api/v1/dashboard/recent-distribution');
-      if (!response.ok) throw new Error('Failed to load distribution');
+      if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (data.length === 0) {
-        container.innerHTML = '<div class="activity-empty">Belum ada distribusi hari ini</div>';
+      if (!data.length) {
+        container.innerHTML = '<div class="activity-empty">Belum ada distribusi</div>';
         return;
       }
       
@@ -199,29 +552,31 @@
             <i data-lucide="send"></i>
           </div>
           <div class="activity-item__content">
-            <div class="activity-item__text">${item.keterangan || 'Distribusi'}</div>
-            <div class="activity-item__meta">${item.waktu || ''}</div>
+            <div class="activity-item__text">${item.outlet || 'Distribusi Outlet'}</div>
+            <div class="activity-item__meta">${formatTime(item.waktu)}</div>
           </div>
         </div>
       `).join('');
       
       if (window.lucide) lucide.createIcons({ nodes: [container] });
+      
     } catch (error) {
-      console.error('Error loading distribution:', error);
+      console.error('Distribution Error:', error);
+      container.innerHTML = '<div class="activity-empty">Gagal memuat data</div>';
     }
   }
-
-  // Load Critical Stock
+  
+  // Stok Kritis
   async function loadStokKritis() {
     const container = document.getElementById('stokKritisList');
     if (!container) return;
     
     try {
       const response = await fetch('/api/v1/dashboard/stok-kritis');
-      if (!response.ok) throw new Error('Failed to load stok kritis');
+      if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (data.length === 0) {
+      if (!data.length) {
         container.innerHTML = '<div class="stok-kritis-empty">Tidak ada stok kritis</div>';
         return;
       }
@@ -229,57 +584,85 @@
       container.innerHTML = data.slice(0, 5).map(item => `
         <div class="stok-kritis-item">
           <div class="stok-kritis-item__info">
+            <div class="stok-kritis-item__sku">${item.sku}</div>
             <div class="stok-kritis-item__nama">${item.nama_produk}</div>
             <div class="stok-kritis-item__stok">
-              <span>Stok: ${item.stok}</span>
-              <span class="stok-kritis-item__min">Min: ${item.stok_minimum}</span>
+              Stok: ${item.stok} | Min: ${item.stok_minimum}
             </div>
           </div>
           <span class="stok-kritis-item__status stok-kritis-item__status--critical">Kritis</span>
         </div>
       `).join('');
+      
     } catch (error) {
-      console.error('Error loading stok kritis:', error);
+      console.error('Stok Kritis Error:', error);
+      container.innerHTML = '<div class="stok-kritis-empty">Gagal memuat data</div>';
     }
   }
-
-  // Load Recent Activity
+  
+  // Recent Activity
   async function loadRecentActivity() {
     const container = document.getElementById('recentActivity');
     if (!container) return;
     
     try {
       const response = await fetch('/api/v1/dashboard/recent-activity');
-      if (!response.ok) throw new Error('Failed to load activity');
+      if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      if (data.length === 0) {
-        container.innerHTML = '<div class="activity-empty">Tidak ada aktivitas terbaru</div>';
+      if (!data.length) {
+        container.innerHTML = '<div class="activity-empty">Belum ada aktivitas</div>';
         return;
       }
       
-      container.innerHTML = data.slice(0, 5).map(item => `
-        <div class="activity-item">
-          <div class="activity-item__icon activity-item__icon--${item.tipe || 'primary'}">
-            <i data-lucide="${item.icon || 'activity'}"></i>
+      container.innerHTML = data.slice(0, 5).map(item => {
+        const iconClass = item.tipe === 'success' ? 'activity-item__icon--success' : 
+                         item.tipe === 'warning' ? 'activity-item__icon--warning' : 
+                         item.tipe === 'danger' ? 'activity-item__icon--danger' : 
+                         'activity-item__icon--primary';
+        return `
+          <div class="activity-item">
+            <div class="activity-item__icon ${iconClass}">
+              <i data-lucide="${item.icon || 'activity'}"></i>
+            </div>
+            <div class="activity-item__content">
+              <div class="activity-item__text">${item.deskripsi}</div>
+              <div class="activity-item__meta">${formatTime(item.waktu)}</div>
+            </div>
           </div>
-          <div class="activity-item__content">
-            <div class="activity-item__text">${item.deskripsi}</div>
-            <div class="activity-item__meta">${item.waktu}</div>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
       
       if (window.lucide) lucide.createIcons({ nodes: [container] });
+      
     } catch (error) {
-      console.error('Error loading activity:', error);
+      console.error('Activity Error:', error);
+      container.innerHTML = '<div class="activity-empty">Gagal memuat data</div>';
     }
   }
-
-  // Initialize on load
+  
+  // Helper: Format Number
+  function formatNumber(num) {
+    if (num === null || num === undefined) return '0';
+    return num.toLocaleString('id-ID');
+  }
+  
+  // Helper: Format Time
+  function formatTime(timeStr) {
+    if (!timeStr) return '';
+    const date = new Date(timeStr);
+    return date.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+  
+  // Initialize
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDashboard);
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
   } else {
-    initDashboard();
+    loadDashboardData();
   }
 </script>
