@@ -1,459 +1,197 @@
-<!-- Dashboard Page -->
+<!-- Dashboard Page - PHASE 2 UI REBUILD -->
 <section class="dashboard-v4">
   
-  <!-- STEP 3: KPI SECTION - 8 Cards -->
+  <!-- Welcome Section -->
+  <div class="welcome-section">
+    <div class="welcome-text">
+      <h2>Selamat datang, Admin 👋</h2>
+      <p>Berikut ringkasan kondisi warehouse hari ini.</p>
+    </div>
+    <div class="welcome-date">
+      <div class="welcome-date__day" id="currentDate">12 Juni 2026</div>
+      <div class="welcome-date__info" id="currentDay">Kamis</div>
+    </div>
+  </div>
+  
+  <!-- KPI Grid - 8 Cards -->
   <div class="kpi-grid">
     
-    <div class="kpi-card">
-      <div class="kpi-label">Total Produk</div>
-      <div class="kpi-value" id="kpi-total-produk">0</div>
+    <!-- KPI 1: Total Produk - Blue -->
+    <div class="kpi-card" style="--card-accent: var(--blue);">
+      <div class="kpi-card__icon kpi-card__icon--blue">
+        <i data-lucide="package"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Total Produk</div>
+        <div class="kpi-value" id="kpi-total-produk">0</div>
+      </div>
+      <div class="kpi-sub">SKU Aktif</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">Total Outlet</div>
-      <div class="kpi-value" id="kpi-total-outlet">0</div>
+    <!-- KPI 2: Total Outlet - Green -->
+    <div class="kpi-card" style="--card-accent: var(--green);">
+      <div class="kpi-card__icon kpi-card__icon--green">
+        <i data-lucide="store"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Total Outlet</div>
+        <div class="kpi-value" id="kpi-total-outlet">0</div>
+      </div>
+      <div class="kpi-sub">Outlet Terdaftar</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">Stok Gudang</div>
-      <div class="kpi-value" id="kpi-stok-gudang">0</div>
+    <!-- KPI 3: Stok Gudang - Purple -->
+    <div class="kpi-card" style="--card-accent: var(--purple);">
+      <div class="kpi-card__icon kpi-card__icon--purple">
+        <i data-lucide="warehouse"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Stok Gudang</div>
+        <div class="kpi-value" id="kpi-stok-gudang">0</div>
+      </div>
+      <div class="kpi-sub">Total Unit</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">Stok Outlet</div>
-      <div class="kpi-value" id="kpi-stok-outlet">0</div>
+    <!-- KPI 4: Stok Outlet - Orange -->
+    <div class="kpi-card" style="--card-accent: var(--orange);">
+      <div class="kpi-card__icon kpi-card__icon--orange">
+        <i data-lucide="box"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Stok Outlet</div>
+        <div class="kpi-value" id="kpi-stok-outlet">0</div>
+      </div>
+      <div class="kpi-sub">Total Unit</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">Distribusi Hari Ini</div>
-      <div class="kpi-value" id="kpi-distribusi">0</div>
+    <!-- KPI 5: Distribusi - Cyan -->
+    <div class="kpi-card" style="--card-accent: var(--cyan);">
+      <div class="kpi-card__icon kpi-card__icon--cyan">
+        <i data-lucide="truck"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Distribusi Hari Ini</div>
+        <div class="kpi-value" id="kpi-distribusi">0</div>
+      </div>
+      <div class="kpi-sub">Unit Dikirim</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">Penjualan Hari Ini</div>
-      <div class="kpi-value" id="kpi-penjualan">0</div>
+    <!-- KPI 6: Penjualan - Pink -->
+    <div class="kpi-card" style="--card-accent: var(--pink);">
+      <div class="kpi-card__icon kpi-card__icon--pink">
+        <i data-lucide="shopping-cart"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Penjualan Hari Ini</div>
+        <div class="kpi-value" id="kpi-penjualan">0</div>
+      </div>
+      <div class="kpi-sub">Unit Terjual</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">SO Pending</div>
-      <div class="kpi-value" id="kpi-so-pending">0</div>
+    <!-- KPI 7: SO Pending - Blue -->
+    <div class="kpi-card" style="--card-accent: var(--blue);">
+      <div class="kpi-card__icon kpi-card__icon--blue">
+        <i data-lucide="clipboard-list"></i>
+      </div>
+      <div>
+        <div class="kpi-label">SO Pending</div>
+        <div class="kpi-value" id="kpi-so-pending">0</div>
+      </div>
+      <div class="kpi-sub">Perintah</div>
     </div>
     
-    <div class="kpi-card">
-      <div class="kpi-label">Stok Kritis</div>
-      <div class="kpi-value" id="kpi-stok-kritis">0</div>
+    <!-- KPI 8: Stok Kritis - Red -->
+    <div class="kpi-card" style="--card-accent: var(--red);">
+      <div class="kpi-card__icon kpi-card__icon--red">
+        <i data-lucide="alert-triangle"></i>
+      </div>
+      <div>
+        <div class="kpi-label">Stok Kritis</div>
+        <div class="kpi-value" id="kpi-stok-kritis">0</div>
+      </div>
+      <div class="kpi-sub">SKU - Perlu perhatian</div>
     </div>
     
   </div>
   
-  <!-- STEP 4-6: MAIN CONTENT ROW -->
+  <!-- Dashboard Row 2: Chart + Stok Kritis -->
   <div class="dashboard-row">
     
-    <!-- LEFT COLUMN: Grafik & Aktivitas -->
-    <div class="dashboard-col-left">
-      
-      <!-- STEP 4: GRAFIK DISTRIBUSI -->
-      <div class="chart-card">
-        <div class="chart-card__header">
-          <h3 class="chart-card__title">Distribusi 7 Hari Terakhir</h3>
-        </div>
-        <div class="chart-container" id="chartContainer">
-          <canvas id="distributionChart"></canvas>
-          <div class="chart-empty" id="chartEmpty">
-            <i data-lucide="bar-chart-2"></i>
-            <span>Belum ada data distribusi</span>
-          </div>
+    <!-- Left: Distribusi Chart -->
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">Distribusi 7 Hari Terakhir</h3>
+      </div>
+      <div class="chart-container">
+        <canvas id="distributionChart"></canvas>
+        <div class="chart-empty" id="chartEmpty">
+          <i data-lucide="bar-chart-2"></i>
+          <span>Belum ada data distribusi</span>
         </div>
       </div>
-      
-      <!-- STEP 6: AKTIVITAS DISTRIBUSI -->
-      <div class="bottom-card">
-        <h3 class="bottom-card__title">
-          <i data-lucide="send"></i>
-          Distribusi Terbaru
-        </h3>
-        <div class="activity-list" id="recentDistribution">
-          <div class="activity-empty">Belum ada distribusi</div>
-        </div>
-      </div>
-      
     </div>
     
-    <!-- RIGHT COLUMN: Stok Kritis & Aktivitas -->
-    <div class="dashboard-col-right">
-      
-      <!-- STEP 5: STOK KRITIS -->
-      <div class="stok-kritis-card">
-        <h3 class="stok-kritis-card__title">
-          <i data-lucide="alert-triangle"></i>
-          Stok Kritis
-        </h3>
-        <div class="stok-kritis-list" id="stokKritisList">
-          <div class="stok-kritis-empty">Tidak ada stok kritis</div>
+    <!-- Right: Stok Kritis Table -->
+    <div class="stok-kritis-card">
+      <h3 class="stok-kritis-card__title">
+        <i data-lucide="alert-triangle"></i>
+        Stok Kritis
+      </h3>
+      <div class="stok-kritis-list" id="stokKritisList">
+        <div class="stok-kritis-empty">Tidak ada stok kritis</div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Dashboard Row 3: Activity Lists -->
+  <div class="dashboard-row">
+    
+    <!-- Left: Distribusi Terbaru -->
+    <div class="bottom-card">
+      <h3 class="bottom-card__title">
+        <i data-lucide="send"></i>
+        Distribusi Terbaru
+      </h3>
+      <div class="activity-list" id="recentDistribution">
+        <div class="activity-empty">
+          <i data-lucide="inbox"></i>
+          <span>Belum ada data distribusi</span>
+          <small>Data distribusi akan muncul di sini</small>
         </div>
       </div>
-      
-      <!-- STEP 6: AKTIVITAS TERBARU -->
-      <div class="bottom-card">
-        <h3 class="bottom-card__title">
-          <i data-lucide="activity"></i>
-          Aktivitas Terbaru
-        </h3>
-        <div class="activity-list" id="recentActivity">
-          <div class="activity-empty">Belum ada aktivitas</div>
+    </div>
+    
+    <!-- Right: Aktivitas Terbaru -->
+    <div class="bottom-card">
+      <h3 class="bottom-card__title">
+        <i data-lucide="activity"></i>
+        Aktivitas Terbaru
+      </h3>
+      <div class="activity-list" id="recentActivity">
+        <div class="activity-empty">
+          <i data-lucide="clock"></i>
+          <span>Belum ada aktivitas</span>
+          <small>Aktivitas terbaru akan muncul di sini</small>
         </div>
       </div>
-      
     </div>
     
   </div>
   
 </section>
 
-<style>
-  /* Dashboard Layout */
-  .dashboard-v4 {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-  
-  /* KPI Grid - STEP 3 */
-  .kpi-grid {
-    display: grid;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  
-  @media (min-width: 1200px) {
-    .kpi-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-  
-  @media (min-width: 768px) and (max-width: 1199px) {
-    .kpi-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @media (max-width: 767px) {
-    .kpi-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-  }
-  
-  .kpi-card {
-    background: #101827;
-    border: 1px solid rgba(255, 255, 255, .06);
-    border-radius: 20px;
-    padding: 20px;
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  
-  .kpi-value {
-    font-size: 32px;
-    font-weight: 700;
-    color: #FFFFFF;
-    margin-top: 8px;
-  }
-  
-  .kpi-label {
-    color: #94A3B8;
-    font-size: 13px;
-  }
-  
-  /* Dashboard Row - STEP 4 */
-  .dashboard-row {
-    display: grid;
-    gap: 16px;
-  }
-  
-  @media (min-width: 1024px) {
-    .dashboard-row {
-      grid-template-columns: 2fr 1fr;
-    }
-  }
-  
-  @media (max-width: 1023px) {
-    .dashboard-row {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  /* Dashboard Columns */
-  .dashboard-col-left,
-  .dashboard-col-right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  /* Chart Card */
-  .chart-card {
-    background: #101827;
-    border: 1px solid rgba(255, 255, 255, .06);
-    border-radius: 20px;
-    padding: 24px;
-  }
-  
-  .chart-card__header {
-    margin-bottom: 16px;
-  }
-  
-  .chart-card__title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #FFFFFF;
-  }
-  
-  .chart-container {
-    position: relative;
-    height: 280px;
-  }
-  
-  .chart-container canvas {
-    max-width: 100%;
-  }
-  
-  .chart-empty {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: #94A3B8;
-  }
-  
-  .chart-empty i {
-    width: 48px;
-    height: 48px;
-    opacity: 0.5;
-  }
-  
-  /* Bottom Card */
-  .bottom-card {
-    background: #101827;
-    border: 1px solid rgba(255, 255, 255, .06);
-    border-radius: 20px;
-    padding: 24px;
-  }
-  
-  .bottom-card__title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #FFFFFF;
-    margin-bottom: 16px;
-  }
-  
-  .bottom-card__title i {
-    width: 20px;
-    height: 20px;
-    color: #FF4D3A;
-  }
-  
-  /* Stok Kritis Card */
-  .stok-kritis-card {
-    background: #101827;
-    border: 1px solid rgba(255, 255, 255, .06);
-    border-radius: 20px;
-    padding: 24px;
-  }
-  
-  .stok-kritis-card__title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #FFFFFF;
-    margin-bottom: 16px;
-  }
-  
-  .stok-kritis-card__title i {
-    width: 20px;
-    height: 20px;
-    color: #EF4444;
-  }
-  
-  .stok-kritis-list {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .stok-kritis-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-  }
-  
-  .stok-kritis-item:last-child {
-    border-bottom: none;
-  }
-  
-  .stok-kritis-item__info {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .stok-kritis-item__sku {
-    font-size: 11px;
-    color: #94A3B8;
-    font-family: monospace;
-  }
-  
-  .stok-kritis-item__nama {
-    font-weight: 500;
-    color: #FFFFFF;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .stok-kritis-item__stok {
-    font-size: 12px;
-    color: #94A3B8;
-    margin-top: 4px;
-  }
-  
-  .stok-kritis-item__status {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  
-  .stok-kritis-item__status--critical {
-    background: rgba(239, 68, 68, 0.15);
-    color: #EF4444;
-  }
-  
-  .stok-kritis-empty {
-    padding: 24px;
-    text-align: center;
-    color: #94A3B8;
-    font-size: 13px;
-  }
-  
-  /* Activity List */
-  .activity-list {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .activity-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
-  }
-  
-  .activity-item:last-child {
-    border-bottom: none;
-  }
-  
-  .activity-item__icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  
-  .activity-item__icon i {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .activity-item__icon--primary {
-    background: rgba(255, 77, 58, 0.12);
-    color: #FF4D3A;
-  }
-  
-  .activity-item__icon--success {
-    background: rgba(34, 197, 94, 0.12);
-    color: #22C55E;
-  }
-  
-  .activity-item__icon--warning {
-    background: rgba(245, 158, 11, 0.12);
-    color: #F59E0B;
-  }
-  
-  .activity-item__icon--danger {
-    background: rgba(239, 68, 68, 0.12);
-    color: #EF4444;
-  }
-  
-  .activity-item__content {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .activity-item__text {
-    font-size: 14px;
-    color: #FFFFFF;
-    line-height: 1.4;
-  }
-  
-  .activity-item__meta {
-    font-size: 12px;
-    color: #94A3B8;
-    margin-top: 4px;
-  }
-  
-  .activity-empty {
-    padding: 24px;
-    text-align: center;
-    color: #94A3B8;
-    font-size: 13px;
-  }
-  
-  /* Mobile Fix - STEP 7 */
-  @media (max-width: 767px) {
-    .kpi-card {
-      padding: 16px;
-      min-height: 100px;
-    }
-    
-    .kpi-value {
-      font-size: 24px;
-    }
-    
-    .kpi-label {
-      font-size: 12px;
-    }
-    
-    .chart-card,
-    .bottom-card,
-    .stok-kritis-card {
-      padding: 16px;
-      border-radius: 16px;
-    }
-    
-    .chart-container {
-      height: 200px;
-    }
-  }
-</style>
-
 <script>
+  // Update date display
+  function updateDateDisplay() {
+    const now = new Date();
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    const dayOptions = { weekday: 'long' };
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', options);
+    document.getElementById('currentDay').textContent = now.toLocaleDateString('id-ID', dayOptions);
+  }
+  updateDateDisplay();
+  
   // Dashboard Data Loading - Using /api/v3-dashboard endpoint
   async function loadDashboardData() {
     try {
