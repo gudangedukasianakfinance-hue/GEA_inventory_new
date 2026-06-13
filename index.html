@@ -4,102 +4,139 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV EPIC Warehouse - Sistem Kontrol Inventaris</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/design-system-v4.css">
+  <meta name="description" content="Platform lengkap untuk mengelola stok gudang, stock opname, dan penjualan">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Styles -->
   <link rel="stylesheet" href="/css/landing.css">
   <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
-<body class="landing-page">
+<body class="landing">
+  
+  <!-- Background Effects -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="bg-gradient"></div>
+
   <!-- Navigation -->
-  <nav class="landing-nav">
+  <nav class="nav">
     <div class="nav-brand">
-      <img src="/assets/logo.png" alt="CV EPIC Warehouse" class="nav-logo">
-      <div class="nav-brand-text">
-        <span class="nav-brand-name">CV EPIC Warehouse</span>
-        <span class="nav-brand-tag">Rangkaian Kontrol Inventaris</span>
+      <div class="nav-logo">
+        <img src="/assets/logo.png" alt="EPIC" width="36" height="36">
+      </div>
+      <div class="nav-text">
+        <span class="nav-title">CV EPIC Warehouse</span>
+        <span class="nav-subtitle">Sistem Kontrol Inventaris</span>
       </div>
     </div>
     <div class="nav-actions">
-      <button class="btn-nav" onclick="openLogin('user')">
+      <button class="btn btn-ghost" onclick="openLoginModal('user')">
         <i data-lucide="user"></i>
         <span>Masuk</span>
       </button>
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-bg">
-      <div class="hero-grid"></div>
-      <div class="hero-glow"></div>
-    </div>
+  <!-- Main Hero -->
+  <main class="hero">
     <div class="hero-content">
       <div class="hero-badge">
-        <i data-lucide="sparkles"></i>
+        <i data-lucide="zap"></i>
         <span>Sistem Manajemen Inventaris Modern</span>
       </div>
+      
       <h1 class="hero-title">
         <span class="hero-title-line">Kelola Inventaris</span>
-        <span class="hero-title-accent">dengan Mudah</span>
+        <span class="hero-title-accent">dengan EPIC</span>
       </h1>
-      <p class="hero-subtitle">
+      
+      <p class="hero-description">
         Platform lengkap untuk mengelola stok gudang, stock opname, dan penjualan. 
         Dirancang untuk efisiensi dan akurasi dalam satu sistem terpadu.
       </p>
-      <div class="hero-cta">
-        <button class="btn btn-primary btn-lg" onclick="openLogin('user')">
+      
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-lg" onclick="openLoginModal('user')">
           <i data-lucide="log-in"></i>
           <span>Mulai Sekarang</span>
         </button>
-        <button class="btn btn-ghost btn-lg" onclick="scrollToFeatures()">
+        <button class="btn btn-outline btn-lg" onclick="scrollToFeatures()">
           <i data-lucide="info"></i>
           <span>Pelajari Lebih</span>
         </button>
       </div>
     </div>
-    <div class="hero-visual">
-      <div class="dashboard-preview">
+    
+    <!-- Dashboard Preview Card -->
+    <div class="hero-preview">
+      <div class="preview-card">
         <div class="preview-header">
           <div class="preview-dots">
             <span></span><span></span><span></span>
           </div>
-          <span class="preview-title">Dashboard Preview</span>
+          <span class="preview-title">Dashboard Overview</span>
         </div>
-        <div class="preview-content">
-          <div class="preview-kpi-grid">
+        <div class="preview-body">
+          <div class="preview-kpis">
             <div class="preview-kpi">
-              <i data-lucide="package"></i>
-              <span class="kpi-value">1,247</span>
-              <span class="kpi-label">Total Produk</span>
+              <div class="preview-kpi-icon blue">
+                <i data-lucide="package"></i>
+              </div>
+              <div class="preview-kpi-info">
+                <span class="preview-kpi-value">1,247</span>
+                <span class="preview-kpi-label">Total Produk</span>
+              </div>
             </div>
             <div class="preview-kpi">
-              <i data-lucide="shopping-cart"></i>
-              <span class="kpi-value">89</span>
-              <span class="kpi-label">Penjualan Hari Ini</span>
+              <div class="preview-kpi-icon red">
+                <i data-lucide="shopping-cart"></i>
+              </div>
+              <div class="preview-kpi-info">
+                <span class="preview-kpi-value">89</span>
+                <span class="preview-kpi-label">Penjualan Hari Ini</span>
+              </div>
             </div>
             <div class="preview-kpi">
-              <i data-lucide="warehouse"></i>
-              <span class="kpi-value">12</span>
-              <span class="kpi-label">Outlet Aktif</span>
+              <div class="preview-kpi-icon green">
+                <i data-lucide="store"></i>
+              </div>
+              <div class="preview-kpi-info">
+                <span class="preview-kpi-value">12</span>
+                <span class="preview-kpi-label">Outlet Aktif</span>
+              </div>
             </div>
             <div class="preview-kpi">
-              <i data-lucide="clipboard-check"></i>
-              <span class="kpi-value">5</span>
-              <span class="kpi-label">Stock Opname</span>
+              <div class="preview-kpi-icon purple">
+                <i data-lucide="clipboard-check"></i>
+              </div>
+              <div class="preview-kpi-info">
+                <span class="preview-kpi-value">5</span>
+                <span class="preview-kpi-label">Stock Opname</span>
+              </div>
             </div>
           </div>
           <div class="preview-chart">
-            <div class="chart-bar" style="height: 60%"></div>
-            <div class="chart-bar" style="height: 80%"></div>
-            <div class="chart-bar" style="height: 45%"></div>
-            <div class="chart-bar" style="height: 90%"></div>
-            <div class="chart-bar" style="height: 70%"></div>
-            <div class="chart-bar" style="height: 55%"></div>
+            <div class="chart-bars">
+              <div class="chart-bar" style="height: 60%"></div>
+              <div class="chart-bar" style="height: 80%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+              <div class="chart-bar" style="height: 90%"></div>
+              <div class="chart-bar" style="height: 70%"></div>
+              <div class="chart-bar" style="height: 55%"></div>
+              <div class="chart-bar" style="height: 75%"></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </main>
 
   <!-- Features Section -->
   <section class="features" id="features">
@@ -108,48 +145,54 @@
       <h2 class="section-title">Semua yang Anda Butuhkan</h2>
       <p class="section-subtitle">Fitur lengkap untuk mengelola inventaris perusahaan Anda</p>
     </div>
+    
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="layout-dashboard"></i>
         </div>
-        <h3>Dashboard Real-time</h3>
-        <p>Pantau semua metric penting dalam satu tampilan. Update data real-time untuk keputusan cepat.</p>
+        <h3 class="feature-title">Dashboard Real-time</h3>
+        <p class="feature-desc">Pantau semua metric penting dalam satu tampilan. Update data real-time untuk keputusan cepat.</p>
       </div>
+      
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="package-check"></i>
         </div>
-        <h3>Stock Opname</h3>
-        <p>Sistem scan barcode dan input qty fisik. Generate laporan selisih otomatis.</p>
+        <h3 class="feature-title">Stock Opname</h3>
+        <p class="feature-desc">Sistem scan barcode dan input qty fisik. Generate laporan selisih otomatis.</p>
       </div>
+      
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="shopping-cart"></i>
         </div>
-        <h3>Transaksi Penjualan</h3>
-        <p>Catat penjualan dan pembelian dengan mudah. Import data dari Excel/CSV.</p>
+        <h3 class="feature-title">Transaksi Penjualan</h3>
+        <p class="feature-desc">Catat penjualan dan pembelian dengan mudah. Import data dari Excel/CSV.</p>
       </div>
+      
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="users"></i>
         </div>
-        <h3>Manajemen User</h3>
-        <p>Kelola akses pengguna dengan role-based permission. Admin, Staff Gudang, atau Checker.</p>
+        <h3 class="feature-title">Manajemen User</h3>
+        <p class="feature-desc">Kelola akses pengguna dengan role-based permission. Admin, Staff Gudang, atau Checker.</p>
       </div>
+      
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="file-bar-chart"></i>
         </div>
-        <h3>Laporan Lengkap</h3>
-        <p>Generate laporan stok, penjualan, dan opname. Export ke CSV atau Excel.</p>
+        <h3 class="feature-title">Laporan Lengkap</h3>
+        <p class="feature-desc">Generate laporan stok, penjualan, dan opname. Export ke CSV atau Excel.</p>
       </div>
+      
       <div class="feature-card">
         <div class="feature-icon">
           <i data-lucide="shield-check"></i>
         </div>
-        <h3>Keamanan Data</h3>
-        <p>Enkripsi password, audit log, dan backup otomatis untuk keamanan data Anda.</p>
+        <h3 class="feature-title">Keamanan Data</h3>
+        <p class="feature-desc">Enkripsi password, audit log, dan backup otomatis untuk keamanan data Anda.</p>
       </div>
     </div>
   </section>
@@ -161,11 +204,12 @@
       <h2 class="section-title">Tiga Peran Utama</h2>
       <p class="section-subtitle">Setiap peran memiliki akses yang sesuai dengan tanggung jawabnya</p>
     </div>
+    
     <div class="roles-grid">
       <div class="role-card">
-        <div class="role-badge role-admin">Admin</div>
-        <h3>Administrator</h3>
-        <p>Akses penuh ke semua fitur sistem. Kelola pengguna, laporan, dan pengaturan.</p>
+        <div class="role-badge admin">Admin</div>
+        <h3 class="role-title">Administrator</h3>
+        <p class="role-desc">Akses penuh ke semua fitur sistem. Kelola pengguna, laporan, dan pengaturan.</p>
         <ul class="role-permissions">
           <li><i data-lucide="check"></i> Dashboard Lengkap</li>
           <li><i data-lucide="check"></i> Manajemen User</li>
@@ -173,10 +217,11 @@
           <li><i data-lucide="check"></i> Pengaturan Sistem</li>
         </ul>
       </div>
+      
       <div class="role-card">
-        <div class="role-badge role-staff">Staff Gudang</div>
-        <h3>Staff Gudang</h3>
-        <p>Kelola operasional gudang sehari-hari. Input transaksi dan laporan.</p>
+        <div class="role-badge staff">Staff Gudang</div>
+        <h3 class="role-title">Staff Gudang</h3>
+        <p class="role-desc">Kelola operasional gudang sehari-hari. Input transaksi dan laporan.</p>
         <ul class="role-permissions">
           <li><i data-lucide="check"></i> Input Penjualan</li>
           <li><i data-lucide="check"></i> Stock Opname</li>
@@ -184,10 +229,11 @@
           <li><i data-lucide="check"></i> Forecast Stok</li>
         </ul>
       </div>
+      
       <div class="role-card">
-        <div class="role-badge role-checker">Checker</div>
-        <h3>Checker Opname</h3>
-        <p>Fokus pada stock opname dan penghitungan fisik barang.</p>
+        <div class="role-badge checker">Checker</div>
+        <h3 class="role-title">Checker Opname</h3>
+        <p class="role-desc">Fokus pada stock opname dan penghitungan fisik barang.</p>
         <ul class="role-permissions">
           <li><i data-lucide="check"></i> Scan & Input SO</li>
           <li><i data-lucide="check"></i> Riwayat Opname</li>
@@ -201,9 +247,9 @@
   <!-- CTA Section -->
   <section class="cta">
     <div class="cta-content">
-      <h2>Siap Memulai?</h2>
-      <p>Masuk ke sistem dan kelola inventaris Anda dengan lebih efisien</p>
-      <button class="btn btn-primary btn-lg" onclick="openLogin('user')">
+      <h2 class="cta-title">Siap Memulai?</h2>
+      <p class="cta-desc">Masuk ke sistem dan kelola inventaris Anda dengan lebih efisien</p>
+      <button class="btn btn-primary btn-lg" onclick="openLoginModal('user')">
         <i data-lucide="log-in"></i>
         <span>Masuk ke Sistem</span>
       </button>
@@ -211,90 +257,114 @@
   </section>
 
   <!-- Footer -->
-  <footer class="landing-footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <img src="/assets/logo.png" alt="CV EPIC Warehouse" class="footer-logo">
-        <div>
-          <span class="footer-name">CV EPIC Warehouse</span>
-          <span class="footer-version">Versi 3.0</span>
-        </div>
+  <footer class="footer">
+    <div class="footer-brand">
+      <img src="/assets/logo.png" alt="EPIC" width="32" height="32">
+      <div class="footer-text">
+        <span class="footer-name">CV EPIC Warehouse</span>
+        <span class="footer-version">Versi 3.0</span>
       </div>
-      <div class="footer-info">
-        <p>&copy; 2024 CV EPIC Warehouse. All rights reserved.</p>
-        <p>Design & UI: Mr.Wid</p>
-      </div>
+    </div>
+    <div class="footer-info">
+      <p>&copy; 2024 CV EPIC Warehouse. All rights reserved.</p>
     </div>
   </footer>
 
   <!-- Login Modal -->
-  <div id="loginModal" class="modal-overlay">
-    <div class="modal modal-auth">
-      <button class="modal-close" onclick="closeLogin()">
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeLoginModal()">
         <i data-lucide="x"></i>
       </button>
-      <div class="modal-auth-header">
-        <img src="/assets/logo.png" alt="CV EPIC Warehouse" class="auth-logo">
-        <h2>CV EPIC Warehouse</h2>
-        <p>Sistem Kontrol Inventaris</p>
+      
+      <div class="modal-header">
+        <div class="modal-logo">
+          <img src="/assets/logo.png" alt="EPIC" width="48" height="48">
+        </div>
+        <h2 class="modal-title">CV EPIC Warehouse</h2>
+        <p class="modal-subtitle">Sistem Kontrol Inventaris</p>
       </div>
       
-      <div class="auth-tabs">
-        <button class="auth-tab active" data-mode="user" onclick="setLoginMode('user')">
+      <!-- Login Mode Tabs -->
+      <div class="login-tabs">
+        <button class="login-tab active" data-mode="user" onclick="setLoginMode('user')">
           <i data-lucide="user"></i>
           <span>User</span>
         </button>
-        <button class="auth-tab" data-mode="admin" onclick="setLoginMode('admin')">
+        <button class="login-tab" data-mode="admin" onclick="setLoginMode('admin')">
           <i data-lucide="shield"></i>
           <span>Admin</span>
         </button>
       </div>
       
-      <p class="auth-caption" id="authCaption">
+      <p class="login-caption" id="loginCaption">
         Login user operasional untuk staff gudang/checker sesuai role masing-masing.
       </p>
       
-      <form class="auth-form" onsubmit="event.preventDefault(); performLogin();">
+      <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>
+          <label class="form-label">
             <i data-lucide="user"></i>
             <span>Username</span>
           </label>
-          <input type="text" id="loginUsername" placeholder="Masukkan username" autocomplete="username" required>
+          <input 
+            type="text" 
+            id="loginUsername" 
+            class="form-input" 
+            placeholder="Masukkan username"
+            autocomplete="username"
+            required
+          >
         </div>
+        
         <div class="form-group">
-          <label>
+          <label class="form-label">
             <i data-lucide="lock"></i>
             <span>Password</span>
           </label>
-          <input type="password" id="loginPassword" placeholder="Masukkan password" autocomplete="current-password" required>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="loginPassword" 
+              class="form-input" 
+              placeholder="Masukkan password"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="input-toggle" onclick="togglePassword()">
+              <i data-lucide="eye" id="toggleIcon"></i>
+            </button>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">
+        
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
           <i data-lucide="log-in"></i>
           <span>Masuk</span>
         </button>
       </form>
       
-      <p class="auth-help">Lupa password? Hubungi administrator.</p>
+      <p class="login-help">Lupa password? Hubungi administrator.</p>
     </div>
   </div>
 
   <!-- Toast Container -->
-  <div id="toastContainer" class="toast-container"></div>
+  <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Scripts -->
   <script>
+    // Initialize Lucide icons
     lucide.createIcons();
 
-    let loginMode = 'user';
-    
+    // Login mode state
+    let currentLoginMode = 'user';
+
+    // Set login mode (user/admin)
     function setLoginMode(mode) {
-      loginMode = mode;
-      document.querySelectorAll('.auth-tab').forEach(tab => {
+      currentLoginMode = mode;
+      document.querySelectorAll('.login-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.mode === mode);
       });
-      const caption = document.getElementById('authCaption');
+      const caption = document.getElementById('loginCaption');
       if (mode === 'admin') {
         caption.textContent = 'Login administrator untuk akses penuh ke semua fitur sistem.';
       } else {
@@ -303,78 +373,133 @@
       document.getElementById('loginUsername').focus();
     }
 
-    function openLogin(mode) {
-      loginMode = mode;
-      setLoginMode(mode);
-      if (mode === 'admin') {
-        document.querySelector('[data-mode="admin"]').click();
+    // Open login modal
+    function openLoginModal(mode) {
+      if (mode) {
+        currentLoginMode = mode;
+        setLoginMode(mode);
       }
       document.getElementById('loginModal').classList.add('active');
-      setTimeout(() => document.getElementById('loginUsername')?.focus(), 100);
+      document.getElementById('loginUsername').focus();
+      document.body.style.overflow = 'hidden';
     }
 
-    function closeLogin() {
+    // Close login modal
+    function closeLoginModal() {
       document.getElementById('loginModal').classList.remove('active');
-      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginForm').reset();
+      document.body.style.overflow = '';
     }
 
-    function showToast(message, isSuccess = true) {
+    // Toggle password visibility
+    function togglePassword() {
+      const input = document.getElementById('loginPassword');
+      const icon = document.getElementById('toggleIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons({ nodes: [icon] });
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
-      toast.innerHTML = `<i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}"></i><span>${message}</span>`;
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
+        <span>${message}</span>
+      `;
       container.appendChild(toast);
       lucide.createIcons({ nodes: [toast] });
-      setTimeout(() => toast.remove(), 3000);
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
 
-    async function performLogin() {
-      const user = document.getElementById('loginUsername').value.trim();
-      const pass = document.getElementById('loginPassword').value;
+    // Handle login form submission
+    async function handleLogin(event) {
+      event.preventDefault();
       
-      if (!user || !pass) {
-        showToast('Masukkan username dan password', false);
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+      
+      if (!username || !password) {
+        showToast('Masukkan username dan password', 'error');
         return;
       }
 
-      const endpoint = loginMode === 'admin' ? '/api/v1/auth/login/admin' : '/api/v1/auth/login/user';
-      
+      // Disable button during request
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span><span>Memproses...</span>';
+
+      const endpoint = currentLoginMode === 'admin' 
+        ? '/api/v1/auth/login/admin' 
+        : '/api/v1/auth/login/user';
+
       try {
-        const res = await fetch(endpoint, {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: user, password: pass })
+          body: JSON.stringify({ username, password })
         });
-        const data = await res.json();
         
-        if (!res.ok) {
-          showToast(data.message || 'Login gagal', false);
-          return;
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Login gagal');
         }
 
+        // Store auth data
         const authData = data.data || data;
         localStorage.setItem('auth_user', JSON.stringify(authData));
-        showToast(`Login ${loginMode === 'admin' ? 'admin' : 'user'} berhasil!`, true);
         
+        showToast(`Login ${currentLoginMode === 'admin' ? 'admin' : 'user'} berhasil!`, 'success');
+        
+        // Redirect to app
         setTimeout(() => {
           window.location.href = '/app.html';
         }, 500);
-      } catch (err) {
-        console.error(err);
-        showToast('Gagal menghubungi server', false);
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        showToast(error.message || 'Gagal menghubungi server', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="log-in"></i><span>Masuk</span>';
+        lucide.createIcons({ nodes: [btn] });
       }
     }
 
+    // Scroll to features section
     function scrollToFeatures() {
-      document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('features').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
     }
 
+    // Close modal on overlay click
     document.getElementById('loginModal').addEventListener('click', (e) => {
-      if (e.target.id === 'loginModal') closeLogin();
+      if (e.target.id === 'loginModal') {
+        closeLoginModal();
+      }
     });
 
+    // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeLogin();
+      if (e.key === 'Escape') {
+        closeLoginModal();
+      }
     });
   </script>
 </body>
