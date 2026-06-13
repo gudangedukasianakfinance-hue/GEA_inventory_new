@@ -1,4 +1,4 @@
-<!-- Dashboard Page - PHASE 1 PREMIUM -->
+<!-- Dashboard Page - PHASE 2 MOBILE UX -->
 <section class="dashboard-page">
   
   <!-- Welcome Section -->
@@ -13,11 +13,27 @@
     </div>
   </div>
   
-  <!-- KPI Grid - 8 Cards -->
-  <div class="kpi-grid">
+  <!-- ROW 1: HERO STOK GUDANG -->
+  <div class="hero-card hero-card--stok">
+    <div class="hero-card__icon">
+      <i data-lucide="warehouse"></i>
+    </div>
+    <div class="hero-card__content">
+      <div class="hero-card__label">Stok Gudang</div>
+      <div class="hero-card__value" id="kpi-stok-gudang">0</div>
+      <div class="hero-card__meta">Total Unit Tersedia</div>
+    </div>
+    <div class="hero-card__badge">
+      <i data-lucide="package"></i>
+      <span>Warehouse</span>
+    </div>
+  </div>
+  
+  <!-- ROW 2: 4 SMALL KPIs -->
+  <div class="kpi-row kpi-row--4">
     
-    <!-- KPI 1: Total Produk - Blue -->
-    <div class="kpi-card kpi-card--blue">
+    <!-- KPI: Total Produk -->
+    <div class="kpi-card kpi-card--sm kpi-card--blue">
       <div class="kpi-card__icon">
         <i data-lucide="package"></i>
       </div>
@@ -25,11 +41,10 @@
         <div class="kpi-card__label">Total Produk</div>
         <div class="kpi-card__value" id="kpi-total-produk">0</div>
       </div>
-      <div class="kpi-card__meta">SKU Aktif</div>
     </div>
     
-    <!-- KPI 2: Total Outlet - Green -->
-    <div class="kpi-card kpi-card--green">
+    <!-- KPI: Total Outlet -->
+    <div class="kpi-card kpi-card--sm kpi-card--green">
       <div class="kpi-card__icon">
         <i data-lucide="store"></i>
       </div>
@@ -37,59 +52,10 @@
         <div class="kpi-card__label">Total Outlet</div>
         <div class="kpi-card__value" id="kpi-total-outlet">0</div>
       </div>
-      <div class="kpi-card__meta">Outlet Terdaftar</div>
     </div>
     
-    <!-- KPI 3: Stok Gudang - Purple -->
-    <div class="kpi-card kpi-card--purple">
-      <div class="kpi-card__icon">
-        <i data-lucide="warehouse"></i>
-      </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Stok Gudang</div>
-        <div class="kpi-card__value" id="kpi-stok-gudang">0</div>
-      </div>
-      <div class="kpi-card__meta">Total Unit</div>
-    </div>
-    
-    <!-- KPI 4: Stok Outlet - Orange -->
-    <div class="kpi-card kpi-card--orange">
-      <div class="kpi-card__icon">
-        <i data-lucide="box"></i>
-      </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Stok Outlet</div>
-        <div class="kpi-card__value" id="kpi-stok-outlet">0</div>
-      </div>
-      <div class="kpi-card__meta">Total Unit</div>
-    </div>
-    
-    <!-- KPI 5: Distribusi - Cyan -->
-    <div class="kpi-card kpi-card--cyan">
-      <div class="kpi-card__icon">
-        <i data-lucide="truck"></i>
-      </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Distribusi Hari Ini</div>
-        <div class="kpi-card__value" id="kpi-distribusi">0</div>
-      </div>
-      <div class="kpi-card__meta">Unit Dikirim</div>
-    </div>
-    
-    <!-- KPI 6: Penjualan - Pink -->
-    <div class="kpi-card kpi-card--pink">
-      <div class="kpi-card__icon">
-        <i data-lucide="shopping-cart"></i>
-      </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Penjualan Hari Ini</div>
-        <div class="kpi-card__value" id="kpi-penjualan">0</div>
-      </div>
-      <div class="kpi-card__meta">Unit Terjual</div>
-    </div>
-    
-    <!-- KPI 7: SO Pending - Blue -->
-    <div class="kpi-card kpi-card--blue2">
+    <!-- KPI: SO Pending -->
+    <div class="kpi-card kpi-card--sm kpi-card--purple">
       <div class="kpi-card__icon">
         <i data-lucide="clipboard-list"></i>
       </div>
@@ -97,11 +63,10 @@
         <div class="kpi-card__label">SO Pending</div>
         <div class="kpi-card__value" id="kpi-so-pending">0</div>
       </div>
-      <div class="kpi-card__meta">Perintah</div>
     </div>
     
-    <!-- KPI 8: Stok Kritis - Red -->
-    <div class="kpi-card kpi-card--red">
+    <!-- KPI: Stok Kritis -->
+    <div class="kpi-card kpi-card--sm kpi-card--red">
       <div class="kpi-card__icon">
         <i data-lucide="alert-triangle"></i>
       </div>
@@ -109,16 +74,58 @@
         <div class="kpi-card__label">Stok Kritis</div>
         <div class="kpi-card__value" id="kpi-stok-kritis">0</div>
       </div>
-      <div class="kpi-card__meta">SKU - Perlu perhatian</div>
     </div>
     
+  </div>
+  
+  <!-- ROW 3: 2 MEDIUM KPIs -->
+  <div class="kpi-row kpi-row--2">
+    
+    <!-- KPI: Distribusi -->
+    <div class="kpi-card kpi-card--md kpi-card--cyan">
+      <div class="kpi-card__icon">
+        <i data-lucide="truck"></i>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Distribusi Hari Ini</div>
+        <div class="kpi-card__value" id="kpi-distribusi">0</div>
+        <div class="kpi-card__meta">Unit Dikirim</div>
+      </div>
+    </div>
+    
+    <!-- KPI: Penjualan -->
+    <div class="kpi-card kpi-card--md kpi-card--pink">
+      <div class="kpi-card__icon">
+        <i data-lucide="shopping-cart"></i>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Penjualan Hari Ini</div>
+        <div class="kpi-card__value" id="kpi-penjualan">0</div>
+        <div class="kpi-card__meta">Unit Terjual</div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- ROW 4: Stok Outlet -->
+  <div class="kpi-row kpi-row--1">
+    <div class="kpi-card kpi-card--lg kpi-card--orange">
+      <div class="kpi-card__icon">
+        <i data-lucide="box"></i>
+      </div>
+      <div class="kpi-card__body">
+        <div class="kpi-card__label">Stok Outlet</div>
+        <div class="kpi-card__value" id="kpi-stok-outlet">0</div>
+        <div class="kpi-card__meta">Total Unit di Semua Outlet</div>
+      </div>
+    </div>
   </div>
   
   <!-- Content Grid -->
   <div class="content-grid">
     
     <!-- Chart Card -->
-    <div class="card card--chart">
+    <div class="card">
       <div class="card__header">
         <h3 class="card__title">Distribusi 7 Hari Terakhir</h3>
       </div>
@@ -137,7 +144,7 @@
     </div>
     
     <!-- Stok Kritis Card -->
-    <div class="card card--stok">
+    <div class="card">
       <div class="card__header">
         <h3 class="card__title">
           <i data-lucide="alert-triangle"></i>
@@ -157,8 +164,13 @@
       </div>
     </div>
     
+  </div>
+  
+  <!-- Activity Lists -->
+  <div class="content-grid">
+    
     <!-- Distribusi Terbaru -->
-    <div class="card card--activity">
+    <div class="card">
       <div class="card__header">
         <h3 class="card__title">
           <i data-lucide="send"></i>
@@ -179,7 +191,7 @@
     </div>
     
     <!-- Aktivitas Terbaru -->
-    <div class="card card--activity">
+    <div class="card">
       <div class="card__header">
         <h3 class="card__title">
           <i data-lucide="activity"></i>

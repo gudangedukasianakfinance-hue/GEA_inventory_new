@@ -1,13 +1,11 @@
 /* ============================================
-   PHASE 1 - DASHBOARD PREMIUM REDESIGN
+   PHASE 2 - DASHBOARD PREMIUM + MOBILE UX
    CV EPIC Warehouse - Dashboard Styles
    
    Design Spec:
-   - Background: #050b17
-   - Card: #0f172a
-   - Border: rgba(255,255,255,.06)
-   - Border-radius: 20px
-   - Padding: 8/16/24/32 system
+   - Hero KPI layout
+   - 3 KPI sizes: sm (4 col), md (2 col), lg (1 col)
+   - Mobile optimized
    ============================================ */
 
 /* ============================================
@@ -16,7 +14,7 @@
 .dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 /* ============================================
@@ -26,21 +24,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px;
+  padding: 16px;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
+  border-radius: 16px;
 }
 
 .welcome-card__title {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
 .welcome-card__subtitle {
-  font-size: 14px;
+  font-size: 12px;
   color: #94a3b8;
   margin: 0;
 }
@@ -50,50 +48,135 @@
 }
 
 .welcome-card__date-main {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   color: #ffffff;
 }
 
 .welcome-card__date-day {
-  font-size: 14px;
+  font-size: 12px;
   color: #94a3b8;
 }
 
 /* ============================================
-   KPI Grid - 8 Cards
+   Hero Card - Stok Gudang
    ============================================ */
-.kpi-grid {
-  display: grid;
+.hero-card {
+  display: flex;
+  align-items: center;
   gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  min-height: 140px;
 }
 
-@media (min-width: 1200px) {
-  .kpi-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #a855f7, #6366f1);
 }
 
-@media (min-width: 768px) and (max-width: 1199px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.hero-card__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-@media (max-width: 767px) {
-  .kpi-grid {
-    grid-template-columns: 1fr;
-  }
+.hero-card--stok .hero-card__icon {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.hero-card__icon i {
+  width: 32px;
+  height: 32px;
+}
+
+.hero-card__content {
+  flex: 1;
+}
+
+.hero-card__label {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.hero-card__value {
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.hero-card__meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.hero-card__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.hero-card__badge i {
+  width: 20px;
+  height: 20px;
+  color: #a855f7;
+}
+
+.hero-card__badge span {
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
 }
 
 /* ============================================
-   KPI Card - Premium Design
+   KPI Row Layouts
+   ============================================ */
+.kpi-row {
+  display: grid;
+  gap: 12px;
+}
+
+.kpi-row--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.kpi-row--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.kpi-row--1 {
+  grid-template-columns: 1fr;
+}
+
+/* ============================================
+   KPI Card - Base + Size Variants
    ============================================ */
 .kpi-card {
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -117,6 +200,56 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
+/* Size Variants */
+.kpi-card--sm {
+  min-height: 90px;
+  padding: 12px;
+}
+
+.kpi-card--sm .kpi-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.kpi-card--sm .kpi-card__icon i {
+  width: 16px;
+  height: 16px;
+}
+
+.kpi-card--sm .kpi-card__value {
+  font-size: 20px;
+}
+
+.kpi-card--md {
+  min-height: 110px;
+}
+
+.kpi-card--md .kpi-card__value {
+  font-size: 28px;
+}
+
+.kpi-card--lg {
+  min-height: 120px;
+  flex-direction: row;
+  align-items: center;
+}
+
+.kpi-card--lg .kpi-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+
+.kpi-card--lg .kpi-card__icon i {
+  width: 28px;
+  height: 28px;
+}
+
+.kpi-card--lg .kpi-card__value {
+  font-size: 32px;
+}
+
 /* KPI Card Colors */
 .kpi-card--blue { --accent: #3b82f6; }
 .kpi-card--green { --accent: #22c55e; }
@@ -124,7 +257,6 @@
 .kpi-card--orange { --accent: #f59e0b; }
 .kpi-card--cyan { --accent: #06b6d4; }
 .kpi-card--pink { --accent: #ec4899; }
-.kpi-card--blue2 { --accent: #3b82f6; }
 .kpi-card--red { --accent: #ef4444; }
 
 .kpi-card__icon {
@@ -147,29 +279,30 @@
 .kpi-card--orange .kpi-card__icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 .kpi-card--cyan .kpi-card__icon { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
 .kpi-card--pink .kpi-card__icon { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
-.kpi-card--blue2 .kpi-card__icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 .kpi-card--red .kpi-card__icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
 .kpi-card__body {
   flex: 1;
+  min-width: 0;
 }
 
 .kpi-card__label {
-  font-size: 14px;
+  font-size: 12px;
   color: #94a3b8;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .kpi-card__value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #ffffff;
   line-height: 1.2;
 }
 
 .kpi-card__meta {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
+  margin-top: 4px;
 }
 
 /* ============================================
@@ -177,16 +310,11 @@
    ============================================ */
 .content-grid {
   display: grid;
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
 
-@media (min-width: 1024px) {
-  .content-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 1023px) {
+@media (max-width: 768px) {
   .content-grid {
     grid-template-columns: 1fr;
   }
@@ -198,18 +326,18 @@
 .card {
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
-  padding: 24px;
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
 }
 
 .card__header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .card__title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
@@ -219,8 +347,8 @@
 }
 
 .card__title i {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: #FF4D3A;
 }
 
@@ -234,7 +362,7 @@
    ============================================ */
 .chart-area {
   position: relative;
-  height: 250px;
+  height: 220px;
 }
 
 .chart-area canvas {
@@ -251,13 +379,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   color: #64748b;
 }
 
 .empty-state i {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   opacity: 0.5;
 }
 
@@ -266,14 +394,14 @@
 }
 
 .empty-state__title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #94a3b8;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .empty-state__desc {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
 }
 
@@ -284,13 +412,15 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .stok-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -304,13 +434,13 @@
 }
 
 .stok-item__sku {
-  font-size: 11px;
+  font-size: 10px;
   color: #64748b;
   font-family: monospace;
 }
 
 .stok-item__nama {
-  font-size: 14px;
+  font-size: 13px;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
@@ -318,7 +448,7 @@
 }
 
 .stok-item__qty {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #ef4444;
 }
@@ -329,13 +459,15 @@
 .activity-list {
   display: flex;
   flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .activity-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
+  gap: 10px;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -344,8 +476,8 @@
 }
 
 .activity-item__icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -354,8 +486,8 @@
 }
 
 .activity-item__icon i {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .activity-item__icon--primary { background: rgba(255, 77, 58, 0.15); color: #FF4D3A; }
@@ -369,24 +501,110 @@
 }
 
 .activity-item__text {
-  font-size: 14px;
+  font-size: 13px;
   color: #ffffff;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .activity-item__meta {
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ============================================
-   Analytics Grid (for data tables)
+   Responsive - Tablet
    ============================================ */
-.analytics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+@media (max-width: 1024px) {
+  .kpi-row--4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   Responsive - Mobile
+   ============================================ */
+@media (max-width: 640px) {
+  .welcome-card {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .welcome-card__date {
+    text-align: center;
+  }
+  
+  .hero-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+    min-height: 120px;
+  }
+  
+  .hero-card__badge {
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .kpi-row--4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .kpi-row--2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpi-card--lg {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+  
+  .chart-area {
+    height: 180px;
+  }
+}
+
+/* ============================================
+   Small Mobile (360px, 390px)
+   ============================================ */
+@media (max-width: 400px) {
+  .hero-card {
+    padding: 16px;
+  }
+  
+  .hero-card__icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .hero-card__icon i {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .hero-card__value {
+    font-size: 28px;
+  }
+  
+  .kpi-row--4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpi-card {
+    padding: 12px;
+  }
+  
+  .kpi-card--sm .kpi-card__value {
+    font-size: 18px;
+  }
 }
 
 /* ============================================
@@ -399,13 +617,13 @@
 
 .data-table th,
 .data-table td {
-  padding: 16px;
+  padding: 12px;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .data-table th {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -414,7 +632,7 @@
 }
 
 .data-table td {
-  font-size: 13px;
+  font-size: 12px;
   color: #ffffff;
 }
 
@@ -423,25 +641,25 @@
 }
 
 /* ============================================
-   User Management Specific
+   User Management
    ============================================ */
 .user-table-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .user-name-cell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .role-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -452,63 +670,11 @@
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
   font-weight: 600;
 }
 
 .status-badge.status-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
 .status-badge.status-inactive { background: rgba(100, 116, 139, 0.15); color: #64748b; }
-
-/* ============================================
-   Responsive
-   ============================================ */
-@media (max-width: 768px) {
-  .welcome-card {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-  
-  .welcome-card__date {
-    text-align: center;
-  }
-  
-  .kpi-card {
-    padding: 16px;
-  }
-  
-  .kpi-card__value {
-    font-size: 24px;
-  }
-  
-  .card {
-    padding: 16px;
-    border-radius: 16px;
-  }
-  
-  .chart-area {
-    height: 200px;
-  }
-  
-  .analytics-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .data-table {
-    display: block;
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .kpi-card__icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .kpi-card__value {
-    font-size: 20px;
-  }
-}
