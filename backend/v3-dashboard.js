@@ -126,6 +126,45 @@ export default async function handler(req, res) {
       WHERE is_active = true
     `);
 
+    // 13. STOK GUDANG AKTUAL (REAL)
+    // Formula: STOK_AWAL + PEMBELIAN - PENJUALAN + PENYESUAIAN
+    const stokGudang = await pool.query(`
+      WITH params AS (
+        SELECT CURRENT_DATE AS end_date
+      ),
+      base_stock AS (
+        SELECT COALESCE(SUM(qty_awal), 0) AS total FROM stok_awal
+      ),
+      pembelian_total AS (
+        SELECT COALESCE(SUM(qty), 0) AS total FROM pembelian WHERE tanggal <= (SELECT end_date FROM params)
+      ),
+      penjualan_total AS (
+        SELECT COALESCE(SUM(qty), 0) AS total FROM penjualan WHERE tanggal <= (SELECT end_date FROM params)
+      ),
+      penyesuaian_total AS (
+        SELECT COALESCE(SUM(qty), 0) AS total FROM stok_penyesuaian WHERE tanggal <= (SELECT end_date FROM params)
+      )
+      SELECT 
+        bs.total AS stok_awal,
+        pt.total AS pembelian,
+        pj.total AS penjualan,
+        pen.total AS penyesuaian,
+        bs.total + pt.total - pj.total + pen.total AS stok_akhir
+      FROM base_stock bs, pembelian_total pt, penjualan_total pj, penyesuaian_total pen
+    `);
+
+    // 14. DISTRIBUSI HARI INI (REAL)
+    // From outlet_stok_masuk table (warehouse transfers to outlets)
+    const distribusiHariIni = await pool.query(`
+      SELECT 
+        COUNT(*) AS distribusi_count,
+        COALESCE(SUM(qty), 0) AS total_qty,
+        COUNT(DISTINCT outlet_id) AS outlet_count
+      FROM outlet_stok_masuk
+      WHERE tanggal = CURRENT_DATE
+        AND sumber = 'warehouse_transfer'
+    `);
+
     const result = {
       today: {
         penjualan: Number(penjualanHarian.rows[0]?.total_qty || 0),
@@ -141,7 +180,21 @@ export default async function handler(req, res) {
         total: Number(totalOutlet.rows[0]?.total || 0)
       },
       stok: {
-        kritis: Number(stokKritis.rows[0]?.kritis_count || 0)
+        kritis: Number(stokKritis.rows[0]?.kritis_count || 0),
+        gudang: {
+          awal: Number(stokGudang.rows[0]?.stok_awal || 0),
+          pembelian: Number(stokGudang.rows[0]?.pembelian || 0),
+          penjualan: Number(stokGudang.rows[0]?.penjualan || 0),
+          penyesuaian: Number(stokGudang.rows[0]?.penyesuaian || 0),
+          akhir: Number(stokGudang.rows[0]?.stok_akhir || 0)
+        }
+      },
+      distribusi: {
+        hari_ini: {
+          count: Number(distribusiHariIni.rows[0]?.distribusi_count || 0),
+          qty: Number(distribusiHariIni.rows[0]?.total_qty || 0),
+          outlet_count: Number(distribusiHariIni.rows[0]?.outlet_count || 0)
+        }
       },
       opname: {
         berjalan: Number(soBerjalan.rows[0]?.total || 0),

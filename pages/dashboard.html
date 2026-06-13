@@ -476,7 +476,7 @@
     }
   }
   
-  // KPI Data - Fixed: Using /api/v3-dashboard with correct field mapping
+  // KPI Data - REAL DATA from v3-dashboard
   async function loadKPIData() {
     try {
       const response = await fetch('/api/v3-dashboard');
@@ -485,26 +485,31 @@
       
       console.log('KPI RESPONSE:', JSON.stringify(data, null, 2));
       
-      // Update KPI values with correct field mapping
-      // KPI Mapping:
-      // total_produk = data.produk.total
-      // total_outlet = data.outlet.total
-      // penjualan_hari_ini = data.today.penjualan
-      // so_pending = data.opname.berjalan
-      // stok_kritis = data.stok.kritis
+      // KPI Mapping (REAL):
+      // total_produk = produk.total
+      // total_outlet = outlet.total
+      // stok_gudang = stok.gudang.akhir (STOK_AWAL + PEMBELIAN - PENJUALAN + PENYESUAIAN)
+      // stok_outlet = outlet.aktif
+      // distribusi = distribusi.hari_ini.qty (warehouse transfers to outlets)
+      // penjualan = today.penjualan
+      // so_pending = opname.berjalan
+      // stok_kritis = stok.kritis
       console.log('KPI MAPPING:', {
         'total_produk': data.produk?.total,
         'total_outlet': data.outlet?.total,
-        'penjualan_hari_ini': data.today?.penjualan,
+        'stok_gudang': data.stok?.gudang?.akhir,
+        'stok_outlet': data.outlet?.aktif,
+        'distribusi': data.distribusi?.hari_ini?.qty,
+        'penjualan': data.today?.penjualan,
         'so_pending': data.opname?.berjalan,
         'stok_kritis': data.stok?.kritis
       });
       
       document.getElementById('kpi-total-produk').textContent = formatNumber(data.produk?.total || 0);
       document.getElementById('kpi-total-outlet').textContent = formatNumber(data.outlet?.total || 0);
-      document.getElementById('kpi-stok-gudang').textContent = formatNumber(data.produk?.total || 0); // Using produk total as proxy
+      document.getElementById('kpi-stok-gudang').textContent = formatNumber(data.stok?.gudang?.akhir || 0);
       document.getElementById('kpi-stok-outlet').textContent = formatNumber(data.outlet?.aktif || 0);
-      document.getElementById('kpi-distribusi').textContent = formatNumber(data.today?.customer_count || 0);
+      document.getElementById('kpi-distribusi').textContent = formatNumber(data.distribusi?.hari_ini?.qty || 0);
       document.getElementById('kpi-penjualan').textContent = formatNumber(data.today?.penjualan || 0);
       document.getElementById('kpi-so-pending').textContent = formatNumber(data.opname?.berjalan || 0);
       document.getElementById('kpi-stok-kritis').textContent = formatNumber(data.stok?.kritis || 0);
