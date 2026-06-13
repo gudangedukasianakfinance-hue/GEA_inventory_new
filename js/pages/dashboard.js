@@ -181,7 +181,12 @@ const Dashboard = {
         outlet: outletData
       };
       
-      console.log('Chart data loaded:', this.data.charts);
+      // DEBUG: Log raw API responses
+      console.log('=== DEBUG: API RESPONSES ===');
+      console.log('TOP PRODUK raw:', topProdukData);
+      console.log('TOP OUTLET raw:', outletData);
+      console.log('MODUL LEVEL raw:', modulLevelData);
+      console.log('Chart data stored:', this.data.charts);
       
     } catch (error) {
       console.error('Error loading chart data:', error);
@@ -280,6 +285,7 @@ const Dashboard = {
   
   // Render Charts
   renderCharts() {
+    console.log('=== DEBUG: renderCharts called ===');
     this.renderPenjualanChart();
     this.renderDistribusiChart();
     this.renderTopProdukChart();
@@ -415,8 +421,12 @@ const Dashboard = {
   
   // Top Produk Chart (from v3-chart type=top_produk)
   renderTopProdukChart() {
+    console.log('=== DEBUG: renderTopProdukChart called ===');
     const canvas = document.getElementById('chartTopProduk');
     const emptyEl = document.getElementById('chartTopProdukEmpty');
+    
+    console.log('Canvas element:', canvas);
+    console.log('Empty element:', emptyEl);
     
     if (!canvas) return;
     
@@ -428,7 +438,9 @@ const Dashboard = {
     }
     
     const topProdukData = this.data.charts?.topProduk?.data || [];
+    console.log('Top Produk Data:', topProdukData);
     const filteredData = topProdukData.filter(d => d.value > 0).slice(0, 10);
+    console.log('Filtered Data:', filteredData);
     
     if (!filteredData.length) {
       if (emptyEl) {
@@ -496,14 +508,20 @@ const Dashboard = {
   
   // Top Outlet Chart (from outlet chart data)
   renderTopOutletChart() {
+    console.log('=== DEBUG: renderTopOutletChart called ===');
     const canvas = document.getElementById('chartTopOutlet');
     const emptyEl = document.getElementById('chartTopOutletEmpty');
+    
+    console.log('Canvas element:', canvas);
+    console.log('Empty element:', emptyEl);
     
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     const outletData = this.data.charts?.outlet?.data || [];
+    console.log('Outlet Data:', outletData);
     const filteredData = outletData.filter(d => d.value > 0);
+    console.log('Filtered Data:', filteredData);
     
     if (this.charts.topOutlet) {
       this.charts.topOutlet.destroy();
@@ -753,10 +771,12 @@ const Dashboard = {
   
   // Modul Terjual Per Level Chart
   renderModulLevelChart() {
+    console.log('=== DEBUG: renderModulLevelChart called ===');
     const container = document.getElementById('modulLevelTable');
     if (!container) return;
     
     const modulData = this.data.charts?.modulLevel?.data || [];
+    console.log('Modul Level Data:', modulData);
     
     if (!modulData.length || !modulData.some(d => d.value > 0)) {
       container.innerHTML = '<div class="table-card__empty"><i data-lucide="package"></i><p class="table-card__empty-text">Tidak ada data modul terjual</p></div>';
