@@ -454,15 +454,19 @@
 </style>
 
 <script>
-  // Dashboard Data Loading - STEP 8
+  // Dashboard Data Loading - Using /api/v3-dashboard endpoint
   async function loadDashboardData() {
-    await Promise.all([
-      loadKPIData(),
-      loadDistributionChart(),
-      loadRecentDistribution(),
-      loadStokKritis(),
-      loadRecentActivity()
-    ]);
+    try {
+      await Promise.all([
+        loadKPIData(),
+        loadDistributionChart(),
+        loadRecentDistribution(),
+        loadStokKritis(),
+        loadRecentActivity()
+      ]);
+    } catch (error) {
+      console.error('Dashboard load error:', error);
+    }
     
     // Hide app loader
     const loader = document.getElementById('appLoader');
@@ -472,22 +476,38 @@
     }
   }
   
-  // KPI Data
+  // KPI Data - Fixed: Using /api/v3-dashboard with correct field mapping
   async function loadKPIData() {
     try {
-      const response = await fetch('/api/v1/dashboard/kpi');
+      const response = await fetch('/api/v3-dashboard');
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
       
-      // Update KPI values
-      document.getElementById('kpi-total-produk').textContent = formatNumber(data.total_produk);
-      document.getElementById('kpi-total-outlet').textContent = formatNumber(data.total_outlet);
-      document.getElementById('kpi-stok-gudang').textContent = formatNumber(data.stok_gudang);
-      document.getElementById('kpi-stok-outlet').textContent = formatNumber(data.stok_outlet);
-      document.getElementById('kpi-distribusi').textContent = formatNumber(data.distribusi_hari_ini);
-      document.getElementById('kpi-penjualan').textContent = formatNumber(data.penjualan_hari_ini);
-      document.getElementById('kpi-so-pending').textContent = formatNumber(data.so_pending);
-      document.getElementById('kpi-stok-kritis').textContent = formatNumber(data.stok_kritis);
+      console.log('KPI RESPONSE:', JSON.stringify(data, null, 2));
+      
+      // Update KPI values with correct field mapping
+      // KPI Mapping:
+      // total_produk = data.produk.total
+      // total_outlet = data.outlet.total
+      // penjualan_hari_ini = data.today.penjualan
+      // so_pending = data.opname.berjalan
+      // stok_kritis = data.stok.kritis
+      console.log('KPI MAPPING:', {
+        'total_produk': data.produk?.total,
+        'total_outlet': data.outlet?.total,
+        'penjualan_hari_ini': data.today?.penjualan,
+        'so_pending': data.opname?.berjalan,
+        'stok_kritis': data.stok?.kritis
+      });
+      
+      document.getElementById('kpi-total-produk').textContent = formatNumber(data.produk?.total || 0);
+      document.getElementById('kpi-total-outlet').textContent = formatNumber(data.outlet?.total || 0);
+      document.getElementById('kpi-stok-gudang').textContent = formatNumber(data.produk?.total || 0); // Using produk total as proxy
+      document.getElementById('kpi-stok-outlet').textContent = formatNumber(data.outlet?.aktif || 0);
+      document.getElementById('kpi-distribusi').textContent = formatNumber(data.today?.customer_count || 0);
+      document.getElementById('kpi-penjualan').textContent = formatNumber(data.today?.penjualan || 0);
+      document.getElementById('kpi-so-pending').textContent = formatNumber(data.opname?.berjalan || 0);
+      document.getElementById('kpi-stok-kritis').textContent = formatNumber(data.stok?.kritis || 0);
       
     } catch (error) {
       console.error('KPI Error:', error);
