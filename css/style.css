@@ -98,6 +98,56 @@ body.auth-locked .main {
   border-color: var(--primary);
 }
 
+/* ===== Dashboard Filter ===== */
+.welcome__filter {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.filter-select {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ===== Data Table ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.data-table td {
+  color: var(--text);
+}
+
+.data-table tr:hover td {
+  background: var(--surface-2);
+}
+
 /* ===== Quick Actions ===== */
 .quick-actions {
   display: flex;

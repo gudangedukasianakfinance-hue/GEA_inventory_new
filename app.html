@@ -448,11 +448,15 @@
     }
     
     function handleLogout() {
+      // Hapus semua data autentikasi dari localStorage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('auth_user');
       showToast('Anda telah keluar', 'success');
       applyAuthState();
       document.getElementById('profileMenu')?.classList.remove('open');
-      navigateTo('dashboard');
+      // Redirect ke halaman utama
+      window.location.href = '/index.html';
     }
     
     document.getElementById('loginModal')?.addEventListener('click', (e) => {
