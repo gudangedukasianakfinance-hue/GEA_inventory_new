@@ -1,396 +1,327 @@
-<!-- Dashboard Page - PHASE 2 MOBILE UX -->
-<section class="dashboard-page">
+<!-- Dashboard Page -->
+<section class="dashboard">
   
   <!-- Welcome Section -->
-  <div class="welcome-card">
-    <div class="welcome-card__content">
-      <h2 class="welcome-card__title">Selamat datang, Admin 👋</h2>
-      <p class="welcome-card__subtitle">Ringkasan kondisi warehouse hari ini</p>
+  <div class="Welcome">
+    <div class="Welcome__content">
+      <h1 class="Welcome__title" id="welcomeTitle">Selamat Datang, Admin</h1>
+      <p class="Welcome__subtitle">Ringkasan operasional warehouse hari ini</p>
     </div>
-    <div class="welcome-card__date">
-      <div class="welcome-card__date-main" id="currentDate">12 Juni 2026</div>
-      <div class="welcome-card__date-day" id="currentDay">Kamis</div>
-    </div>
-  </div>
-  
-  <!-- ROW 1: HERO STOK GUDANG -->
-  <div class="hero-card hero-card--stok">
-    <div class="hero-card__icon">
-      <i data-lucide="warehouse"></i>
-    </div>
-    <div class="hero-card__content">
-      <div class="hero-card__label">Stok Gudang</div>
-      <div class="hero-card__value" id="kpi-stok-gudang">0</div>
-      <div class="hero-card__meta">Total Unit Tersedia</div>
-    </div>
-    <div class="hero-card__badge">
-      <i data-lucide="package"></i>
-      <span>Warehouse</span>
+    <div class="Welcome__datetime">
+      <div class="Welcome__date" id="currentDate">-</div>
+      <div class="Welcome__time" id="currentTime">--:--:--</div>
     </div>
   </div>
-  
-  <!-- ROW 2: 4 SMALL KPIs -->
-  <div class="kpi-row kpi-row--4">
-    
-    <!-- KPI: Total Produk -->
-    <div class="kpi-card kpi-card--sm kpi-card--blue">
-      <div class="kpi-card__icon">
+
+  <!-- KPI Section - Row 1 -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--info">
         <i data-lucide="package"></i>
       </div>
-      <div class="kpi-card__body">
+      <div class="kpi-card__content">
         <div class="kpi-card__label">Total Produk</div>
         <div class="kpi-card__value" id="kpi-total-produk">0</div>
       </div>
     </div>
     
-    <!-- KPI: Total Outlet -->
-    <div class="kpi-card kpi-card--sm kpi-card--green">
-      <div class="kpi-card__icon">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--success">
         <i data-lucide="store"></i>
       </div>
-      <div class="kpi-card__body">
+      <div class="kpi-card__content">
         <div class="kpi-card__label">Total Outlet</div>
         <div class="kpi-card__value" id="kpi-total-outlet">0</div>
       </div>
     </div>
     
-    <!-- KPI: SO Pending -->
-    <div class="kpi-card kpi-card--sm kpi-card--purple">
-      <div class="kpi-card__icon">
-        <i data-lucide="clipboard-list"></i>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--primary">
+        <i data-lucide="warehouse"></i>
       </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">SO Pending</div>
-        <div class="kpi-card__value" id="kpi-so-pending">0</div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Stok Gudang</div>
+        <div class="kpi-card__value" id="kpi-stok-gudang">0</div>
       </div>
     </div>
     
-    <!-- KPI: Stok Kritis -->
-    <div class="kpi-card kpi-card--sm kpi-card--red">
-      <div class="kpi-card__icon">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--warning">
+        <i data-lucide="box"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Stok Outlet</div>
+        <div class="kpi-card__value" id="kpi-stok-outlet">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Section - Row 2 -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--info">
+        <i data-lucide="send"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Distribusi Hari Ini</div>
+        <div class="kpi-card__value" id="kpi-distribusi">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--success">
+        <i data-lucide="shopping-cart"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Penjualan Hari Ini</div>
+        <div class="kpi-card__value" id="kpi-penjualan">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--warning">
+        <i data-lucide="clipboard-list"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">SO Berjalan</div>
+        <div class="kpi-card__value" id="kpi-so-berjalan">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--danger">
         <i data-lucide="alert-triangle"></i>
       </div>
-      <div class="kpi-card__body">
+      <div class="kpi-card__content">
         <div class="kpi-card__label">Stok Kritis</div>
         <div class="kpi-card__value" id="kpi-stok-kritis">0</div>
       </div>
     </div>
-    
   </div>
-  
-  <!-- ROW 3: 2 MEDIUM KPIs -->
-  <div class="kpi-row kpi-row--2">
-    
-    <!-- KPI: Distribusi -->
-    <div class="kpi-card kpi-card--md kpi-card--cyan">
-      <div class="kpi-card__icon">
-        <i data-lucide="truck"></i>
+
+  <!-- KPI Section - Row 3 -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--info">
+        <i data-lucide="users"></i>
       </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Distribusi Hari Ini</div>
-        <div class="kpi-card__value" id="kpi-distribusi">0</div>
-        <div class="kpi-card__meta">Unit Dikirim</div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">User Aktif</div>
+        <div class="kpi-card__value" id="kpi-user-aktif">0</div>
       </div>
     </div>
     
-    <!-- KPI: Penjualan -->
-    <div class="kpi-card kpi-card--md kpi-card--pink">
-      <div class="kpi-card__icon">
-        <i data-lucide="shopping-cart"></i>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--warning">
+        <i data-lucide="clock"></i>
       </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Penjualan Hari Ini</div>
-        <div class="kpi-card__value" id="kpi-penjualan">0</div>
-        <div class="kpi-card__meta">Unit Terjual</div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Approval Pending</div>
+        <div class="kpi-card__value" id="kpi-approval-pending">0</div>
       </div>
     </div>
     
-  </div>
-  
-  <!-- ROW 4: Stok Outlet -->
-  <div class="kpi-row kpi-row--1">
-    <div class="kpi-card kpi-card--lg kpi-card--orange">
-      <div class="kpi-card__icon">
-        <i data-lucide="box"></i>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--primary">
+        <i data-lucide="trending-up"></i>
       </div>
-      <div class="kpi-card__body">
-        <div class="kpi-card__label">Stok Outlet</div>
-        <div class="kpi-card__value" id="kpi-stok-outlet">0</div>
-        <div class="kpi-card__meta">Total Unit di Semua Outlet</div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Forecast Bulan Depan</div>
+        <div class="kpi-card__value" id="kpi-forecast">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--success">
+        <i data-lucide="target"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Akurasi Stok</div>
+        <div class="kpi-card__value" id="kpi-akurasi">0%</div>
       </div>
     </div>
   </div>
-  
-  <!-- Content Grid -->
-  <div class="content-grid">
-    
-    <!-- Chart Card -->
-    <div class="card">
-      <div class="card__header">
-        <h3 class="card__title">Distribusi 7 Hari Terakhir</h3>
+
+  <!-- Charts Grid -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">
+          <i data-lucide="bar-chart-2"></i>
+          Penjualan Bulanan
+        </h3>
       </div>
-      <div class="card__body">
-        <div class="chart-area">
-          <canvas id="distributionChart"></canvas>
-          <div class="empty-state" id="chartEmpty">
-            <i data-lucide="bar-chart-2"></i>
-            <div class="empty-state__content">
-              <div class="empty-state__title">Tidak ada data distribusi</div>
-              <div class="empty-state__desc">Data distribusi akan muncul setelah transaksi pertama</div>
-            </div>
+      <div class="chart-card__body">
+        <canvas id="chartPenjualan"></canvas>
+        <div class="chart-card__empty" id="chartPenjualanEmpty" style="display:none;">
+          <i data-lucide="bar-chart-2"></i>
+          <p class="chart-card__empty-text">Tidak ada data penjualan</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">
+          <i data-lucide="send"></i>
+          Distribusi Bulanan
+        </h3>
+      </div>
+      <div class="chart-card__body">
+        <canvas id="chartDistribusi"></canvas>
+        <div class="chart-card__empty" id="chartDistribusiEmpty" style="display:none;">
+          <i data-lucide="send"></i>
+          <p class="chart-card__empty-text">Tidak ada data distribusi</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">
+          <i data-lucide="package"></i>
+          Top Produk
+        </h3>
+      </div>
+      <div class="chart-card__body">
+        <canvas id="chartTopProduk"></canvas>
+        <div class="chart-card__empty" id="chartTopProdukEmpty" style="display:none;">
+          <i data-lucide="package"></i>
+          <p class="chart-card__empty-text">Tidak ada data produk</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">
+          <i data-lucide="store"></i>
+          Top Outlet
+        </h3>
+      </div>
+      <div class="chart-card__body">
+        <canvas id="chartTopOutlet"></canvas>
+        <div class="chart-card__empty" id="chartTopOutletEmpty" style="display:none;">
+          <i data-lucide="store"></i>
+          <p class="chart-card__empty-text">Tidak ada data outlet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Operational Section - SO Progress -->
+  <div class="charts-grid">
+    <div class="progress-card">
+      <div class="progress-card__header">
+        <h3 class="progress-card__title">
+          <i data-lucide="clipboard-check"></i>
+          SO Progress
+        </h3>
+      </div>
+      <div class="progress-card__body">
+        <div class="progress-item">
+          <div>
+            <div class="progress-item__label">Menunggu</div>
+            <div class="progress-item__count" id="so-menunggu">0</div>
+          </div>
+          <div class="progress-bar" style="flex:1; margin:0 var(--space-md);">
+            <div class="progress-bar__fill progress-bar__fill--waiting" id="so-menunggu-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="progress-item">
+          <div>
+            <div class="progress-item__label">Proses</div>
+            <div class="progress-item__count" id="so-proses">0</div>
+          </div>
+          <div class="progress-bar" style="flex:1; margin:0 var(--space-md);">
+            <div class="progress-bar__fill progress-bar__fill--progress" id="so-proses-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="progress-item">
+          <div>
+            <div class="progress-item__label">Selesai</div>
+            <div class="progress-item__count" id="so-selesai">0</div>
+          </div>
+          <div class="progress-bar" style="flex:1; margin:0 var(--space-md);">
+            <div class="progress-bar__fill progress-bar__fill--done" id="so-selesai-bar" style="width:0%"></div>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- Stok Kritis Card -->
-    <div class="card">
-      <div class="card__header">
-        <h3 class="card__title">
+    <!-- Forecast Section -->
+    <div class="forecast-card">
+      <div class="forecast-card__header">
+        <h3 class="forecast-card__title">
+          <i data-lucide="trending-up"></i>
+          Forecast Ringkas
+        </h3>
+      </div>
+      <div class="forecast-card__body">
+        <div id="forecastList">
+          <div class="empty-state">
+            <i data-lucide="trending-up"></i>
+            <div class="empty-state__title">Tidak ada forecast</div>
+            <div class="empty-state__desc">Data forecast akan muncul di sini</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables Grid -->
+  <div class="tables-grid">
+    <!-- Stok Kritis Table -->
+    <div class="table-card">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
           <i data-lucide="alert-triangle"></i>
           Stok Kritis
         </h3>
+        <a href="#" class="table-card__link" onclick="navigateTo('persediaan'); return false;">Lihat Semua</a>
       </div>
-      <div class="card__body">
-        <div class="stok-list" id="stokKritisList">
-          <div class="empty-state">
-            <i data-lucide="check-circle"></i>
-            <div class="empty-state__content">
-              <div class="empty-state__title">Tidak ada stok kritis</div>
-              <div class="empty-state__desc">Semua produk dalam kondisi aman</div>
-            </div>
-          </div>
+      <div class="table-card__body" id="stokKritisList">
+        <div class="table-card__empty">
+          <i data-lucide="check-circle"></i>
+          <p class="table-card__empty-text">Tidak ada stok kritis</p>
         </div>
       </div>
     </div>
     
-  </div>
-  
-  <!-- Activity Lists -->
-  <div class="content-grid">
-    
-    <!-- Distribusi Terbaru -->
-    <div class="card">
-      <div class="card__header">
-        <h3 class="card__title">
+    <!-- Distribusi Terbaru Table -->
+    <div class="table-card">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
           <i data-lucide="send"></i>
           Distribusi Terbaru
         </h3>
+        <a href="#" class="table-card__link" onclick="navigateTo('distribusi-outlet'); return false;">Lihat Semua</a>
       </div>
-      <div class="card__body">
-        <div class="activity-list" id="recentDistribution">
-          <div class="empty-state">
-            <i data-lucide="inbox"></i>
-            <div class="empty-state__content">
-              <div class="empty-state__title">Belum ada distribusi</div>
-              <div class="empty-state__desc">Data distribusi akan muncul di sini</div>
-            </div>
-          </div>
+      <div class="table-card__body" id="distribusiTerbaruList">
+        <div class="table-card__empty">
+          <i data-lucide="inbox"></i>
+          <p class="table-card__empty-text">Belum ada distribusi</p>
         </div>
       </div>
     </div>
     
-    <!-- Aktivitas Terbaru -->
-    <div class="card">
-      <div class="card__header">
-        <h3 class="card__title">
+    <!-- Aktivitas Terbaru Table -->
+    <div class="table-card">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
           <i data-lucide="activity"></i>
           Aktivitas Terbaru
         </h3>
       </div>
-      <div class="card__body">
-        <div class="activity-list" id="recentActivity">
-          <div class="empty-state">
-            <i data-lucide="clock"></i>
-            <div class="empty-state__content">
-              <div class="empty-state__title">Belum ada aktivitas</div>
-              <div class="empty-state__desc">Aktivitas terbaru akan muncul di sini</div>
-            </div>
-          </div>
+      <div class="table-card__body" id="aktivitasList">
+        <div class="table-card__empty">
+          <i data-lucide="clock"></i>
+          <p class="table-card__empty-text">Belum ada aktivitas</p>
         </div>
       </div>
     </div>
-    
   </div>
-  
+
 </section>
 
-<script>
-  // Update date display
-  function updateDateDisplay() {
-    const now = new Date();
-    const options = { day: 'numeric', month: 'long', year: 'numeric' };
-    const dayOptions = { weekday: 'long' };
-    document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', options);
-    document.getElementById('currentDay').textContent = now.toLocaleDateString('id-ID', dayOptions);
-  }
-  updateDateDisplay();
-  
-  // Dashboard Data Loading
-  async function loadDashboardData() {
-    try {
-      await Promise.all([
-        loadKPIData(),
-        loadDistributionChart(),
-        loadRecentDistribution(),
-        loadStokKritis(),
-        loadRecentActivity()
-      ]);
-    } catch (error) {
-      console.error('Dashboard load error:', error);
-    }
-    
-    const loader = document.getElementById('appLoader');
-    if (loader) {
-      loader.classList.add('hidden');
-      setTimeout(() => loader.remove(), 500);
-    }
-  }
-  
-  // KPI Data
-  async function loadKPIData() {
-    try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
-      
-      document.getElementById('kpi-total-produk').textContent = formatNumber(data.produk?.total || 0);
-      document.getElementById('kpi-total-outlet').textContent = formatNumber(data.outlet?.total || 0);
-      document.getElementById('kpi-stok-gudang').textContent = formatNumber(data.stok?.gudang?.akhir || 0);
-      document.getElementById('kpi-stok-outlet').textContent = formatNumber(data.outlet?.aktif || 0);
-      document.getElementById('kpi-distribusi').textContent = formatNumber(data.distribusi?.hari_ini?.qty || 0);
-      document.getElementById('kpi-penjualan').textContent = formatNumber(data.today?.penjualan || 0);
-      document.getElementById('kpi-so-pending').textContent = formatNumber(data.opname?.berjalan || 0);
-      document.getElementById('kpi-stok-kritis').textContent = formatNumber(data.stok?.kritis || 0);
-    } catch (error) {
-      console.error('KPI load error:', error);
-    }
-  }
-  
-  // Distribution Chart
-  async function loadDistributionChart() {
-    try {
-      const response = await fetch('/api/v3-chart');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
-      
-      if (data.distribusi && data.distribusi.labels && data.distribusi.labels.length > 0) {
-        document.getElementById('chartEmpty').style.display = 'none';
-        const ctx = document.getElementById('distributionChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: data.distribusi.labels,
-            datasets: [{
-              label: 'Distribusi',
-              data: data.distribusi.values,
-              backgroundColor: 'rgba(255, 77, 58, 0.8)',
-              borderRadius: 8,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } },
-              x: { grid: { display: false }, ticks: { color: '#94A3B8' } }
-            }
-          }
-        });
-      } else {
-        document.getElementById('chartEmpty').style.display = 'flex';
-      }
-    } catch (error) {
-      console.error('Chart load error:', error);
-      document.getElementById('chartEmpty').style.display = 'flex';
-    }
-  }
-  
-  // Recent Distribution
-  async function loadRecentDistribution() {
-    try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
-      
-      const container = document.getElementById('recentDistribution');
-      if (data.distribusi?.recent && data.distribusi.recent.length > 0) {
-        container.innerHTML = data.distribusi.recent.map(item => `
-          <div class="activity-item">
-            <div class="activity-item__icon activity-item__icon--primary">
-              <i data-lucide="truck"></i>
-            </div>
-            <div class="activity-item__content">
-              <div class="activity-item__text">${item.outlet || 'Outlet'}</div>
-              <div class="activity-item__meta">${item.qty || 0} unit • ${item.waktu || 'Baru'}</div>
-            </div>
-          </div>
-        `).join('');
-        lucide.createIcons();
-      }
-    } catch (error) {
-      console.error('Distribution load error:', error);
-    }
-  }
-  
-  // Stok Kritis
-  async function loadStokKritis() {
-    try {
-      const response = await fetch('/api/v3-persediaan');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
-      
-      const container = document.getElementById('stokKritisList');
-      if (data.kritis && data.kritis.length > 0) {
-        container.innerHTML = data.kritis.slice(0, 5).map(item => `
-          <div class="stok-item">
-            <div class="stok-item__info">
-              <div class="stok-item__sku">${item.sku || '-'}</div>
-              <div class="stok-item__nama">${item.nama || '-'}</div>
-            </div>
-            <div class="stok-item__qty">${item.stok || 0}</div>
-          </div>
-        `).join('');
-      }
-    } catch (error) {
-      console.error('Stok kritis load error:', error);
-    }
-  }
-  
-  // Recent Activity
-  async function loadRecentActivity() {
-    try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
-      
-      const container = document.getElementById('recentActivity');
-      if (data.aktivitas && data.aktivitas.length > 0) {
-        container.innerHTML = data.aktivitas.map(item => `
-          <div class="activity-item">
-            <div class="activity-item__icon activity-item__icon--${item.type || 'primary'}">
-              <i data-lucide="${item.icon || 'activity'}"></i>
-            </div>
-            <div class="activity-item__content">
-              <div class="activity-item__text">${item.text || ''}</div>
-              <div class="activity-item__meta">${item.waktu || ''}</div>
-            </div>
-          </div>
-        `).join('');
-        lucide.createIcons();
-      }
-    } catch (error) {
-      console.error('Activity load error:', error);
-    }
-  }
-  
-  // Format number helper
-  function formatNumber(num) {
-    if (num === null || num === undefined) return '0';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  }
-  
-  // Load on page ready
-  document.addEventListener('DOMContentLoaded', loadDashboardData);
-</script>
+<script src="/js/pages/dashboard.js"></script>
