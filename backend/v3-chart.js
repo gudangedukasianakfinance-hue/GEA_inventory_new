@@ -11,6 +11,17 @@ export default async function handler(req, res) {
     // Default type: 'overview'
     const chartType = type || 'overview';
 
+    // Check if database is available
+    if (!pool) {
+      console.warn('Database not configured - returning empty chart');
+      return res.status(200).json({
+        type: chartType,
+        periode: { bulan: targetBulan, tahun: targetTahun },
+        data: [],
+        _warning: 'Database not configured'
+      });
+    }
+
     let result;
 
     switch (chartType) {
@@ -321,6 +332,12 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("V3 CHART ERROR:", err);
-    res.status(500).json({ error: err.message });
+    // Return empty but valid response instead of 500
+    res.status(200).json({
+      type: req.query.type || 'overview',
+      periode: { bulan: 1, tahun: 2024 },
+      data: [],
+      _error: err.message
+    });
   }
 }

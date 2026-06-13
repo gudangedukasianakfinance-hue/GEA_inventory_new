@@ -12,6 +12,26 @@ export default async function handler(req, res) {
     const startDate = new Date(targetTahun, targetBulan - 1, 1);
     const endDate = new Date(targetTahun, targetBulan, 0); // Last day of month
 
+    // Check if database is available
+    if (!pool) {
+      console.warn('Database not configured - returning empty persediaan');
+      return res.status(200).json({
+        periode: {
+          bulan: targetBulan,
+          tahun: targetTahun,
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0]
+        },
+        ringkasan: { stok_awal: 0, total_pembelian: 0, total_penjualan: 0, total_penyesuaian: 0, stok_akhir: 0 },
+        produk: [],
+        kategori: [],
+        stok_kritis: [],
+        forecast: [],
+        generated_at: new Date().toISOString(),
+        _warning: 'Database not configured'
+      });
+    }
+
     // 1. Stok Gudang dengan Rolling Stock
     // STOK_AKHIR = STOK_AWAL + PEMBELIAN - PENJUALAN + PENYESUAIAN
     const stokGudang = await pool.query(`
@@ -324,6 +344,22 @@ export default async function handler(req, res) {
     res.status(200).json(result);
   } catch (err) {
     console.error("V3 PERSEDIAAN ERROR:", err);
-    res.status(500).json({ error: err.message });
+    // Return empty but valid response instead of 500
+    const now = new Date();
+    const fallbackBulan = Number(req.query.bulan || now.getMonth() + 1);
+    const fallbackTahun = Number(req.query.tahun || now.getFullYear());
+    const startDate = new Date(fallbackTahun, fallbackBulan - 1, 1);
+    const endDate = new Date(fallbackTahun, fallbackBulan, 0);
+    
+    res.status(200).json({
+      periode: { bulan: fallbackBulan, tahun: fallbackTahun, start_date: startDate.toISOString().split('T')[0], end_date: endDate.toISOString().split('T')[0] },
+      ringkasan: { stok_awal: 0, total_pembelian: 0, total_penjualan: 0, total_penyesuaian: 0, stok_akhir: 0 },
+      produk: [],
+      kategori: [],
+      stok_kritis: [],
+      forecast: [],
+      generated_at: new Date().toISOString(),
+      _error: err.message
+    });
   }
 }

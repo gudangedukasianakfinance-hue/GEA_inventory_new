@@ -129,12 +129,23 @@ const Dashboard = {
     showGlobalLoading();
     
     try {
-      await Promise.all([
+      // Use Promise.allSettled to prevent one failed widget from breaking entire dashboard
+      const results = await Promise.allSettled([
         this.loadDashboardData(),
         this.loadChartData(),
         this.loadPersediaanData(),
         this.loadModulLevelData()
       ]);
+      
+      // Log results for debugging
+      results.forEach((result, index) => {
+        const names = ['Dashboard', 'Chart', 'Persediaan', 'Modul Level'];
+        if (result.status === 'fulfilled') {
+          console.log(`✅ ${names[index]} loaded successfully`);
+        } else {
+          console.error(`❌ ${names[index]} failed:`, result.reason?.message || result.reason);
+        }
+      });
       
       this.isLoading = false;
       this.renderKPIs();
@@ -148,8 +159,8 @@ const Dashboard = {
       this.updateUserGreeting();
       
     } catch (error) {
-      console.error('Error loading dashboard:', error);
-      this.showError(error.message || 'Terjadi kesalahan saat memuat data');
+      console.error('Critical error loading dashboard:', error);
+      this.showError('Terjadi kesalahan saat memuat data dashboard');
     } finally {
       // Hide global loading after minimum 500ms
       setTimeout(() => {
@@ -163,16 +174,32 @@ const Dashboard = {
     try {
       const params = `bulan=${this.currentBulan}&tahun=${this.currentTahun}`;
       const response = await fetch(`/api/v3-dashboard?${params}`);
-      if (!response.ok) throw new Error('Gagal memuat data dashboard');
+      if (!response.ok) throw new Error(`Dashboard API failed: ${response.status}`);
       
       this.data = await response.json();
-      console.log('Dashboard data loaded:', this.data);
+      console.log('📊 Dashboard response:', this.data);
       
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('❌ Error loading dashboard data:', error);
       this.data = this.getEmptyData();
-      throw error;
+      throw error; // Re-throw to be caught by Promise.allSettled
     }
+  },
+  
+  // Get empty/default data structure
+  getEmptyData() {
+    return {
+      today: { penjualan: 0, customer_count: 0, pembelian: 0 },
+      produk: { aktif: 0, total: 0 },
+      outlet: { aktif: 0, total: 0 },
+      stok: { kritis: 0, gudang: { awal: 0, pembelian: 0, penjualan: 0, penyesuaian: 0, akhir: 0 } },
+      distribusi: { periode: { count: 0, qty: 0, outlet_count: 0 } },
+      opname: { menunggu: 0, proses: 0, selesai: 0, berjalan: 0 },
+      users: { total: 0 },
+      profit: 0,
+      siswa_aktif: 0,
+      charts: { outlet: { data: [] }, tren: { data: [] }, overview: { data: [] }, kategori: { data: [] } }
+    };
   },
   
   // Load chart data from /api/v3-chart
@@ -181,7 +208,7 @@ const Dashboard = {
       const params = `bulan=${this.currentBulan}&tahun=${this.currentTahun}`;
       
       const outletResponse = await fetch(`/api/v3-chart?type=outlet&${params}`);
-      if (!outletResponse.ok) throw new Error('Gagal memuat data outlet');
+      if (!outletResponse.ok) throw new Error(`Outlet chart API failed: ${outletResponse.status}`);
       const outletData = await outletResponse.json();
       
       const trenResponse = await fetch(`/api/v3-chart?type=tren&${params}`);
@@ -200,11 +227,17 @@ const Dashboard = {
         kategori: kategoriData
       };
       
-      console.log('Chart data loaded:', this.data.charts);
+      console.log('📈 Chart response:', {
+        outlet: outletData?.data?.length || 0,
+        tren: trenData?.data?.length || 0,
+        overview: overviewData?.data?.length || 0,
+        kategori: kategoriData?.data?.length || 0
+      });
       
     } catch (error) {
-      console.error('Error loading chart data:', error);
+      console.error('❌ Error loading chart data:', error);
       this.data.charts = { outlet: { data: [] }, tren: { data: [] }, overview: { data: [] }, kategori: { data: [] } };
+      throw error; // Re-throw to be caught by Promise.allSettled
     }
   },
   
@@ -213,27 +246,37 @@ const Dashboard = {
     try {
       const params = `bulan=${this.currentBulan}&tahun=${this.currentTahun}`;
       const response = await fetch(`/api/v3-persediaan?${params}`);
-      if (!response.ok) throw new Error('Gagal memuat data persediaan');
+      if (!response.ok) throw new Error(`Persediaan API failed: ${response.status}`);
       
       this.persediaan = await response.json();
-      console.log('Persediaan data loaded:', this.persediaan);
+      console.log('📦 Persediaan response:', {
+        produk_count: this.persediaan.produk?.length || 0,
+        forecast_count: this.persediaan.forecast?.length || 0,
+        stok_kritis_count: this.persediaan.stok_kritis?.length || 0
+      });
       
     } catch (error) {
-      console.error('Error loading persediaan data:', error);
+      console.error('❌ Error loading persediaan data:', error);
       this.persediaan = { stok_kritis: [], forecast: [] };
+      throw error; // Re-throw to be caught by Promise.allSettled
     }
   },
   
-  // Load modul level data
+  // Load modul level data (temporarily disabled if causes issues)
   async loadModulLevelData() {
     try {
       const params = `bulan=${this.currentBulan}&tahun=${this.currentTahun}`;
       const response = await fetch(`/api/v3-chart?type=modul_level&${params}`);
-      if (!response.ok) throw new Error('Gagal memuat data modul level');
+      if (!response.ok) throw new Error(`Modul Level API failed: ${response.status}`);
+      
       this.data.modulLevel = await response.json();
-      console.log('Modul level data loaded:', this.data.modulLevel);
+      console.log('📚 Modul Level response:', {
+        data_count: this.data.modulLevel?.data?.length || 0
+      });
+      
     } catch (error) {
-      console.error('Error loading modul level data:', error);
+      console.warn('⚠️ Modul Level data unavailable (non-critical):', error.message);
+      // Don't throw - this is non-critical, just log and continue
       this.data.modulLevel = { data: [] };
     }
   },
