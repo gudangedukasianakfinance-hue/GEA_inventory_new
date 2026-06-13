@@ -1,10 +1,77 @@
+
+> inventory-app@3.0.0 start
+> node server.js
+
+⚠️ DATABASE_URL belum di-set. API database akan gagal sampai env tersedia.
+   Untuk Vercel: Tambahkan DATABASE_URL di Settings → Environment Variables
 Server running on http://localhost:3000
-(node:2166) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
-In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
-
-To prepare for this change:
-- If you want the current behavior, explicitly use 'sslmode=verify-full'
-- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
-
-See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
-(Use `node --trace-warnings ...` to show where the warning was created)
+V3 DASHBOARD ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-dashboard.js:16:25) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+V3 DASHBOARD ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-dashboard.js:16:25) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+V3 CHART ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-chart.js:170:18) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+V3 CHART ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-chart.js:94:18) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+V3 CHART ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-chart.js:49:18) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+V3 CHART ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-chart.js:19:18) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
+V3 PERSEDIAAN ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/v3-persediaan.js:17:24) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}

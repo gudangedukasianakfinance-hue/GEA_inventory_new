@@ -448,11 +448,22 @@
     }
     
     function handleLogout() {
+      // Clear all session data
       localStorage.removeItem('auth_user');
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Show toast and close dropdown
       showToast('Anda telah keluar', 'success');
-      applyAuthState();
       document.getElementById('profileMenu')?.classList.remove('open');
-      navigateTo('dashboard');
+      
+      // Clear AppRouter cache
+      if (window.AppRouter) {
+        AppRouter.clearCache();
+      }
+      
+      // Redirect to login page (index.html)
+      window.location.href = '/index.html';
     }
     
     document.getElementById('loginModal')?.addEventListener('click', (e) => {

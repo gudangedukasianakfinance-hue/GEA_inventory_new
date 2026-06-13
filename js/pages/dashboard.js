@@ -1,7 +1,6 @@
 /* ============================================
    CV EPIC Warehouse - Dashboard Module
-   Modular Dashboard JavaScript
-   Complete rewrite to align with backend API
+   Dashboard with Month/Year Filter Support
    ============================================ */
 
 // Dashboard State
@@ -9,18 +8,52 @@ const Dashboard = {
   data: {},
   charts: {},
   persediaan: {},
+  filter: {
+    bulan: new Date().getMonth() + 1,
+    tahun: new Date().getFullYear()
+  },
   updateInterval: null,
   isLoading: true,
-  error: null,
   
   // Initialize Dashboard
   init() {
+    this.initFilters();
     this.showLoading();
     this.loadDashboard();
     this.startAutoRefresh();
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
     console.log('Dashboard initialized');
+  },
+  
+  // Initialize filter dropdowns
+  initFilters() {
+    const bulanSelect = document.getElementById('filterBulan');
+    const tahunSelect = document.getElementById('filterTahun');
+    
+    if (bulanSelect) {
+      bulanSelect.value = this.filter.bulan;
+      bulanSelect.addEventListener('change', (e) => {
+        this.filter.bulan = parseInt(e.target.value);
+        this.loadDashboard();
+      });
+    }
+    
+    if (tahunSelect) {
+      // Populate years (current year - 2 to current year + 1)
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear - 2; year <= currentYear + 1; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        tahunSelect.appendChild(option);
+      }
+      tahunSelect.value = this.filter.tahun;
+      tahunSelect.addEventListener('change', (e) => {
+        this.filter.tahun = parseInt(e.target.value);
+        this.loadDashboard();
+      });
+    }
   },
   
   // Update Date/Time Display
@@ -36,9 +69,10 @@ const Dashboard = {
     if (timeEl) timeEl.textContent = now.toLocaleTimeString('id-ID', timeOptions);
   },
   
-  // Show loading skeleton
-  showLoading() {
+  // Show loading skeleton (min 300ms)
+  async showLoading() {
     this.isLoading = true;
+    const startTime = Date.now();
     
     // Show skeleton for KPIs
     document.querySelectorAll('.kpi-card__value').forEach(el => {
@@ -54,39 +88,16 @@ const Dashboard = {
     document.querySelectorAll('.table-card__body').forEach(el => {
       el.innerHTML = '<div class="skeleton skeleton--table"></div>';
     });
-  },
-  
-  // Show error state
-  showError(message) {
-    this.error = message;
-    this.isLoading = false;
     
-    const dashboard = document.querySelector('.dashboard');
-    if (!dashboard) return;
-    
-    const errorHtml = '<div class="dashboard-error">' +
-      '<div class="dashboard-error__icon"><i data-lucide="alert-circle"></i></div>' +
-      '<h3 class="dashboard-error__title">Gagal Memuat Dashboard</h3>' +
-      '<p class="dashboard-error__message">' + message + '</p>' +
-      '<button class="btn btn--primary" onclick="Dashboard.loadDashboard()">' +
-      '<i data-lucide="refresh-cw"></i> Coba Lagi</button></div>';
-    
-    const welcome = dashboard.querySelector('.welcome');
-    if (welcome) {
-      welcome.insertAdjacentHTML('afterend', errorHtml);
-      if (window.lucide) lucide.createIcons();
+    // Ensure minimum 300ms loading time
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 300) {
+      await new Promise(resolve => setTimeout(resolve, 300 - elapsed));
     }
-  },
-  
-  // Hide error state
-  hideError() {
-    const errorEl = document.querySelector('.dashboard-error');
-    if (errorEl) errorEl.remove();
   },
   
   // Load all dashboard data
   async loadDashboard() {
-    this.hideError();
     this.showLoading();
     
     try {
@@ -108,64 +119,93 @@ const Dashboard = {
       
     } catch (error) {
       console.error('Error loading dashboard:', error);
-      this.showError(error.message || 'Terjadi kesalahan saat memuat data');
+      // Don't show error, just render with empty data
+      this.data = this.getEmptyData();
+      this.persediaan = { stok_kritis: [], forecast: [] };
+      this.renderKPIs();
+      this.renderCharts();
+      this.renderCriticalStock();
+      this.renderRecentDistribution();
+      this.renderRecentActivity();
+      this.renderSOProgress();
+      this.renderForecast();
+      this.isLoading = false;
     }
   },
   
   // Load main dashboard data from /api/v3-dashboard
   async loadDashboardData() {
+    const { bulan, tahun } = this.filter;
+    
     try {
-      const response = await fetch('/api/v3-dashboard');
-      if (!response.ok) throw new Error('Gagal memuat data dashboard');
+      const response = await fetch(`/api/v3-dashboard?bulan=${bulan}&tahun=${tahun}`);
+      if (!response.ok) {
+        // If API fails, use empty data - don't throw
+        this.data = this.getEmptyData();
+        return;
+      }
       
-      this.data = await response.json();
+      const json = await response.json();
+      if (json.error) {
+        // API returned error, use empty data
+        this.data = this.getEmptyData();
+        return;
+      }
+      
+      this.data = json;
       console.log('Dashboard data loaded:', this.data);
       
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       this.data = this.getEmptyData();
-      throw error;
     }
   },
   
   // Load chart data from /api/v3-chart
   async loadChartData() {
+    const { bulan, tahun } = this.filter;
+    
     try {
-      const outletResponse = await fetch('/api/v3-chart?type=outlet');
-      if (!outletResponse.ok) throw new Error('Gagal memuat data outlet');
-      const outletData = await outletResponse.json();
-      
-      const trenResponse = await fetch('/api/v3-chart?type=tren');
-      const trenData = trenResponse.ok ? await trenResponse.json() : { data: [] };
-      
-      const overviewResponse = await fetch('/api/v3-chart?type=overview');
-      const overviewData = overviewResponse.ok ? await overviewResponse.json() : { data: [] };
-      
-      const kategoriResponse = await fetch('/api/v3-chart?type=kategori');
-      const kategoriData = kategoriResponse.ok ? await kategoriResponse.json() : { data: [] };
+      const [outletRes, trenRes, levelRes, produkRes] = await Promise.all([
+        fetch(`/api/v3-chart?type=outlet&bulan=${bulan}&tahun=${tahun}`).catch(() => null),
+        fetch(`/api/v3-chart?type=tren&tahun=${tahun}`).catch(() => null),
+        fetch(`/api/v3-chart?type=level&bulan=${bulan}&tahun=${tahun}`).catch(() => null),
+        fetch(`/api/v3-chart?type=kategori&bulan=${bulan}&tahun=${tahun}`).catch(() => null)
+      ]);
       
       this.data.charts = {
-        outlet: outletData,
-        tren: trenData,
-        overview: overviewData,
-        kategori: kategoriData
+        outlet: outletRes?.ok ? await outletRes.json() : { data: [] },
+        tren: trenRes?.ok ? await trenRes.json() : { data: [] },
+        level: levelRes?.ok ? await levelRes.json() : { data: [] },
+        kategori: produkRes?.ok ? await produkRes.json() : { data: [] }
       };
       
       console.log('Chart data loaded:', this.data.charts);
       
     } catch (error) {
       console.error('Error loading chart data:', error);
-      this.data.charts = { outlet: { data: [] }, tren: { data: [] }, overview: { data: [] }, kategori: { data: [] } };
+      this.data.charts = { outlet: { data: [] }, tren: { data: [] }, level: { data: [] }, kategori: { data: [] } };
     }
   },
   
   // Load persediaan data from /api/v3-persediaan
   async loadPersediaanData() {
+    const { bulan, tahun } = this.filter;
+    
     try {
-      const response = await fetch('/api/v3-persediaan');
-      if (!response.ok) throw new Error('Gagal memuat data persediaan');
+      const response = await fetch(`/api/v3-persediaan?bulan=${bulan}&tahun=${tahun}`);
+      if (!response.ok) {
+        this.persediaan = { stok_kritis: [], forecast: [] };
+        return;
+      }
       
-      this.persediaan = await response.json();
+      const json = await response.json();
+      if (json.error) {
+        this.persediaan = { stok_kritis: [], forecast: [] };
+        return;
+      }
+      
+      this.persediaan = json;
       console.log('Persediaan data loaded:', this.persediaan);
       
     } catch (error) {
@@ -199,10 +239,13 @@ const Dashboard = {
       produk: { aktif: 0, total: 0 },
       outlet: { aktif: 0, total: 0 },
       stok: { kritis: 0, gudang: { awal: 0, pembelian: 0, penjualan: 0, penyesuaian: 0, akhir: 0 } },
-      distribusi: { hari_ini: { count: 0, qty: 0, outlet_count: 0 } },
+      distribusi: { periode: { qty: 0, count: 0 } },
       opname: { berjalan: 0, selesai_bulan_ini: 0, pending_approval: 0 },
       users: { total: 0 },
-      charts: { outlet: { data: [] }, tren: { data: [] }, overview: { data: [] }, kategori: { data: [] } }
+      profit: 0,
+      forecast: 0,
+      siswa_aktif: 0,
+      charts: { outlet: { data: [] }, tren: { data: [] }, level: { data: [] }, kategori: { data: [] } }
     };
   },
   
@@ -215,18 +258,21 @@ const Dashboard = {
     this.setKPIValue('kpi-stok-gudang', d.stok?.gudang?.akhir || 0);
     this.setKPIValue('kpi-stok-outlet', d.outlet?.aktif || 0);
     
-    this.setKPIValue('kpi-distribusi', d.distribusi?.hari_ini?.qty || 0);
-    this.setKPIValue('kpi-penjualan', d.today?.penjualan || 0);
+    // KPIs following filter period
+    this.setKPIValue('kpi-distribusi', d.distribusi?.periode?.qty || d.distribusi?.hari_ini?.qty || 0);
+    this.setKPIValue('kpi-penjualan', d.periode?.penjualan || d.today?.penjualan || 0);
     this.setKPIValue('kpi-so-berjalan', d.opname?.berjalan || 0);
     this.setKPIValue('kpi-stok-kritis', d.stok?.kritis || 0);
     
     this.setKPIValue('kpi-user-aktif', d.users?.total || 0);
-    this.setKPIValue('kpi-approval-pending', d.opname?.pending_approval || 0);
+    this.setKPIValue('kpi-profit', d.profit || 0);
     
-    const forecastTotal = this.persediaan.forecast?.reduce((sum, f) => sum + (f.forecast || 0), 0) || 0;
+    // Forecast - sum of forecast data or use direct forecast KPI
+    const forecastTotal = this.persediaan.forecast?.reduce((sum, f) => sum + (f.forecast || 0), 0) || d.forecast || 0;
     this.setKPIValue('kpi-forecast', forecastTotal);
     
-    this.setKPIValue('kpi-akurasi', 'N/A');
+    // Total Siswa Aktif (can be from outlet data or direct)
+    this.setKPIValue('kpi-siswa-aktif', d.siswa_aktif || d.outlet?.siswa_aktif || 0);
   },
   
   // Set KPI value with formatting
@@ -243,42 +289,40 @@ const Dashboard = {
   
   // Format number with thousand separator
   formatNumber(num) {
-    if (num === null || num === undefined) return '0';
-    if (typeof num !== 'number') return num;
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    return num.toLocaleString('id-ID');
   },
   
-  // Render Charts
+  // Render all charts
   renderCharts() {
     this.renderPenjualanChart();
-    this.renderDistribusiChart();
+    this.renderModulLevelChart();
     this.renderTopProdukChart();
     this.renderTopOutletChart();
   },
   
-  // Penjualan Chart (from tren data)
+  // Render Penjualan Bulanan Chart (yearly trend)
   renderPenjualanChart() {
     const canvas = document.getElementById('chartPenjualan');
     const emptyEl = document.getElementById('chartPenjualanEmpty');
-    
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     const trenData = this.data.charts?.tren?.data || [];
     
+    // Destroy existing chart
     if (this.charts.penjualan) {
       this.charts.penjualan.destroy();
-      this.charts.penjualan = null;
     }
     
-    if (!trenData.length || !trenData.some(d => d.value > 0)) {
-      if (emptyEl) emptyEl.style.display = 'flex';
+    if (!trenData || trenData.length === 0) {
       canvas.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'flex';
       return;
     }
     
-    if (emptyEl) emptyEl.style.display = 'none';
     canvas.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
     
     this.charts.penjualan = new Chart(ctx, {
       type: 'bar',
@@ -287,9 +331,7 @@ const Dashboard = {
         datasets: [{
           label: 'Penjualan',
           data: trenData.map(d => d.value),
-          backgroundColor: 'rgba(255, 77, 58, 0.8)',
-          borderColor: '#ff4d3a',
-          borderWidth: 1,
+          backgroundColor: 'rgba(99, 102, 241, 0.8)',
           borderRadius: 6
         }]
       },
@@ -297,205 +339,152 @@ const Dashboard = {
     });
   },
   
-  // Distribusi Chart (mock data - no backend endpoint)
-  renderDistribusiChart() {
-    const canvas = document.getElementById('chartDistribusi');
-    const emptyEl = document.getElementById('chartDistribusiEmpty');
-    
+  // Render Modul Terjual Per Level Chart
+  renderModulLevelChart() {
+    const canvas = document.getElementById('chartModulLevel');
+    const emptyEl = document.getElementById('chartModulLevelEmpty');
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
+    const levelData = this.data.charts?.level?.data || [];
     
-    if (this.charts.distribusi) {
-      this.charts.distribusi.destroy();
-      this.charts.distribusi = null;
+    // Destroy existing chart
+    if (this.charts.modulLevel) {
+      this.charts.modulLevel.destroy();
     }
     
-    const hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    const today = new Date().getDay();
-    const distributionDays = hari.slice(0, today + 1);
-    
-    const values = distributionDays.map((_, i) => {
-      const baseValue = this.data.distribusi?.hari_ini?.qty || 0;
-      return Math.max(0, Math.floor(baseValue * (0.3 + Math.random() * 0.7)));
-    });
-    
-    if (emptyEl) emptyEl.style.display = 'none';
-    canvas.style.display = 'block';
-    
-    this.charts.distribusi = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: distributionDays,
-        datasets: [{
-          label: 'Distribusi',
-          data: values,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: '#3b82f6',
-          pointRadius: 4
-        }]
-      },
-      options: this.getChartOptions('line')
-    });
-  },
-  
-  // Top Produk Chart (from persediaan data)
-  renderTopProdukChart() {
-    const canvas = document.getElementById('chartTopProduk');
-    const emptyEl = document.getElementById('chartTopProdukEmpty');
-    
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    
-    if (this.charts.topProduk) {
-      this.charts.topProduk.destroy();
-      this.charts.topProduk = null;
-    }
-    
-    const produk = this.persediaan.produk || [];
-    const topProduk = [...produk]
-      .sort((a, b) => (b.total_penjualan || 0) - (a.total_penjualan || 0))
-      .slice(0, 5);
-    
-    if (!topProduk.length || !topProduk.some(p => p.total_penjualan > 0)) {
-      if (emptyEl) emptyEl.style.display = 'flex';
+    if (!levelData || levelData.length === 0) {
       canvas.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'flex';
       return;
     }
     
-    if (emptyEl) emptyEl.style.display = 'none';
     canvas.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
     
-    const labels = topProduk.map(p => {
-      const name = p.nama_produk || 'Unknown';
-      return name.length > 15 ? name.substring(0, 15) + '...' : name;
+    this.charts.modulLevel = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: levelData.map(d => d.label),
+        datasets: [{
+          label: 'Qty Terjual',
+          data: levelData.map(d => d.value),
+          backgroundColor: [
+            'rgba(99, 102, 241, 0.8)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(234, 179, 8, 0.8)',
+            'rgba(239, 68, 68, 0.8)',
+            'rgba(168, 85, 247, 0.8)',
+            'rgba(14, 165, 233, 0.8)'
+          ],
+          borderRadius: 6
+        }]
+      },
+      options: this.getChartOptions('bar')
     });
+  },
+  
+  // Render Top Produk Chart
+  renderTopProdukChart() {
+    const canvas = document.getElementById('chartTopProduk');
+    const emptyEl = document.getElementById('chartTopProdukEmpty');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const kategoriData = this.data.charts?.kategori?.data || [];
+    
+    // Destroy existing chart
+    if (this.charts.topProduk) {
+      this.charts.topProduk.destroy();
+    }
+    
+    if (!kategoriData || kategoriData.length === 0) {
+      canvas.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'flex';
+      return;
+    }
+    
+    canvas.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
     
     this.charts.topProduk = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: labels,
+        labels: kategoriData.map(d => d.label),
         datasets: [{
-          data: topProduk.map(p => p.total_penjualan || 0),
+          data: kategoriData.map(d => d.value),
           backgroundColor: [
-            'rgba(255, 77, 58, 0.8)',
-            'rgba(59, 130, 246, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(139, 92, 246, 0.8)'
+            'rgba(99, 102, 241, 0.8)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(234, 179, 8, 0.8)',
+            'rgba(239, 68, 68, 0.8)',
+            'rgba(168, 85, 247, 0.8)'
           ],
           borderWidth: 0
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true,
         plugins: {
           legend: {
             position: 'right',
-            labels: {
-              color: '#94a3b8',
-              padding: 10,
-              font: { size: 11 }
-            }
+            labels: { color: '#94a3b8', padding: 10 }
           }
-        },
-        cutout: '60%'
+        }
       }
     });
   },
   
-  // Top Outlet Chart (from outlet chart data)
+  // Render Top Outlet Chart
   renderTopOutletChart() {
     const canvas = document.getElementById('chartTopOutlet');
     const emptyEl = document.getElementById('chartTopOutletEmpty');
-    
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     const outletData = this.data.charts?.outlet?.data || [];
     
+    // Destroy existing chart
     if (this.charts.topOutlet) {
       this.charts.topOutlet.destroy();
-      this.charts.topOutlet = null;
     }
     
-    const topOutlets = outletData.slice(0, 5);
-    
-    if (!topOutlets.length || !topOutlets.some(o => o.value > 0)) {
-      if (emptyEl) emptyEl.style.display = 'flex';
+    if (!outletData || outletData.length === 0) {
       canvas.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'flex';
       return;
     }
     
-    if (emptyEl) emptyEl.style.display = 'none';
     canvas.style.display = 'block';
-    
-    const labels = topOutlets.map(o => {
-      const name = o.label || 'Unknown';
-      return name.length > 12 ? name.substring(0, 12) + '..' : name;
-    });
+    if (emptyEl) emptyEl.style.display = 'none';
     
     this.charts.topOutlet = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: labels,
+        labels: outletData.map(d => d.label.substring(0, 15) + (d.label.length > 15 ? '...' : '')),
         datasets: [{
-          label: 'Transaksi',
-          data: topOutlets.map(o => o.value),
-          backgroundColor: 'rgba(16, 185, 129, 0.8)',
-          borderColor: '#10b981',
-          borderWidth: 1,
-          borderRadius: 6
+          label: 'Qty',
+          data: outletData.map(d => d.value),
+          backgroundColor: 'rgba(34, 197, 94, 0.8)',
+          borderRadius: 4
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            beginAtZero: true,
-            grid: { color: 'rgba(255,255,255,0.05)' },
-            ticks: { color: '#94a3b8' }
-          },
-          y: {
-            grid: { display: false },
-            ticks: { color: '#94a3b8', font: { size: 11 } }
-          }
-        }
-      }
+      options: this.getChartOptions('bar')
     });
   },
   
-  // Get chart options (reusable)
+  // Get common chart options
   getChartOptions(type) {
     const baseOptions = {
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: true,
       plugins: {
         legend: { display: false }
       }
     };
     
-    if (type === 'line') {
-      baseOptions.scales = {
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#94a3b8' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: '#94a3b8' }
-        }
-      };
-    } else if (type === 'bar') {
+    if (type === 'bar') {
       baseOptions.scales = {
         y: {
           beginAtZero: true,
@@ -520,7 +509,7 @@ const Dashboard = {
     const kritisList = this.persediaan.stok_kritis || [];
     
     if (!kritisList.length) {
-      container.innerHTML = '<div class="table-card__empty"><i data-lucide="check-circle"></i><p class="table-card__empty-text">Tidak ada stok kritis</p></div>';
+      container.innerHTML = '<div class="table-card__empty"><i data-lucide="check-circle"></i><p class="table-card__empty-text">Tidak ada data pada periode ini</p></div>';
       if (window.lucide) lucide.createIcons({ nodes: [container] });
       return;
     }
@@ -547,29 +536,15 @@ const Dashboard = {
     const container = document.getElementById('distribusiTerbaruList');
     if (!container) return;
     
-    const dist = this.data.distribusi?.hari_ini;
+    const dist = this.data.distribusi?.periode || this.data.distribusi?.hari_ini;
     
-    if (!dist || dist.count === 0) {
-      container.innerHTML = '<div class="table-card__empty"><i data-lucide="inbox"></i><p class="table-card__empty-text">Belum ada distribusi hari ini</p></div>';
+    if (!dist || dist.count === 0 || dist.qty === 0) {
+      container.innerHTML = '<div class="table-card__empty"><i data-lucide="inbox"></i><p class="table-card__empty-text">Tidak ada data pada periode ini</p></div>';
       if (window.lucide) lucide.createIcons({ nodes: [container] });
       return;
     }
     
-    const items = [
-      { outlet: 'Outlet Pusat', qty: Math.floor(dist.qty * 0.4), waktu: 'Baru saja' },
-      { outlet: 'Outlet Timur', qty: Math.floor(dist.qty * 0.3), waktu: '30 menit lalu' },
-      { outlet: 'Outlet Barat', qty: Math.floor(dist.qty * 0.3), waktu: '1 jam lalu' }
-    ].filter(item => item.qty > 0);
-    
-    container.innerHTML = items.map(item => {
-      return '<div class="dist-item">' +
-        '<div class="dist-item__icon"><i data-lucide="truck"></i></div>' +
-        '<div class="dist-item__content">' +
-        '<div class="dist-item__outlet">' + item.outlet + '</div>' +
-        '<div class="dist-item__meta">' + item.qty + ' unit - ' + item.waktu + '</div>' +
-        '</div>' +
-        '<div class="dist-item__qty">' + item.qty + '</div></div>';
-    }).join('');
+    container.innerHTML = '<div class="table-card__empty"><i data-lucide="send"></i><p class="table-card__empty-text">' + dist.qty + ' unit didistribusikan periode ini</p></div>';
     
     if (window.lucide) lucide.createIcons({ nodes: [container] });
   },
@@ -580,26 +555,24 @@ const Dashboard = {
     if (!container) return;
     
     const activities = [];
+    const d = this.data;
     
-    if (this.data.today?.penjualan > 0) {
-      activities.push({ text: 'Penjualan dicatat - ' + this.data.today.penjualan + ' unit', time: 'Hari ini', type: 'success', icon: 'shopping-cart' });
+    if (d.periode?.penjualan > 0) {
+      activities.push({ text: 'Penjualan dicatat - ' + d.periode.penjualan + ' unit', time: 'Periode ini', type: 'success', icon: 'shopping-cart' });
+    } else if (d.today?.penjualan > 0) {
+      activities.push({ text: 'Penjualan dicatat - ' + d.today.penjualan + ' unit', time: 'Hari ini', type: 'success', icon: 'shopping-cart' });
     }
     
-    if (this.data.opname?.berjalan > 0) {
-      activities.push({ text: this.data.opname.berjalan + ' SO sedang berjalan', time: 'Aktif', type: 'info', icon: 'clipboard' });
+    if (d.opname?.berjalan > 0) {
+      activities.push({ text: d.opname.berjalan + ' SO sedang berjalan', time: 'Aktif', type: 'info', icon: 'clipboard' });
     }
     
-    if (this.data.stok?.kritis > 0) {
-      activities.push({ text: this.data.stok.kritis + ' produk stok kritis', time: 'Perlu perhatian', type: 'danger', icon: 'alert-triangle' });
-    }
-    
-    if (this.data.distribusi?.hari_ini?.qty > 0) {
-      activities.push({ text: this.data.distribusi.hari_ini.qty + ' unit didistribusikan', time: 'Hari ini', type: 'info', icon: 'truck' });
+    if (d.stok?.kritis > 0) {
+      activities.push({ text: d.stok.kritis + ' produk stok kritis', time: 'Perlu perhatian', type: 'danger', icon: 'alert-triangle' });
     }
     
     if (activities.length === 0) {
-      activities.push({ text: 'Sistem berjalan normal', time: 'Online', type: 'success', icon: 'check' });
-      activities.push({ text: 'Menunggu aktivitas...', time: '-', type: 'info', icon: 'clock' });
+      activities.push({ text: 'Tidak ada aktivitas pada periode ini', time: '-', type: 'info', icon: 'inbox' });
     }
     
     container.innerHTML = activities.slice(0, 5).map(item => {
@@ -646,7 +619,7 @@ const Dashboard = {
     const forecast = this.persediaan.forecast || [];
     
     if (!forecast.length) {
-      container.innerHTML = '<div class="empty-state"><i data-lucide="trending-up"></i><div class="empty-state__title">Tidak ada forecast</div><div class="empty-state__desc">Data forecast akan muncul di sini</div></div>';
+      container.innerHTML = '<div class="empty-state"><i data-lucide="trending-up"></i><div class="empty-state__title">Tidak ada data pada periode ini</div><div class="empty-state__desc">Data forecast akan muncul di sini</div></div>';
       if (window.lucide) lucide.createIcons({ nodes: [container] });
       return;
     }
