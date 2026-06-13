@@ -23,6 +23,8 @@
 :root {
   /* Background Colors */
   --bg: #050b17;
+  --surface: #0d1628;
+  --surface-hover: #0f1c35;  /* Added for style.css compatibility */
   --sidebar: #08111f;
   --sidebar2: #0b1730;
   --card: #0d1628;
@@ -31,9 +33,12 @@
   /* Border */
   --border: rgba(255, 255, 255, 0.06);
   --border-light: rgba(255, 255, 255, 0.04);
+  --line: rgba(255, 255, 255, 0.08);    /* Added for style.css compatibility */
+  --line-light: rgba(255, 255, 255, 0.04);
   
   /* Text Colors */
   --text: #ffffff;
+  --text-secondary: #94a3b8;  /* Added for style.css compatibility */
   --muted: #94a3b8;
   --text-muted: #6B7280;
   
@@ -58,6 +63,16 @@
   --cyan-soft: rgba(6, 182, 212, 0.15);
   --pink: #ec4899;
   --pink-soft: rgba(236, 72, 153, 0.15);
+  --info: #3b82f6;           /* Added for style.css compatibility */
+  --info-soft: rgba(59, 130, 246, 0.15);
+  
+  /* Aliases for style.css compatibility */
+  --success: #22c55e;       /* Alias for --green */
+  --success-soft: rgba(34, 197, 94, 0.15);  /* Alias for --green-soft */
+  --warning: #f59e0b;       /* Alias for --orange */
+  --warning-soft: rgba(245, 158, 11, 0.15);  /* Alias for --orange-soft */
+  --danger: #ef4444;        /* Alias for --red */
+  --danger-soft: rgba(239, 68, 68, 0.15);  /* Alias for --red-soft */
   
   /* Border Radius */
   --radius-xs: 6px;
