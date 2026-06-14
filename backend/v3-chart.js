@@ -119,17 +119,17 @@ export default async function handler(req, res) {
         break;
 
       case 'tren_penjualan':
-        // Line chart - Trend Penjualan Bulanan (SUM total_harga per bulan)
-        // Using COALESCE to ensure 0 for months with no data
+        // Line chart - Trend Penjualan Bulanan (SUM qty * harga_jual per bulan)
         result = await pool.query(`
           SELECT 
             m.bulan,
-            COALESCE(SUM(j.total_harga), 0) AS value
+            COALESCE(SUM(j.qty * p.harga_jual), 0) AS value
           FROM (
             VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12)
           ) m(bulan)
           LEFT JOIN penjualan j ON EXTRACT(MONTH FROM j.tanggal) = m.bulan
             AND EXTRACT(YEAR FROM j.tanggal) = $1
+          LEFT JOIN produk p ON p.sku = j.sku
           GROUP BY m.bulan
           ORDER BY m.bulan
         `, [targetTahun]);
