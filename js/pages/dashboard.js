@@ -142,18 +142,21 @@ const Dashboard = {
       const { selectedMonth, selectedYear } = this;
       const params = `bulan=${selectedMonth}&tahun=${selectedYear}`;
       
-      const [topProdukResponse, outletResponse, modulLevelResponse] = await Promise.all([
+      const [trenResponse, topProdukResponse, outletResponse, modulLevelResponse] = await Promise.all([
+        fetch('/api/v3-chart?type=tren_penjualan&' + params),
         fetch('/api/v3-chart?type=top_produk&' + params),
         fetch('/api/v3-chart?type=outlet&' + params),
         fetch('/api/v3-chart?type=modul_level&' + params)
       ]);
       
+      const trenData = trenResponse.ok ? await trenResponse.json() : { data: [] };
       const topProdukData = topProdukResponse.ok ? await topProdukResponse.json() : { data: [] };
       const outletData = outletResponse.ok ? await outletResponse.json() : { data: [] };
       const modulLevelData = modulLevelResponse.ok ? await modulLevelResponse.json() : { data: [] };
       
       // API returns { type, periode, data: [...] }, store directly
       this.data.charts = {
+        trenPenjualan: trenData,
         topProduk: topProdukData,
         outlet: outletData,
         modulLevel: modulLevelData
@@ -163,7 +166,7 @@ const Dashboard = {
       
     } catch (error) {
       console.error('Error loading chart data:', error);
-      this.data.charts = { topProduk: { data: [] }, outlet: { data: [] }, modulLevel: { data: [] } };
+      this.data.charts = { trenPenjualan: { data: [] }, topProduk: { data: [] }, outlet: { data: [] }, modulLevel: { data: [] } };
     }
   },
   
@@ -191,7 +194,7 @@ const Dashboard = {
       stok: { kritis: 0, gudang: { akhir: 0 } },
       opname: { berjalan: 0, selesai_bulan_ini: 0 },
       users: { total: 0 },
-      charts: { topProduk: { data: [] }, outlet: { data: [] }, modulLevel: { data: [] } }
+      charts: { trenPenjualan: { data: [] }, topProduk: { data: [] }, outlet: { data: [] }, modulLevel: { data: [] } }
     };
   },
   
@@ -226,9 +229,112 @@ const Dashboard = {
   
   renderCharts() {
     console.log('=== RENDER CHARTS ===');
+    console.log('Tren Penjualan Data:', this.data.charts?.trenPenjualan);
     console.log('Top Produk Data:', this.data.charts?.topProduk);
+    this.renderTrenPenjualanChart();
     this.renderTopProdukChart();
     this.renderTopOutletChart();
+  },
+  
+  renderTrenPenjualanChart() {
+    const canvas = document.getElementById('chartPenjualan');
+    const emptyEl = document.getElementById('chartPenjualanEmpty');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (this.charts.penjualan) {
+      this.charts.penjualan.destroy();
+      this.charts.penjualan = null;
+    }
+    
+    // API returns { type, periode, data: [...] }
+    const trenData = this.data.charts?.trenPenjualan?.data || [];
+    console.log('Tren Penjualan Data Array:', trenData);
+    
+    // Nama bulan Indonesia
+    const bulanIndonesia = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    
+    // Buat array 12 bulan dengan nilai default 0
+    const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+      bulan: i + 1,
+      value: 0
+    }));
+    
+    // Isi data dari API
+    trenData.forEach(item => {
+      if (item.bulan && item.bulan >= 1 && item.bulan <= 12) {
+        monthlyData[item.bulan - 1].value = item.value;
+      }
+    });
+    
+    const labels = bulanIndonesia;
+    const dataValues = monthlyData.map(d => d.value);
+    
+    // Hitung total untuk判断是否有数据
+    const hasData = dataValues.some(v => v > 0);
+    
+    if (!hasData) {
+      if (emptyEl) emptyEl.style.display = 'flex';
+      canvas.style.display = 'none';
+      return;
+    }
+    
+    if (emptyEl) emptyEl.style.display = 'none';
+    canvas.style.display = 'block';
+    
+    this.charts.penjualan = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Penjualan',
+          data: dataValues,
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (item) => {
+                return 'Rp ' + this.formatRupiah(item.raw);
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: {
+              color: '#94a3b8',
+              callback: (value) => 'Rp ' + this.formatRupiah(value)
+            }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#94a3b8' }
+          }
+        }
+      }
+    });
+  },
+  
+  formatRupiah(num) {
+    if (num === null || num === undefined || num === 0) return '0';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   },
   
   renderTopProdukChart() {

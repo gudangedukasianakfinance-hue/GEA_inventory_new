@@ -118,6 +118,19 @@ export default async function handler(req, res) {
         `);
         break;
 
+      case 'tren_penjualan':
+        // Line chart - Trend Penjualan Bulanan (SUM total_harga per bulan)
+        result = await pool.query(`
+          SELECT 
+            EXTRACT(MONTH FROM tanggal) AS bulan,
+            COALESCE(SUM(total_harga), 0) AS total_penjualan
+          FROM penjualan
+          WHERE EXTRACT(YEAR FROM tanggal) = $1
+          GROUP BY EXTRACT(MONTH FROM tanggal)
+          ORDER BY bulan
+        `, [targetTahun]);
+        break;
+
       case 'stok':
         // Bar chart - Stok per kategori
         result = await pool.query(`
@@ -319,9 +332,10 @@ export default async function handler(req, res) {
       type: chartType,
       periode: { bulan: targetBulan, tahun: targetTahun },
       data: result.rows.map(r => ({
-        label: r.label || r.full_label || '',
+        label: r.label || r.full_label || (r.bulan ? `Bulan ${r.bulan}` : ''),
+        bulan: r.bulan ? Number(r.bulan) : null,
         nama_produk: r.nama_produk || r.label || '',
-        value: Number(r.value || 0)
+        value: Number(r.value || r.total_penjualan || 0)
       }))
     });
 
