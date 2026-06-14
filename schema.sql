@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS outlet (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS supplier (
+  id SERIAL PRIMARY KEY,
+  nama_supplier VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS penjualan (
   id SERIAL PRIMARY KEY,
   tanggal DATE NOT NULL,
@@ -25,6 +31,7 @@ CREATE TABLE IF NOT EXISTS penjualan (
 CREATE TABLE IF NOT EXISTS pembelian (
   id SERIAL PRIMARY KEY,
   tanggal DATE NOT NULL,
+  nama_supplier VARCHAR(255) NOT NULL REFERENCES supplier(nama_supplier),
   sku VARCHAR(50) NOT NULL REFERENCES produk(sku),
   qty INTEGER NOT NULL CHECK (qty >= 0),
   created_at TIMESTAMP DEFAULT NOW()
@@ -183,6 +190,7 @@ CREATE TABLE IF NOT EXISTS outlet_siswa_level_bulanan (
 
 CREATE INDEX IF NOT EXISTS idx_penjualan_tanggal_sku ON penjualan (tanggal, sku);
 CREATE INDEX IF NOT EXISTS idx_pembelian_tanggal_sku ON pembelian (tanggal, sku);
+CREATE INDEX IF NOT EXISTS idx_pembelian_supplier ON pembelian (nama_supplier);
 CREATE INDEX IF NOT EXISTS idx_penyesuaian_tanggal_sku ON stok_penyesuaian (tanggal, sku);
 CREATE INDEX IF NOT EXISTS idx_stok_opname_tanggal ON stok_opname (tanggal DESC);
 CREATE INDEX IF NOT EXISTS idx_stok_opname_detail_opname ON stok_opname_detail (opname_id, sku);

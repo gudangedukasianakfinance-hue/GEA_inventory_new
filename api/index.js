@@ -4,6 +4,7 @@ import addPembelianHandler from "../backend/add-pembelian.js";
 import addPenjualanHandler from "../backend/add-penjualan.js";
 import addStokAwalHandler from "../backend/add-stok_awal.js";
 import apiPenjualanHandler from "../backend/api-penjualan.js";
+import apiPembelianHandler from "../backend/api-pembelian.js";
 import auditHandler from "../backend/audit.js";
 import chartHandler from "../backend/chart.js";
 // forecast.js REMOVED - feature deprecated
@@ -125,6 +126,15 @@ const routes = {
   "POST /v1/penjualan/import": apiPenjualanHandler,
   "PUT /v1/penjualan/:id": apiPenjualanHandler,
   "DELETE /v1/penjualan/:id": apiPenjualanHandler,
+
+  // Pembelian CRUD API routes
+  "GET /v1/pembelian": apiPembelianHandler,
+  "GET /v1/pembelian/:id": apiPembelianHandler,
+  "POST /v1/pembelian": apiPembelianHandler,
+  "POST /v1/pembelian/import": apiPembelianHandler,
+  "PUT /v1/pembelian/:id": apiPembelianHandler,
+  "DELETE /v1/pembelian/:id": apiPembelianHandler,
+  "GET /v1/suppliers": apiPembelianHandler,
 
   // GET /forecast REMOVED - feature deprecated
   "GET /produk-list": produkListHandler,
