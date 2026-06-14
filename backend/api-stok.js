@@ -48,38 +48,38 @@ async function getStokRealtime(req, res) {
     const beforeDateStr = beforeDate.toISOString().split('T')[0];
 
     // Build search condition
-    const searchCondition = search 
-      ? `AND (p.sku ILIKE $4 OR p.nama_produk ILIKE $4)` 
-      : "";
-    const searchParam = search ? [`%${search}%`] : [];
+    // Use $1 for search, inline dates for clarity
+    const searchParam = search ? `%${search}%` : '%';
+    const searchCondition = `AND (p.sku ILIKE $1 OR p.nama_produk ILIKE $1)`;
     
     // Build kategori condition
     let kategoriCondition = "";
     if (kategori && kategori !== "semua") {
       const kategoriMap = {
-        'modul': `UPPER(p.nama_produk) LIKE '%MODUL%'`,
-        'poster': `(UPPER(p.nama_produk) LIKE '%POSTER%' OR UPPER(p.nama_produk) LIKE '%FLASHCARD%' OR UPPER(p.nama_produk) LIKE '%FLASH CARD%')`,
-        'panduan': `UPPER(p.nama_produk) LIKE '%PANDUAN%'`,
-        'tas': `UPPER(p.nama_produk) LIKE '%TAS%'`,
-        'seragam': `(UPPER(p.nama_produk) LIKE '%BIRU%' OR UPPER(p.nama_produk) LIKE '%KUNING%' OR UPPER(p.nama_produk) LIKE '%MERAH%' OR UPPER(p.nama_produk) LIKE '%MY%')`,
-        'lain_lain': `(UPPER(p.nama_produk) NOT LIKE '%MODUL%' AND UPPER(p.nama_produk) NOT LIKE '%POSTER%' AND UPPER(p.nama_produk) NOT LIKE '%FLASHCARD%' AND UPPER(p.nama_produk) NOT LIKE '%FLASH CARD%' AND UPPER(p.nama_produk) NOT LIKE '%PANDUAN%' AND UPPER(p.nama_produk) NOT LIKE '%TAS%' AND UPPER(p.nama_produk) NOT LIKE '%BIRU%' AND UPPER(p.nama_produk) NOT LIKE '%KUNING%' AND UPPER(p.nama_produk) NOT LIKE '%MERAH%' AND UPPER(p.nama_produk) NOT LIKE '%MY%')`
+        'modul': `AND UPPER(p.nama_produk) LIKE '%MODUL%'`,
+        'poster': `AND (UPPER(p.nama_produk) LIKE '%POSTER%' OR UPPER(p.nama_produk) LIKE '%FLASHCARD%' OR UPPER(p.nama_produk) LIKE '%FLASH CARD%')`,
+        'panduan': `AND UPPER(p.nama_produk) LIKE '%PANDUAN%'`,
+        'tas': `AND UPPER(p.nama_produk) LIKE '%TAS%'`,
+        'seragam': `AND (UPPER(p.nama_produk) LIKE '%BIRU%' OR UPPER(p.nama_produk) LIKE '%KUNING%' OR UPPER(p.nama_produk) LIKE '%MERAH%' OR UPPER(p.nama_produk) LIKE '%MY%')`,
+        'lain_lain': `AND (UPPER(p.nama_produk) NOT LIKE '%MODUL%' AND UPPER(p.nama_produk) NOT LIKE '%POSTER%' AND UPPER(p.nama_produk) NOT LIKE '%FLASHCARD%' AND UPPER(p.nama_produk) NOT LIKE '%FLASH CARD%' AND UPPER(p.nama_produk) NOT LIKE '%PANDUAN%' AND UPPER(p.nama_produk) NOT LIKE '%TAS%' AND UPPER(p.nama_produk) NOT LIKE '%BIRU%' AND UPPER(p.nama_produk) NOT LIKE '%KUNING%' AND UPPER(p.nama_produk) NOT LIKE '%MERAH%' AND UPPER(p.nama_produk) NOT LIKE '%MY%')`
       };
       if (kategoriMap[kategori]) {
-        kategoriCondition = `AND ${kategoriMap[kategori]}`;
+        kategoriCondition = kategoriMap[kategori];
       }
     }
-
-    // Get total count for pagination
+    
+    // Count query - only uses search param
     const countResult = await pool.query(`
       SELECT COUNT(*) as total 
       FROM produk p
       WHERE 1=1 ${kategoriCondition} ${searchCondition}
-    `, searchParam);
+    `, [searchParam]);
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
 
     // Main query - Stok Realtime with rolling calculation per period
     // Stok Awal = Stok Akhir previous month (not total from beginning)
     // Stok Akhir = Stok Awal + Pembelian this month - Penjualan this month + Penyesuaian this month
+    // Params: $1=startDateStr, $2=endDateStr, $3=beforeDateStr, $4=searchParam, $5=limit, $6=offset
     const dataResult = await pool.query(`
       WITH params AS (
         SELECT 
@@ -149,10 +149,10 @@ async function getStokRealtime(req, res) {
       LEFT JOIN pembelian_bulan pb ON pb.sku = p.sku
       LEFT JOIN penjualan_bulan pj ON pj.sku = p.sku
       LEFT JOIN penyesuaian_bulan py ON py.sku = p.sku
-      WHERE 1=1 ${kategoriCondition} ${searchCondition}
+      WHERE 1=1 ${kategoriCondition} AND (p.sku ILIKE $4 OR p.nama_produk ILIKE $4)
       ORDER BY p.nama_produk
       LIMIT $5 OFFSET $6
-    `, [startDateStr, endDateStr, beforeDateStr, ...searchParam, limit, offset]);
+    `, [startDateStr, endDateStr, beforeDateStr, searchParam, limit, offset]);
 
     // Calculate summary stats
     const summaryResult = await pool.query(`
@@ -278,19 +278,18 @@ async function getKartuStok(req, res) {
         
         UNION ALL
         
-        -- Pembelian with supplier name
+        -- Pembelian (no supplier info in schema)
         SELECT 
           pb.tanggal,
           pb.sku,
           pr.nama_produk,
           'Pembelian' as aktivitas,
-          COALESCE(s.nama_supplier, '-') as partner,
+          '-' as partner,
           pb.qty as masuk,
           0 as keluar,
           2 as sort_order
         FROM pembelian pb
         JOIN produk pr ON pr.sku = pb.sku
-        LEFT JOIN supplier s ON s.id = pb.supplier_id
         WHERE pb.tanggal >= (SELECT start_date FROM params) 
           AND pb.tanggal <= (SELECT end_date FROM params)
           AND ($3::text IS NULL OR $3::text = '' OR pb.sku = $3)
@@ -303,13 +302,12 @@ async function getKartuStok(req, res) {
           jj.sku,
           pr.nama_produk,
           'Penjualan' as aktivitas,
-          COALESCE(o.nama_outlet, '-') as partner,
+          COALESCE(jj.nama_outlet, '-') as partner,
           0 as masuk,
           jj.qty as keluar,
           3 as sort_order
         FROM penjualan jj
         JOIN produk pr ON pr.sku = jj.sku
-        LEFT JOIN outlet o ON o.id = jj.outlet_id
         WHERE jj.tanggal >= (SELECT start_date FROM params) 
           AND jj.tanggal <= (SELECT end_date FROM params)
           AND ($3::text IS NULL OR $3::text = '' OR jj.sku = $3)
