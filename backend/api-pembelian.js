@@ -1,9 +1,11 @@
 /* ============================================
    CV EPIC Warehouse - Pembelian CRUD API
    Sprint 3 - Purchase/Transaction API
+   Uses supplier_id reference (new schema)
    ============================================ */
 
 import pool from "../services/db.js";
+import { getOrCreateSupplier } from "./migrations/supplier-pembelian.js";
 
 // Helper to send JSON responses
 function send(res, status, payload) {
@@ -42,7 +44,8 @@ async function listPembelian(req, res) {
     // Filter parameters
     const tanggalAwal = req.query?.tanggal_awal;
     const tanggalAkhir = req.query?.tanggal_akhir;
-    const supplier = req.query?.supplier;
+    const supplierId = req.query?.supplier_id;
+    const supplier = req.query?.supplier; // fallback for nama_supplier search
     const sku = req.query?.sku;
     const search = req.query?.search;
 
@@ -63,9 +66,13 @@ async function listPembelian(req, res) {
       paramIndex++;
     }
 
-    // Supplier filter
-    if (supplier) {
-      whereConditions.push(`p.nama_supplier ILIKE $${paramIndex}`);
+    // Supplier filter (by ID or by name)
+    if (supplierId) {
+      whereConditions.push(`p.supplier_id = $${paramIndex}`);
+      params.push(parseInt(supplierId));
+      paramIndex++;
+    } else if (supplier) {
+      whereConditions.push(`s.nama_supplier ILIKE $${paramIndex}`);
       params.push(`%${supplier}%`);
       paramIndex++;
     }
@@ -81,7 +88,7 @@ async function listPembelian(req, res) {
     if (search) {
       whereConditions.push(`(
         CAST(p.tanggal AS TEXT) ILIKE $${paramIndex} OR 
-        p.nama_supplier ILIKE $${paramIndex} OR 
+        s.nama_supplier ILIKE $${paramIndex} OR 
         p.sku ILIKE $${paramIndex}
       )`);
       params.push(`%${search}%`);
@@ -94,17 +101,20 @@ async function listPembelian(req, res) {
 
     // Get total count
     const countResult = await pool.query(
-      `SELECT COUNT(*) as total FROM pembelian p ${whereClause}`,
+      `SELECT COUNT(*) as total FROM pembelian p
+       LEFT JOIN supplier s ON s.id = p.supplier_id
+       ${whereClause}`,
       params
     );
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
 
-    // Get pembelian with product info and calculated nominal
+    // Get pembelian with supplier and product info - use LEFT JOIN to get nama_supplier, nama_produk, harga_beli
     const dataResult = await pool.query(
       `SELECT 
         p.id,
         p.tanggal,
-        p.nama_supplier,
+        p.supplier_id,
+        s.nama_supplier,
         p.sku,
         p.qty,
         pr.nama_produk,
@@ -112,6 +122,7 @@ async function listPembelian(req, res) {
         (p.qty * COALESCE(pr.harga_beli, 0)) as nominal,
         p.created_at
        FROM pembelian p
+       LEFT JOIN supplier s ON s.id = p.supplier_id
        LEFT JOIN produk pr ON pr.sku = p.sku
        ${whereClause}
        ORDER BY p.tanggal DESC, p.id DESC
@@ -144,7 +155,8 @@ async function getPembelian(req, res, pembelianId) {
       `SELECT 
         p.id,
         p.tanggal,
-        p.nama_supplier,
+        p.supplier_id,
+        s.nama_supplier,
         p.sku,
         p.qty,
         pr.nama_produk,
@@ -152,6 +164,7 @@ async function getPembelian(req, res, pembelianId) {
         (p.qty * COALESCE(pr.harga_beli, 0)) as nominal,
         p.created_at
        FROM pembelian p
+       LEFT JOIN supplier s ON s.id = p.supplier_id
        LEFT JOIN produk pr ON pr.sku = p.sku
        WHERE p.id = $1`,
       [pembelianId]
@@ -172,15 +185,11 @@ async function getPembelian(req, res, pembelianId) {
 // POST /v1/pembelian - Create new pembelian
 // ============================================
 async function createPembelian(req, res) {
-  const { tanggal, nama_supplier, sku, qty } = req.body || {};
+  const { tanggal, supplier_id, nama_supplier, sku, qty } = req.body || {};
 
   // Validation
   if (!tanggal) {
     return send(res, 400, { success: false, message: "Tanggal wajib diisi" });
-  }
-
-  if (!nama_supplier) {
-    return send(res, 400, { success: false, message: "Supplier wajib diisi" });
   }
 
   if (!sku) {
@@ -198,27 +207,27 @@ async function createPembelian(req, res) {
       return send(res, 404, { success: false, message: "SKU tidak ditemukan di master produk" });
     }
 
-    // Check if supplier exists in master supplier table, create if not exists
-    let supplierCheck = await pool.query("SELECT nama_supplier FROM supplier WHERE nama_supplier = $1", [nama_supplier]);
-    if (supplierCheck.rows.length === 0) {
-      // Auto-create supplier if not exists
-      await pool.query("INSERT INTO supplier (nama_supplier) VALUES ($1) ON CONFLICT (nama_supplier) DO NOTHING", [nama_supplier]);
+    // Get or create supplier
+    let finalSupplierId = supplier_id;
+    if (!finalSupplierId && nama_supplier) {
+      finalSupplierId = await getOrCreateSupplier(nama_supplier);
     }
 
     // Insert new pembelian
     const result = await pool.query(
-      `INSERT INTO pembelian (tanggal, nama_supplier, sku, qty, created_at)
+      `INSERT INTO pembelian (tanggal, supplier_id, sku, qty, created_at)
        VALUES ($1, $2, $3, $4, NOW())
-       RETURNING id, tanggal, nama_supplier, sku, qty, created_at`,
-      [tanggal, nama_supplier, sku, qty]
+       RETURNING id, tanggal, supplier_id, sku, qty, created_at`,
+      [tanggal, finalSupplierId, sku, qty]
     );
 
-    // Get full data with product info
+    // Get full data with supplier and product info
     const fullResult = await pool.query(
       `SELECT 
         p.id,
         p.tanggal,
-        p.nama_supplier,
+        p.supplier_id,
+        s.nama_supplier,
         p.sku,
         p.qty,
         pr.nama_produk,
@@ -226,6 +235,7 @@ async function createPembelian(req, res) {
         (p.qty * COALESCE(pr.harga_beli, 0)) as nominal,
         p.created_at
        FROM pembelian p
+       LEFT JOIN supplier s ON s.id = p.supplier_id
        LEFT JOIN produk pr ON pr.sku = p.sku
        WHERE p.id = $1`,
       [result.rows[0].id]
@@ -246,7 +256,7 @@ async function createPembelian(req, res) {
 // PUT /v1/pembelian/:id - Update pembelian
 // ============================================
 async function updatePembelian(req, res, pembelianId) {
-  const { tanggal, nama_supplier, sku, qty } = req.body || {};
+  const { tanggal, supplier_id, nama_supplier, sku, qty } = req.body || {};
 
   // Validation for qty if provided
   if (qty !== undefined && qty !== null && qty <= 0) {
@@ -261,20 +271,17 @@ async function updatePembelian(req, res, pembelianId) {
     }
   }
 
-  // Validation for nama_supplier if provided
-  if (nama_supplier !== undefined && nama_supplier !== null && nama_supplier !== "") {
-    // Check if supplier exists, create if not
-    let supplierCheck = await pool.query("SELECT nama_supplier FROM supplier WHERE nama_supplier = $1", [nama_supplier]);
-    if (supplierCheck.rows.length === 0) {
-      await pool.query("INSERT INTO supplier (nama_supplier) VALUES ($1) ON CONFLICT (nama_supplier) DO NOTHING", [nama_supplier]);
-    }
-  }
-
   try {
     // Check if exists
     const existingCheck = await pool.query("SELECT id FROM pembelian WHERE id = $1", [pembelianId]);
     if (existingCheck.rows.length === 0) {
       return send(res, 404, { success: false, message: "Pembelian tidak ditemukan" });
+    }
+
+    // Get or create supplier if nama_supplier is provided
+    let finalSupplierId = supplier_id;
+    if (!finalSupplierId && nama_supplier) {
+      finalSupplierId = await getOrCreateSupplier(nama_supplier);
     }
 
     // Build update query dynamically
@@ -288,9 +295,9 @@ async function updatePembelian(req, res, pembelianId) {
       paramIndex++;
     }
 
-    if (nama_supplier !== undefined) {
-      updates.push(`nama_supplier = $${paramIndex}`);
-      params.push(nama_supplier);
+    if (finalSupplierId !== undefined) {
+      updates.push(`supplier_id = $${paramIndex}`);
+      params.push(finalSupplierId);
       paramIndex++;
     }
 
@@ -317,12 +324,13 @@ async function updatePembelian(req, res, pembelianId) {
       params
     );
 
-    // Get updated data with product info
+    // Get updated data with supplier and product info
     const result = await pool.query(
       `SELECT 
         p.id,
         p.tanggal,
-        p.nama_supplier,
+        p.supplier_id,
+        s.nama_supplier,
         p.sku,
         p.qty,
         pr.nama_produk,
@@ -330,6 +338,7 @@ async function updatePembelian(req, res, pembelianId) {
         (p.qty * COALESCE(pr.harga_beli, 0)) as nominal,
         p.created_at
        FROM pembelian p
+       LEFT JOIN supplier s ON s.id = p.supplier_id
        LEFT JOIN produk pr ON pr.sku = p.sku
        WHERE p.id = $1`,
       [pembelianId]
@@ -385,11 +394,14 @@ async function importPembelian(req, res) {
     // Load master data for validation
     const [produkResult, supplierResult] = await Promise.all([
       pool.query("SELECT sku FROM produk"),
-      pool.query("SELECT nama_supplier FROM supplier")
+      pool.query("SELECT id, nama_supplier FROM supplier")
     ]);
 
     const validSkuSet = new Set(produkResult.rows.map(r => r.sku));
-    const validSupplierSet = new Set(supplierResult.rows.map(r => r.nama_supplier));
+    const supplierNameToId = {};
+    supplierResult.rows.forEach(s => {
+      supplierNameToId[s.nama_supplier] = s.id;
+    });
 
     // Validate all rows first
     const errors = [];
@@ -432,7 +444,15 @@ async function importPembelian(req, res) {
         continue;
       }
 
-      validRows.push({ tanggal, nama_supplier, sku, qty });
+      // Get or create supplier ID
+      let supplierId = supplierNameToId[nama_supplier];
+      if (!supplierId) {
+        // Will be created during insert
+        supplierId = await getOrCreateSupplier(nama_supplier);
+        supplierNameToId[nama_supplier] = supplierId;
+      }
+
+      validRows.push({ tanggal, supplier_id: supplierId, nama_supplier, sku, qty });
     }
 
     // If any errors, return them without importing
@@ -449,13 +469,13 @@ async function importPembelian(req, res) {
       });
     }
 
-    // All valid - perform bulk insert (auto-create suppliers)
+    // All valid - perform bulk insert
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       // First, ensure all suppliers exist
-      const uniqueSuppliers = [...new Set(validRows.map(r => r.nama_supplier))];
+      const uniqueSuppliers = [...new Set(validRows.filter(r => r.supplier_id).map(r => r.nama_supplier))];
       for (const sup of uniqueSuppliers) {
         await client.query(
           "INSERT INTO supplier (nama_supplier) VALUES ($1) ON CONFLICT (nama_supplier) DO NOTHING",
@@ -465,10 +485,16 @@ async function importPembelian(req, res) {
 
       let importedCount = 0;
       for (const row of validRows) {
+        // Get supplier_id again in case it was just created
+        let supplierId = supplierNameToId[row.nama_supplier];
+        if (!supplierId) {
+          supplierId = await getOrCreateSupplier(row.nama_supplier);
+        }
+
         await client.query(
-          `INSERT INTO pembelian (tanggal, nama_supplier, sku, qty, created_at)
+          `INSERT INTO pembelian (tanggal, supplier_id, sku, qty, created_at)
            VALUES ($1, $2, $3, $4, NOW())`,
-          [row.tanggal, row.nama_supplier, row.sku, row.qty]
+          [row.tanggal, supplierId, row.sku, row.qty]
         );
         importedCount++;
       }
