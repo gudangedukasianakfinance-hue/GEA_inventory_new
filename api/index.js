@@ -3,6 +3,7 @@ import addOutletHandler from "../backend/add-outlet.js";
 import addPembelianHandler from "../backend/add-pembelian.js";
 import addPenjualanHandler from "../backend/add-penjualan.js";
 import addStokAwalHandler from "../backend/add-stok_awal.js";
+import apiPenjualanHandler from "../backend/api-penjualan.js";
 import auditHandler from "../backend/audit.js";
 import chartHandler from "../backend/chart.js";
 // forecast.js REMOVED - feature deprecated
@@ -117,6 +118,14 @@ const routes = {
   "GET /opname-export": opnameExportHandler,
   "GET /persediaan": persediaanHandler,
   "GET /audit": auditHandler,
+  // Penjualan CRUD API routes
+  "GET /v1/penjualan": apiPenjualanHandler,
+  "GET /v1/penjualan/:id": apiPenjualanHandler,
+  "POST /v1/penjualan": apiPenjualanHandler,
+  "POST /v1/penjualan/import": apiPenjualanHandler,
+  "PUT /v1/penjualan/:id": apiPenjualanHandler,
+  "DELETE /v1/penjualan/:id": apiPenjualanHandler,
+
   // GET /forecast REMOVED - feature deprecated
   "GET /produk-list": produkListHandler,
   "GET /v3-dashboard": v3DashboardHandler,
