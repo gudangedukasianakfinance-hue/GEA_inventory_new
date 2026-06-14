@@ -214,7 +214,7 @@ const Dashboard = {
     
     // Row 2 - Period-based KPIs
     this.setKPIValue('kpi-distribusi', this.formatNumber(data.periode?.distribusi?.qty || 0));
-    this.setKPIValue('kpi-penjualan', this.formatNumber(data.periode?.penjualan?.qty || 0));
+    this.setKPIValue('kpi-penjualan', 'Rp ' + this.formatNumber(data.periode?.penjualan?.nominal || 0));
     this.setKPIValue('kpi-so-berjalan', this.formatNumber(data.opname?.berjalan || 0));
     this.setKPIValue('kpi-stok-kritis', this.formatNumber(data.stok?.kritis || 0));
     

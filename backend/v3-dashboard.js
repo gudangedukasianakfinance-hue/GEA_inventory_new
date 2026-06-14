@@ -28,13 +28,15 @@ export default async function handler(req, res) {
         AND sumber = 'warehouse_sale_auto'
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
-    // 2. Penjualan Periode
+    // 2. Penjualan Periode - Qty and Nominal
     const penjualanPeriode = await pool.query(`
       SELECT 
         COALESCE(SUM(qty), 0) AS total_qty,
+        COALESCE(SUM(j.qty * p.harga_jual), 0) AS nominal,
         COUNT(DISTINCT nama_outlet) AS customer_count
-      FROM penjualan 
-      WHERE tanggal >= $1 AND tanggal <= $2
+      FROM penjualan j
+      JOIN produk p ON p.sku = j.sku
+      WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
     // 3. Profit Periode (simplified: based on harga_jual - harga_beli)
@@ -179,6 +181,7 @@ export default async function handler(req, res) {
         },
         penjualan: {
           qty: Number(penjualanPeriode.rows[0]?.total_qty || 0),
+          nominal: Number(penjualanPeriode.rows[0]?.nominal || 0),
           customer_count: Number(penjualanPeriode.rows[0]?.customer_count || 0)
         },
         profit: Number(profitPeriode.rows[0]?.total_profit || 0),
