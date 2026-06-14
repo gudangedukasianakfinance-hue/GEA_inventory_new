@@ -831,6 +831,10 @@
       
       produkList = await response.json();
       
+      // DEBUG: Log produk data
+      console.log('Produk API response:', produkList);
+      console.log('Produk count:', produkList?.length);
+      
       // Populate filter produk
       const filterProduk = document.getElementById('filterProduk');
       filterProduk.innerHTML = '<option value="">Semua Produk</option>' + 
@@ -838,8 +842,12 @@
       
       // Populate input produk
       const inputProduk = document.getElementById('inputProduk');
-      inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + 
-        produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+      if (inputProduk) {
+        inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + 
+          produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+        console.log('inputProduk options count:', inputProduk.options.length);
+        console.log('inputProduk HTML generated:', inputProduk.innerHTML.substring(0, 200) + '...');
+      }
     } catch (error) {
       console.error('Error loading produk:', error);
     }
