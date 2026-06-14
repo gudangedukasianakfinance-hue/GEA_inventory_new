@@ -41,7 +41,7 @@ import v3ChartHandler from "../backend/v3-chart.js";
 import usersApiHandler from "../backend/users-api.js";
 import approvalApiHandler from "../backend/approval-api.js";
 import settingsApiHandler from "../backend/settings-api.js";
-import { runSupplierPembelianMigration } from "../backend/migrations/supplier-pembelian.js";
+import { runSupplierPembelianMigration, initMigration } from "../backend/migrations/supplier-pembelian.js";
 import { isDatabaseConfigured, checkDatabaseHealth } from "../services/db.js";
 
 // Health check handler
@@ -177,13 +177,8 @@ function getRoutePath(req) {
 }
 
 export default async function handler(req, res) {
-  // Auto-run supplier & pembelian migration on every request (idempotent)
-  // Only runs once due to module-level caching in migrations
-  if (isDatabaseConfigured()) {
-    runSupplierPembelianMigration().catch(err => 
-      console.error("Migration error:", err)
-    );
-  }
+  // Initialize migration in background (non-blocking, won't crash API)
+  initMigration();
 
   const routePath = getRoutePath(req);
   const key = `${req.method} ${routePath}`;

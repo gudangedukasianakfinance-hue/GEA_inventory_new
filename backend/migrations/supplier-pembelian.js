@@ -5,12 +5,37 @@
    ============================================ */
 
 import pool from "../services/db.js";
+import { isDatabaseConfigured } from "../services/db.js";
+
+// Track if migration has already run
+let migrationRun = false;
+let migrationInProgress = false;
 
 /**
  * Run supplier and pembelian migration
  * Creates tables and seeds default data if not exists
+ * Safe to call multiple times - only runs once
  */
 export async function runSupplierPembelianMigration() {
+  // Skip if database not configured
+  if (!isDatabaseConfigured()) {
+    console.log("⏭️  Migration skipped: Database not configured");
+    return { success: true, skipped: true };
+  }
+  
+  // Skip if already run
+  if (migrationRun) {
+    console.log("⏭️  Migration skipped: Already completed");
+    return { success: true, skipped: true };
+  }
+  
+  // Skip if currently running (prevent concurrent execution)
+  if (migrationInProgress) {
+    console.log("⏭️  Migration skipped: Already in progress");
+    return { success: true, skipped: true };
+  }
+  
+  migrationInProgress = true;
   console.log("🔄 Running supplier & pembelian migration...");
   
   try {
@@ -23,10 +48,13 @@ export async function runSupplierPembelianMigration() {
     // Step 3: Create pembelian table
     await createPembelianTable();
     
+    migrationRun = true;
+    migrationInProgress = false;
     console.log("✅ Supplier & Pembelian migration completed successfully");
     return { success: true };
   } catch (error) {
-    console.error("❌ Migration failed:", error);
+    migrationInProgress = false;
+    console.error("❌ Migration failed:", error.message);
     return { success: false, error: error.message };
   }
 }
@@ -182,3 +210,14 @@ export async function getOrCreateSupplier(namaSupplier) {
 }
 
 export default runSupplierPembelianMigration;
+
+/**
+ * Initialize migration in background (non-blocking)
+ * Call this on API startup - won't crash if migration fails
+ */
+export function initMigration() {
+  // Run in background, don't await
+  runSupplierPembelianMigration().catch(err => {
+    console.error("Migration init error:", err?.message || err);
+  });
+}
