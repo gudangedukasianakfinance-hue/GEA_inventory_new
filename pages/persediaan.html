@@ -421,6 +421,14 @@ function switchTab(tabName) {
     content.classList.toggle('active', content.id === `tab-${tabName}`);
   });
   
+  // Load data when switching tabs
+  if (tabName === 'periode') {
+    loadStokPeriode();
+  } else if (tabName === 'kartu') {
+    loadKartuStok();
+  }
+  // Mutasi tab is "Coming Soon" - no data to load
+  
   if (window.lucide) lucide.createIcons();
 }
 
@@ -545,6 +553,9 @@ async function loadStokPeriode(page = 1) {
     if (!response.ok) throw new Error('Failed to load data');
     
     const result = await response.json();
+    console.log('[DEBUG] loadStokPeriode response:', result);
+    console.log('[DEBUG] result.data.length:', result.data?.length);
+    console.log('[DEBUG] result.data fields:', result.data?.length > 0 ? Object.keys(result.data[0]) : 'N/A');
     
     if (!result.success) {
       throw new Error(result.message || 'Gagal memuat data');
@@ -722,6 +733,9 @@ async function loadKartuStok(page = 1) {
     if (!response.ok) throw new Error('Failed to load data');
     
     const result = await response.json();
+    console.log('[DEBUG] loadKartuStok response:', result);
+    console.log('[DEBUG] result.data.length:', result.data?.length);
+    console.log('[DEBUG] result.data fields:', result.data?.length > 0 ? Object.keys(result.data[0]) : 'N/A');
     
     if (!result.success) {
       throw new Error(result.message || 'Gagal memuat data');
