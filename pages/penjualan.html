@@ -118,50 +118,108 @@
   </div>
 </section>
 
-<!-- Add/Edit Modal -->
+<!-- Add/Edit Modal - Multi Item Transaction -->
 <div id="penjualanModal" class="modal-overlay">
-  <div class="modal">
+  <div class="modal" style="max-width: 800px;">
     <div class="modal__header">
       <h3 class="modal__title" id="modalTitle">Tambah Penjualan</h3>
       <button class="modal__close" onclick="closeModal()">
         <i data-lucide="x"></i>
       </button>
     </div>
-    <form id="penjualanForm" onsubmit="savePenjualan(event)">
-      <input type="hidden" id="penjualanId">
-      <div class="form-group">
-        <label>Tanggal <span class="text-danger">*</span></label>
-        <input type="date" id="inputTanggal" class="form-input" required>
+    <div class="modal__body">
+      <!-- Header Section -->
+      <div class="transaction-header">
+        <div class="form-group">
+          <label>Tanggal <span class="text-danger">*</span></label>
+          <input type="date" id="inputTanggal" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label>Outlet <span class="text-danger">*</span></label>
+          <select id="inputOutlet" class="form-input" required>
+            <option value="">Pilih Outlet</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Outlet <span class="text-danger">*</span></label>
-        <select id="inputOutlet" class="form-input" required>
-          <option value="">Pilih Outlet</option>
-        </select>
+      
+      <!-- Detail Input Section -->
+      <div class="transaction-detail">
+        <h4 class="section-title">Tambah Item</h4>
+        <div class="detail-row">
+          <div class="form-group" style="flex: 2;">
+            <label>Produk</label>
+            <select id="inputProduk" class="form-input" onchange="updateHarga()">
+              <option value="">Pilih Produk</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>Qty</label>
+            <input type="number" id="inputQty" class="form-input" min="1" value="1" oninput="updateNominal()">
+          </div>
+          <div class="form-group" style="flex: 1.5;">
+            <label>Harga</label>
+            <input type="text" id="inputHarga" class="form-input" readonly placeholder="Auto">
+          </div>
+          <div class="form-group" style="flex: 1.5;">
+            <label>Nominal</label>
+            <input type="text" id="inputNominal" class="form-input" readonly style="font-weight: 600; color: var(--primary);">
+          </div>
+          <div class="form-group" style="flex: 0; align-self: flex-end;">
+            <button type="button" class="btn btn--primary" onclick="addToList()" id="btnAddToList">
+              <i data-lucide="plus"></i>
+              <span>Tambah</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Produk <span class="text-danger">*</span></label>
-        <select id="inputProduk" class="form-input" required onchange="updateHarga()">
-          <option value="">Pilih Produk</option>
-        </select>
+      
+      <!-- Preview Table -->
+      <div class="transaction-preview">
+        <h4 class="section-title">Daftar Item (<span id="itemCount">0</span>)</h4>
+        <div class="table-wrapper" style="max-height: 250px; overflow-y: auto;">
+          <table class="data-table" id="previewTable">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>SKU</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Harga</th>
+                <th class="text-right">Nominal</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="previewTableBody">
+              <tr>
+                <td colspan="6" class="text-center text-muted">Belum ada item</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Harga Jual</label>
-        <input type="text" id="inputHarga" class="form-input" readonly>
+      
+      <!-- Summary -->
+      <div class="transaction-summary" id="transactionSummary" style="display: none;">
+        <div class="summary-item">
+          <span class="summary-label">Total Item</span>
+          <span class="summary-value" id="totalItem">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Total Qty</span>
+          <span class="summary-value" id="totalQty">0</span>
+        </div>
+        <div class="summary-item summary-item--total">
+          <span class="summary-label">Total Nominal</span>
+          <span class="summary-value" id="totalNominal">Rp 0</span>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Qty <span class="text-danger">*</span></label>
-        <input type="number" id="inputQty" class="form-input" min="1" required oninput="updateNominal()">
-      </div>
-      <div class="form-group">
-        <label>Nominal</label>
-        <input type="text" id="inputNominal" class="form-input" readonly style="font-weight: 600; color: var(--primary);">
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn btn--secondary" onclick="closeModal()">Batal</button>
-        <button type="submit" class="btn btn--primary" id="btnSave">Simpan</button>
-      </div>
-    </form>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" onclick="closeModal()">Batal</button>
+      <button type="button" class="btn btn--primary" onclick="saveAllPenjualan()" id="btnSaveAll" disabled>
+        <i data-lucide="save"></i>
+        <span>Simpan Semua</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -404,6 +462,118 @@
   
   .import-error-item strong {
     color: var(--danger);
+  }
+  
+  /* Multi-Item Transaction Modal Styles */
+  .transaction-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-md);
+  }
+  
+  .transaction-detail {
+    background: var(--surface-2);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+  
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+  }
+  
+  .detail-row {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: flex-end;
+  }
+  
+  .detail-row .form-group {
+    margin-bottom: 0;
+  }
+  
+  .transaction-preview {
+    margin-bottom: var(--space-md);
+  }
+  
+  .transaction-summary {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-lg);
+    padding: var(--space-md);
+    background: var(--surface-2);
+    border-radius: var(--radius-md);
+  }
+  
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+  }
+  
+  .summary-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  
+  .summary-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  
+  .summary-item--total {
+    background: var(--primary);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    min-width: 150px;
+  }
+  
+  .summary-item--total .summary-label {
+    color: rgba(255,255,255,0.8);
+  }
+  
+  .summary-item--total .summary-value {
+    font-size: 18px;
+    color: white;
+  }
+  
+  .preview-row {
+    transition: background 0.2s;
+  }
+  
+  .preview-row:hover {
+    background: var(--surface-2);
+  }
+  
+  .preview-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: var(--space-lg);
+  }
+  
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--surface-2);
+    z-index: 9999;
+  }
+  
+  .progress-bar__fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s ease;
   }
 </style>
 
@@ -788,16 +958,284 @@
     return data;
   }
 
-  // Show add modal
+  // ===== MULTI-ITEM TRANSACTION FUNCTIONS =====
+  let transactionItems = [];
+  
   function showAddModal() {
     editingId = null;
     document.getElementById('modalTitle').textContent = 'Tambah Penjualan';
-    document.getElementById('penjualanForm').reset();
-    document.getElementById('penjualanId').value = '';
+    document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inputOutlet').value = '';
+    document.getElementById('inputProduk').value = '';
+    document.getElementById('inputQty').value = '1';
     document.getElementById('inputHarga').value = '';
     document.getElementById('inputNominal').value = '';
-    document.getElementById('btnSave').innerHTML = '<i data-lucide="plus"></i><span>Simpan</span>';
+    
+    // Reset transaction items
+    transactionItems = [];
+    renderPreviewTable();
+    updateSummary();
+    
     openModal('penjualanModal');
+  }
+
+  // Update harga when produk changes
+  function updateHarga() {
+    const sku = document.getElementById('inputProduk').value;
+    if (!sku) {
+      document.getElementById('inputHarga').value = '';
+      document.getElementById('inputProduk').dataset.harga = '0';
+      updateNominal();
+      return;
+    }
+    
+    const produk = produkList.find(p => p.sku === sku);
+    if (produk) {
+      document.getElementById('inputHarga').value = formatRupiah(parseFloat(produk.harga_jual) || 0);
+      document.getElementById('inputProduk').dataset.harga = produk.harga_jual || 0;
+      updateNominal();
+    }
+  }
+
+  // Update nominal
+  function updateNominal() {
+    const harga = parseFloat(document.getElementById('inputProduk').dataset.harga) || 0;
+    const qty = parseInt(document.getElementById('inputQty').value) || 0;
+    const nominal = harga * qty;
+    document.getElementById('inputNominal').value = formatRupiah(nominal);
+  }
+
+  // Add item to list
+  function addToList() {
+    const sku = document.getElementById('inputProduk').value;
+    const qty = parseInt(document.getElementById('inputQty').value) || 0;
+    const harga = parseFloat(document.getElementById('inputProduk').dataset.harga) || 0;
+    
+    if (!sku) {
+      showToast('Pilih produk terlebih dahulu', false);
+      return;
+    }
+    
+    if (qty <= 0) {
+      showToast('Qty harus lebih dari 0', false);
+      return;
+    }
+    
+    const produk = produkList.find(p => p.sku === sku);
+    if (!produk) return;
+    
+    // Check if same product exists - merge qty
+    const existingIndex = transactionItems.findIndex(item => item.sku === sku);
+    if (existingIndex >= 0) {
+      transactionItems[existingIndex].qty += qty;
+      transactionItems[existingIndex].nominal = transactionItems[existingIndex].qty * harga;
+      showToast(`Qty "${produk.nama_produk}" di-merge: ${transactionItems[existingIndex].qty} unit`);
+    } else {
+      transactionItems.push({
+        sku,
+        nama_produk: produk.nama_produk,
+        qty,
+        harga_jual: harga,
+        nominal: qty * harga
+      });
+      showToast(`"${produk.nama_produk}" ditambahkan ke daftar`);
+    }
+    
+    // Reset input
+    document.getElementById('inputProduk').value = '';
+    document.getElementById('inputQty').value = '1';
+    document.getElementById('inputHarga').value = '';
+    document.getElementById('inputNominal').value = '';
+    document.getElementById('inputProduk').dataset.harga = '0';
+    
+    renderPreviewTable();
+    updateSummary();
+    
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Remove item from list
+  function removeFromList(index) {
+    const item = transactionItems[index];
+    transactionItems.splice(index, 1);
+    renderPreviewTable();
+    updateSummary();
+    showToast(`"${item.nama_produk}" dihapus dari daftar`);
+  }
+
+  // Render preview table
+  function renderPreviewTable() {
+    const tbody = document.getElementById('previewTableBody');
+    const itemCount = document.getElementById('itemCount');
+    
+    itemCount.textContent = transactionItems.length;
+    
+    if (transactionItems.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada item. Tambahkan produk di atas.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = transactionItems.map((item, index) => `
+      <tr class="preview-row">
+        <td>${item.nama_produk}</td>
+        <td><code>${item.sku}</code></td>
+        <td class="text-right">${item.qty.toLocaleString('id-ID')}</td>
+        <td class="text-right">${formatRupiah(item.harga_jual)}</td>
+        <td class="text-right" style="color: var(--primary); font-weight: 600;">${formatRupiah(item.nominal)}</td>
+        <td>
+          <button class="action-btn action-btn--danger" onclick="removeFromList(${index})" title="Hapus">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+  }
+
+  // Update summary
+  function updateSummary() {
+    const summary = document.getElementById('transactionSummary');
+    const btnSave = document.getElementById('btnSaveAll');
+    
+    if (transactionItems.length === 0) {
+      summary.style.display = 'none';
+      btnSave.disabled = true;
+      return;
+    }
+    
+    summary.style.display = 'flex';
+    btnSave.disabled = false;
+    
+    const totalItem = transactionItems.length;
+    const totalQty = transactionItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalNominal = transactionItems.reduce((sum, item) => sum + item.nominal, 0);
+    
+    document.getElementById('totalItem').textContent = totalItem;
+    document.getElementById('totalQty').textContent = totalQty.toLocaleString('id-ID');
+    document.getElementById('totalNominal').textContent = formatRupiah(totalNominal);
+  }
+
+  // Save all items
+  async function saveAllPenjualan() {
+    const tanggal = document.getElementById('inputTanggal').value;
+    const nama_outlet = document.getElementById('inputOutlet').value;
+    
+    if (!tanggal) {
+      showToast('Tanggal wajib diisi', false);
+      return;
+    }
+    
+    if (!nama_outlet) {
+      showToast('Outlet wajib diisi', false);
+      return;
+    }
+    
+    if (transactionItems.length === 0) {
+      showToast('Tambahkan minimal 1 item', false);
+      return;
+    }
+    
+    const btn = document.getElementById('btnSaveAll');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Menyimpan...</span>';
+    
+    // Create progress bar
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+    progressBar.innerHTML = '<div class="progress-bar__fill" style="width: 0%"></div>';
+    document.body.appendChild(progressBar);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    const total = transactionItems.length;
+    const isEditMode = editingId !== null;
+    
+    try {
+      if (isEditMode && total === 1) {
+        // Edit mode: update single item via PUT
+        const progress = 50;
+        progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
+        
+        const response = await fetch('/api/v1/penjualan/' + editingId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            qty: transactionItems[0].qty
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          successCount = 1;
+        } else {
+          errorCount = 1;
+        }
+        
+        progressBar.querySelector('.progress-bar__fill').style.width = '100%';
+      } else if (!isEditMode) {
+        // Create mode: POST each item
+        for (let i = 0; i < transactionItems.length; i++) {
+          const item = transactionItems[i];
+          
+          // Update progress
+          const progress = ((i + 1) / total) * 100;
+          progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
+          
+          const response = await fetch('/api/v1/penjualan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tanggal,
+              nama_outlet,
+              sku: item.sku,
+              qty: item.qty
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error('Error saving item:', item.sku, result.message);
+          }
+        }
+      }
+      
+      // Remove progress bar
+      progressBar.remove();
+      
+      if (errorCount === 0) {
+        showToast(`Berhasil menyimpan ${successCount} transaksi`);
+        closeModal();
+        loadPenjualan();
+      } else {
+        showToast(`${successCount} berhasil, ${errorCount} gagal`, false);
+        loadPenjualan();
+      }
+    } catch (error) {
+      console.error('Error saving all:', error);
+      progressBar.remove();
+      showToast('Gagal menyimpan data', false);
+    }
+    
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="save"></i><span>Simpan Semua</span>';
+    if (window.lucide) lucide.createIcons({ nodes: [btn] });
+  }
+
+  // Close modal
+  function closeModal() {
+    document.getElementById('penjualanModal').classList.remove('active');
+    editingId = null;
+    transactionItems = [];
+    
+    // Reset disabled fields
+    document.getElementById('inputTanggal').disabled = false;
+    document.getElementById('inputOutlet').disabled = false;
   }
 
   // View penjualan
@@ -855,7 +1293,7 @@
     }
   }
 
-  // Edit penjualan
+  // Edit penjualan (single item edit)
   async function editPenjualan(id) {
     try {
       const response = await fetch('/api/v1/penjualan/' + id);
@@ -866,31 +1304,36 @@
       
       const item = result.data;
       
+      // For single-item edit, we use a simple modal - for now, just show the item
+      showToast(`Edit: ${item.nama_produk || item.sku} - Qty: ${item.qty}`);
+      
+      // Open the multi-item modal in edit mode
       editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit Penjualan';
-      document.getElementById('penjualanId').value = id;
       document.getElementById('inputTanggal').value = item.tanggal ? item.tanggal.split('T')[0] : '';
       document.getElementById('inputOutlet').value = item.nama_outlet || '';
-      document.getElementById('inputProduk').value = item.sku || '';
-      document.getElementById('inputHarga').value = formatRupiah(parseFloat(item.harga_jual) || 0);
-      document.getElementById('inputQty').value = item.qty || 0;
-      document.getElementById('inputNominal').value = formatRupiah(parseFloat(item.nominal) || 0);
-      document.getElementById('btnSave').innerHTML = '<i data-lucide="save"></i><span>Update</span>';
       
-      // Store harga_jual for calculation
-      document.getElementById('inputProduk').dataset.harga = item.harga_jual || 0;
+      // Add item to transaction items for editing
+      transactionItems = [{
+        sku: item.sku,
+        nama_produk: item.nama_produk,
+        qty: item.qty,
+        harga_jual: parseFloat(item.harga_jual) || 0,
+        nominal: parseFloat(item.nominal) || 0
+      }];
+      
+      renderPreviewTable();
+      updateSummary();
+      
+      // Disable header fields (can't change date/outlet for single edit)
+      document.getElementById('inputTanggal').disabled = true;
+      document.getElementById('inputOutlet').disabled = true;
       
       openModal('penjualanModal');
     } catch (error) {
       console.error('Error editing penjualan:', error);
       showToast('Gagal memuat data penjualan', false);
     }
-  }
-
-  // Close modal
-  function closeModal() {
-    document.getElementById('penjualanModal').classList.remove('active');
-    editingId = null;
   }
 
   // Close view modal
@@ -902,71 +1345,6 @@
   function openModal(modalId) {
     document.getElementById(modalId).classList.add('active');
     if (window.lucide) lucide.createIcons();
-  }
-
-  // Update harga when produk changes
-  async function updateHarga() {
-    const sku = document.getElementById('inputProduk').value;
-    if (!sku) {
-      document.getElementById('inputHarga').value = '';
-      return;
-    }
-    
-    const produk = produkList.find(p => p.sku === sku);
-    if (produk) {
-      document.getElementById('inputHarga').value = formatRupiah(parseFloat(produk.harga_jual) || 0);
-      document.getElementById('inputProduk').dataset.harga = produk.harga_jual || 0;
-      updateNominal();
-    }
-  }
-
-  // Update nominal
-  function updateNominal() {
-    const harga = parseFloat(document.getElementById('inputProduk').dataset.harga) || 0;
-    const qty = parseInt(document.getElementById('inputQty').value) || 0;
-    const nominal = harga * qty;
-    document.getElementById('inputNominal').value = formatRupiah(nominal);
-  }
-
-  // Save penjualan
-  async function savePenjualan(event) {
-    event.preventDefault();
-    
-    const data = {
-      tanggal: document.getElementById('inputTanggal').value,
-      nama_outlet: document.getElementById('inputOutlet').value,
-      sku: document.getElementById('inputProduk').value,
-      qty: parseInt(document.getElementById('inputQty').value) || 0
-    };
-    
-    if (!data.tanggal || !data.nama_outlet || !data.sku || data.qty <= 0) {
-      showToast('Mohon lengkapi semua field yang wajib', false);
-      return;
-    }
-    
-    try {
-      const url = editingId ? '/api/v1/penjualan/' + editingId : '/api/v1/penjualan';
-      const method = editingId ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Save failed');
-      }
-      
-      showToast(editingId ? 'Penjualan berhasil diupdate' : 'Penjualan berhasil ditambahkan');
-      closeModal();
-      loadPenjualan();
-    } catch (error) {
-      console.error('Error saving penjualan:', error);
-      showToast(error.message || 'Gagal menyimpan penjualan', false);
-    }
   }
 
   // Delete penjualan
