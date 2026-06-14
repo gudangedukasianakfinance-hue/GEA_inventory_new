@@ -3,7 +3,7 @@ import pool from "../services/db.js";
 export default async function handler(req, res) {
   try {
     const result = await pool.query(`
-      SELECT sku, nama_produk
+      SELECT sku, nama_produk, harga_jual
       FROM produk
       ORDER BY nama_produk
     `);
