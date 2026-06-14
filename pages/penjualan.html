@@ -1480,10 +1480,6 @@
     await loadPenjualan();
   }
 
-  // Page load handler
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPenjualanPage);
-  } else {
-    initPenjualanPage();
-  }
+  // Page load handler - called by AppRouter only
+  // Do NOT call initPenjualanPage() here to avoid double initialization
 </script>

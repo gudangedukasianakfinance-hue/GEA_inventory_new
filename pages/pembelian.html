@@ -1419,10 +1419,6 @@
     await loadPembelian();
   }
 
-  // Page load handler
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPembelianPage);
-  } else {
-    initPembelianPage();
-  }
+  // Page load handler - called by AppRouter only
+  // Do NOT call initPembelianPage() here to avoid double initialization
 </script>

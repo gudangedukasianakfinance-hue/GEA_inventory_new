@@ -140,8 +140,14 @@ const AppRouter = {
   
   initPage(page) {
     if (window.lucide) lucide.createIcons();
+    
+    // Call page-specific init functions
     if (page === 'dashboard' && typeof initDashboard === 'function') initDashboard();
     if (page === 'user' && typeof initUserManagement === 'function') initUserManagement();
+    if (page === 'persediaan' && typeof initPersediaanPage === 'function') initPersediaanPage();
+    if (page === 'penjualan' && typeof initPenjualanPage === 'function') initPenjualanPage();
+    if (page === 'pembelian' && typeof initPembelianPage === 'function') initPembelianPage();
+    
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },
   

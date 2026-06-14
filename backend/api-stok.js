@@ -80,6 +80,9 @@ async function getStokRealtime(req, res) {
     // Stok Awal = Stok Akhir previous month (not total from beginning)
     // Stok Akhir = Stok Awal + Pembelian this month - Penjualan this month + Penyesuaian this month
     // Params: $1=startDateStr, $2=endDateStr, $3=beforeDateStr, $4=searchParam, $5=limit, $6=offset
+    // Determine if January (bulan = 1) - special handling for stok_awal
+    const isJanuary = parseInt(bulan) === 1;
+    
     const dataResult = await pool.query(`
       WITH params AS (
         SELECT 
@@ -87,19 +90,26 @@ async function getStokRealtime(req, res) {
           $2::date AS end_date,
           $3::date AS before_date
       ),
-      -- Stok Awal = total stok from previous period (stok_awal + all transactions before this month)
+      -- Stok Awal calculation:
+      -- For January: Use ONLY stok_awal table (initial recorded stock)
+      -- For other months: Use cumulative transactions from all tables before this month
       stok_terakhir_sebelumnya AS (
         SELECT 
           sku,
           COALESCE(SUM(stok), 0) AS stok_sblm
         FROM (
-          SELECT sku, COALESCE(SUM(qty_awal), 0) AS stok FROM stok_awal WHERE created_at::date <= (SELECT before_date FROM params) GROUP BY sku
-          UNION ALL
-          SELECT sku, COALESCE(SUM(qty), 0) AS stok FROM pembelian WHERE tanggal <= (SELECT before_date FROM params) GROUP BY sku
-          UNION ALL
-          SELECT sku, COALESCE(SUM(-qty), 0) AS stok FROM penjualan WHERE tanggal <= (SELECT before_date FROM params) GROUP BY sku
-          UNION ALL
-          SELECT sku, COALESCE(SUM(qty), 0) AS stok FROM stok_penyesuaian WHERE tanggal <= (SELECT before_date FROM params) GROUP BY sku
+          ${isJanuary 
+            ? `-- January: Only use stok_awal table
+               SELECT sku, COALESCE(SUM(qty_awal), 0) AS stok FROM stok_awal GROUP BY sku`
+            : `-- Other months: Cumulative of all transactions before this month
+               SELECT sku, COALESCE(SUM(qty_awal), 0) AS stok FROM stok_awal WHERE created_at::date <= (SELECT before_date FROM params) GROUP BY sku
+               UNION ALL
+               SELECT sku, COALESCE(SUM(qty), 0) AS stok FROM pembelian WHERE tanggal <= (SELECT before_date FROM params) GROUP BY sku
+               UNION ALL
+               SELECT sku, COALESCE(SUM(-qty), 0) AS stok FROM penjualan WHERE tanggal <= (SELECT before_date FROM params) GROUP BY sku
+               UNION ALL
+               SELECT sku, COALESCE(SUM(qty), 0) AS stok FROM stok_penyesuaian WHERE tanggal <= (SELECT before_date FROM params) GROUP BY sku`
+          }
         ) combined
         GROUP BY sku
       ),
@@ -154,7 +164,7 @@ async function getStokRealtime(req, res) {
       LIMIT $5 OFFSET $6
     `, [startDateStr, endDateStr, beforeDateStr, searchParam, limit, offset]);
 
-    // Calculate summary stats
+    // Calculate summary stats - same January logic
     const summaryResult = await pool.query(`
       WITH params AS (
         SELECT 
@@ -166,10 +176,13 @@ async function getStokRealtime(req, res) {
         SELECT 
           p.sku,
           COALESCE(
-            (SELECT COALESCE(SUM(qty_awal), 0) FROM stok_awal WHERE sku = p.sku AND created_at::date <= (SELECT before_date FROM params)) +
-            (SELECT COALESCE(SUM(qty), 0) FROM pembelian WHERE sku = p.sku AND tanggal <= (SELECT before_date FROM params)) -
-            (SELECT COALESCE(SUM(qty), 0) FROM penjualan WHERE sku = p.sku AND tanggal <= (SELECT before_date FROM params)) +
-            (SELECT COALESCE(SUM(qty), 0) FROM stok_penyesuaian WHERE sku = p.sku AND tanggal <= (SELECT before_date FROM params)),
+            ${isJanuary
+              ? `(SELECT COALESCE(SUM(qty_awal), 0) FROM stok_awal WHERE sku = p.sku)`
+              : `(SELECT COALESCE(SUM(qty_awal), 0) FROM stok_awal WHERE sku = p.sku AND created_at::date <= (SELECT before_date FROM params)) +
+                 (SELECT COALESCE(SUM(qty), 0) FROM pembelian WHERE sku = p.sku AND tanggal <= (SELECT before_date FROM params)) -
+                 (SELECT COALESCE(SUM(qty), 0) FROM penjualan WHERE sku = p.sku AND tanggal <= (SELECT before_date FROM params)) +
+                 (SELECT COALESCE(SUM(qty), 0) FROM stok_penyesuaian WHERE sku = p.sku AND tanggal <= (SELECT before_date FROM params))`
+            },
             0
           ) AS stok_awal,
           COALESCE((SELECT SUM(qty) FROM pembelian WHERE sku = p.sku AND tanggal >= (SELECT start_date FROM params) AND tanggal <= (SELECT end_date FROM params)), 0) AS pembelian,
@@ -256,7 +269,8 @@ async function getKartuStok(req, res) {
       WITH params AS (
         SELECT 
           $1::date AS start_date,
-          $2::date AS end_date
+          $2::date AS end_date,
+          $3::text AS produk_filter
       ),
       -- Get all transactions with partner info
       all_transactions AS (
@@ -274,7 +288,7 @@ async function getKartuStok(req, res) {
         JOIN produk p ON p.sku = sa.sku
         WHERE sa.created_at::date >= (SELECT start_date FROM params) 
           AND sa.created_at::date <= (SELECT end_date FROM params)
-          AND ($3::text IS NULL OR $3::text = '' OR sa.sku = $3)
+          AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR sa.sku = (SELECT produk_filter FROM params))
         
         UNION ALL
         
@@ -292,7 +306,7 @@ async function getKartuStok(req, res) {
         JOIN produk pr ON pr.sku = pb.sku
         WHERE pb.tanggal >= (SELECT start_date FROM params) 
           AND pb.tanggal <= (SELECT end_date FROM params)
-          AND ($3::text IS NULL OR $3::text = '' OR pb.sku = $3)
+          AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR pb.sku = (SELECT produk_filter FROM params))
         
         UNION ALL
         
@@ -310,7 +324,7 @@ async function getKartuStok(req, res) {
         JOIN produk pr ON pr.sku = jj.sku
         WHERE jj.tanggal >= (SELECT start_date FROM params) 
           AND jj.tanggal <= (SELECT end_date FROM params)
-          AND ($3::text IS NULL OR $3::text = '' OR jj.sku = $3)
+          AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR jj.sku = (SELECT produk_filter FROM params))
         
         UNION ALL
         
@@ -328,7 +342,7 @@ async function getKartuStok(req, res) {
         JOIN produk pr ON pr.sku = sp.sku
         WHERE sp.tanggal >= (SELECT start_date FROM params) 
           AND sp.tanggal <= (SELECT end_date FROM params)
-          AND ($3::text IS NULL OR $3::text = '' OR sp.sku = $3)
+          AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR sp.sku = (SELECT produk_filter FROM params))
       ),
       -- Calculate running balance per SKU
       with_balance AS (
@@ -397,16 +411,17 @@ async function getKartuStok(req, res) {
       WITH params AS (
         SELECT 
           $1::date AS start_date,
-          $2::date AS end_date
+          $2::date AS end_date,
+          $3::text AS produk_filter
       ),
       all_transactions AS (
-        SELECT sa.sku FROM stok_awal sa WHERE sa.created_at::date >= (SELECT start_date FROM params) AND sa.created_at::date <= (SELECT end_date FROM params) AND ($3::text IS NULL OR $3::text = '' OR sa.sku = $3)
+        SELECT sa.sku FROM stok_awal sa WHERE sa.created_at::date >= (SELECT start_date FROM params) AND sa.created_at::date <= (SELECT end_date FROM params) AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR sa.sku = (SELECT produk_filter FROM params))
         UNION
-        SELECT pb.sku FROM pembelian pb WHERE pb.tanggal >= (SELECT start_date FROM params) AND pb.tanggal <= (SELECT end_date FROM params) AND ($3::text IS NULL OR $3::text = '' OR pb.sku = $3)
+        SELECT pb.sku FROM pembelian pb WHERE pb.tanggal >= (SELECT start_date FROM params) AND pb.tanggal <= (SELECT end_date FROM params) AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR pb.sku = (SELECT produk_filter FROM params))
         UNION
-        SELECT jj.sku FROM penjualan jj WHERE jj.tanggal >= (SELECT start_date FROM params) AND jj.tanggal <= (SELECT end_date FROM params) AND ($3::text IS NULL OR $3::text = '' OR jj.sku = $3)
+        SELECT jj.sku FROM penjualan jj WHERE jj.tanggal >= (SELECT start_date FROM params) AND jj.tanggal <= (SELECT end_date FROM params) AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR jj.sku = (SELECT produk_filter FROM params))
         UNION
-        SELECT sp.sku FROM stok_penyesuaian sp WHERE sp.tanggal >= (SELECT start_date FROM params) AND sp.tanggal <= (SELECT end_date FROM params) AND ($3::text IS NULL OR $3::text = '' OR sp.sku = $3)
+        SELECT sp.sku FROM stok_penyesuaian sp WHERE sp.tanggal >= (SELECT start_date FROM params) AND sp.tanggal <= (SELECT end_date FROM params) AND ((SELECT produk_filter FROM params) IS NULL OR (SELECT produk_filter FROM params) = '' OR sp.sku = (SELECT produk_filter FROM params))
       )
       SELECT COUNT(*) as total FROM all_transactions
     `, [startDateStr, endDateStr, produk || null]);

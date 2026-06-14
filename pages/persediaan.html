@@ -184,7 +184,7 @@
       <div class="filter-group">
         <label>Produk</label>
         <select id="filterProdukKartu" onchange="loadKartuStok()">
-          <option value="">Semua Produk</option>
+          <option value="" disabled selected>Pilih Produk</option>
         </select>
       </div>
       <div class="filter-group" style="flex: 1;">
@@ -505,14 +505,15 @@ async function loadProdukDropdown() {
     if (!response.ok) throw new Error('Failed to load products');
     
     const result = await response.json();
-    const produkList = result.data || [];
+    // API returns 'produk' not 'data'
+    const produkList = result.produk || result.data || [];
     
     const options = produkList.map(p => 
       `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`
     ).join('');
     
     document.getElementById('filterProdukKartu').innerHTML = 
-      '<option value="">Semua Produk</option>' + options;
+      '<option value="" disabled selected>Pilih Produk</option>' + options;
   } catch (error) {
     console.error('Error loading produk:', error);
   }
@@ -1008,7 +1009,6 @@ async function initPersediaanPage() {
   await loadStokPeriode();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initPersediaanPage();
-});
+// Page load handler - called by AppRouter only
+// Do NOT call initPersediaanPage() here to avoid double initialization
 </script>
