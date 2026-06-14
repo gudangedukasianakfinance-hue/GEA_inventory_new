@@ -300,16 +300,18 @@ const Dashboard = {
         datasets: [{
           label: 'Penjualan',
           data: dataValues,
-          borderColor: 'rgba(59, 130, 246, 1)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: '#e53935',
+          backgroundColor: 'rgba(229, 57, 53, 0.15)',
           borderWidth: 2,
           fill: true,
           tension: 0.3,
-          pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+          pointBackgroundColor: '#e53935',
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           pointRadius: 4,
-          pointHoverRadius: 6
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#ff5252',
+          pointHoverBorderColor: '#fff'
         }]
       },
       options: {
@@ -318,6 +320,9 @@ const Dashboard = {
         plugins: {
           legend: { display: false },
           tooltip: {
+            backgroundColor: '#e53935',
+            titleColor: '#fff',
+            bodyColor: '#fff',
             callbacks: {
               label: (item) => {
                 return 'Rp ' + this.formatRupiah(item.raw);
