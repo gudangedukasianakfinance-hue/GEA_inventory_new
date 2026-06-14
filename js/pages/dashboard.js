@@ -544,8 +544,10 @@ const Dashboard = {
     const container = document.getElementById('modulLevelTable');
     if (!container) return;
     
-    // Data from API
-    const modulData = this.data.charts?.modulLevel?.data || [];
+    // Data from API - check response structure
+    const modulLevelResponse = this.data.charts?.modulLevel;
+    const modulData = modulLevelResponse?.data || [];
+    console.log('Modul Level Response:', modulLevelResponse);
     console.log('Modul Level Data:', modulData);
     
     if (!modulData.length || !modulData.some(d => d.value > 0)) {
@@ -561,9 +563,10 @@ const Dashboard = {
       '<thead><tr><th>Jenis Modul</th><th>Level</th><th class="text-right">Qty Terjual</th></tr></thead>' +
       '<tbody>' +
       modulData.filter(d => d.value > 0).map(item => {
-        const parts = (item.full_label || item.label || '').split(' Level ');
-        const jenis = parts[0] || '-';
-        const level = parts[1] || '-';
+        // Use label for jenis (Membaca, Ekspro PU, Ekspro MD)
+        // Use level_num for level number (1, 2, 3, 4)
+        const jenis = item.label || '-';
+        const level = item.level_num ? String(item.level_num) : '-';
         return '<tr><td class="modul-jenis">' + jenis + '</td><td class="modul-level">' + level + '</td><td class="modul-qty text-right">' + this.formatNumber(item.value) + '</td></tr>';
       }).join('') +
       '</tbody>' +

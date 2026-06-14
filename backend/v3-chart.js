@@ -333,7 +333,9 @@ export default async function handler(req, res) {
       periode: { bulan: targetBulan, tahun: targetTahun },
       data: result.rows.map(r => ({
         label: r.label || r.full_label || (r.bulan ? `Bulan ${r.bulan}` : ''),
+        full_label: r.full_label || (r.label ? r.label + (r.level_num ? ' Level ' + r.level_num : '') : ''),
         bulan: r.bulan ? Number(r.bulan) : null,
+        level_num: r.level_num ? Number(r.level_num) : null,
         nama_produk: r.nama_produk || r.label || '',
         value: Number(r.value || r.total_penjualan || 0)
       }))
