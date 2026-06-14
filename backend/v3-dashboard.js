@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         COUNT(DISTINCT outlet_id) AS outlet_count
       FROM outlet_stok_masuk
       WHERE tanggal >= $1 AND tanggal <= $2
-        AND sumber = 'warehouse_transfer'
+        AND sumber = 'warehouse_sale_auto'
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
     // 2. Penjualan Periode
