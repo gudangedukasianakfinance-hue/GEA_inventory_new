@@ -40,6 +40,7 @@ import v3ChartHandler from "../backend/v3-chart.js";
 import usersApiHandler from "../backend/users-api.js";
 import approvalApiHandler from "../backend/approval-api.js";
 import settingsApiHandler from "../backend/settings-api.js";
+import apiStokHandler from "../backend/api-stok.js";
 import { isDatabaseConfigured, checkDatabaseHealth } from "../services/db.js";
 
 // Health check handler
@@ -137,6 +138,11 @@ const routes = {
 
   // Supplier API routes
   "GET /v1/supplier": apiPembelianHandler,
+
+  // Stok Module API routes (Sprint 4)
+  "GET /v1/stok/realtime": apiStokHandler,
+  "GET /v1/stok/kartu": apiStokHandler,
+  "GET /v1/stok/mutasi": apiStokHandler,
 
   // GET /forecast REMOVED - feature deprecated
   "GET /produk-list": produkListHandler,
