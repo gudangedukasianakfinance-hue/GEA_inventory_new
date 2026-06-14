@@ -120,14 +120,18 @@ export default async function handler(req, res) {
 
       case 'tren_penjualan':
         // Line chart - Trend Penjualan Bulanan (SUM total_harga per bulan)
+        // Using COALESCE to ensure 0 for months with no data
         result = await pool.query(`
           SELECT 
-            EXTRACT(MONTH FROM tanggal) AS bulan,
-            COALESCE(SUM(total_harga), 0) AS total_penjualan
-          FROM penjualan
-          WHERE EXTRACT(YEAR FROM tanggal) = $1
-          GROUP BY EXTRACT(MONTH FROM tanggal)
-          ORDER BY bulan
+            m.bulan,
+            COALESCE(SUM(j.total_harga), 0) AS value
+          FROM (
+            VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12)
+          ) m(bulan)
+          LEFT JOIN penjualan j ON EXTRACT(MONTH FROM j.tanggal) = m.bulan
+            AND EXTRACT(YEAR FROM j.tanggal) = $1
+          GROUP BY m.bulan
+          ORDER BY m.bulan
         `, [targetTahun]);
         break;
 
@@ -193,16 +197,23 @@ export default async function handler(req, res) {
         break;
 
       case 'modul_level':
-        // Bar chart - Modul Terjual Per Level
-        // Mapping sesuai requirement:
-        // Modul Membaca Level 1.1-1.6 -> Membaca Level 1
-        // Modul Membaca Level 2.1-2.6 -> Membaca Level 2
-        // Modul Membaca Level 3.1-3.6 -> Membaca Level 3
-        // Ekspro PU Level 1, Level 2
-        // Ekspro MD Level 1, Level 2, Level 3, Level 4
+        // Table - Modul Terjual Per Level
+        // Show all expected levels regardless of sales
         result = await pool.query(`
           WITH params AS (
             SELECT $1::int AS bulan, $2::int AS tahun
+          ),
+          expected_levels AS (
+            VALUES 
+              ('Membaca', 1),
+              ('Membaca', 2),
+              ('Membaca', 3),
+              ('Expro PU', 1),
+              ('Expro PU', 2),
+              ('Expro MD', 1),
+              ('Expro MD', 2),
+              ('Expro MD', 3),
+              ('Expro MD', 4)
           ),
           produk_mapping AS (
             SELECT 
@@ -241,18 +252,19 @@ export default async function handler(req, res) {
             GROUP BY pm.jenis, pm.level_num
           )
           SELECT 
-            jenis AS label,
-            level_num,
-            qty_terjual AS value,
-            jenis || ' Level ' || level_num AS full_label
-          FROM penjualan_level
+            el.column1 AS label,
+            el.column2 AS level_num,
+            COALESCE(pl.qty_terjual, 0) AS value,
+            el.column1 || ' Level ' || el.column2 AS full_label
+          FROM expected_levels el
+          LEFT JOIN penjualan_level pl ON pl.jenis = el.column1 AND pl.level_num = el.column2
           ORDER BY 
-            CASE jenis 
+            CASE el.column1 
               WHEN 'Membaca' THEN 1 
               WHEN 'Ekspro PU' THEN 2 
-              WHEN 'Ekspro MD' THEN 3 
+              WHEN 'Expro MD' THEN 3 
             END,
-            level_num
+            el.column2
         `, [targetBulan, targetTahun]);
         break;
 

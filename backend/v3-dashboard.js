@@ -75,49 +75,83 @@ export default async function handler(req, res) {
     // 8. Total Outlet/Gerai
     const totalOutlet = await pool.query(`SELECT COUNT(*) AS total FROM outlet`);
 
-    // 9. Stok Kritis
-    const stokKritis = await pool.query(`
-      WITH params AS (
-        SELECT CURRENT_DATE AS end_date
-      ),
-      base_stock AS (
-        SELECT sku, COALESCE(SUM(qty_awal), 0) AS stok_awal
-        FROM stok_awal
-        GROUP BY sku
-      ),
-      pembelian_total AS (
-        SELECT sku, COALESCE(SUM(qty), 0) AS total_beli
-        FROM pembelian
-        WHERE tanggal <= (SELECT end_date FROM params)
-        GROUP BY sku
-      ),
-      penjualan_total AS (
-        SELECT sku, COALESCE(SUM(qty), 0) AS total_jual
-        FROM penjualan
-        WHERE tanggal <= (SELECT end_date FROM params)
-        GROUP BY sku
-      ),
-      penyesuaian_total AS (
-        SELECT sku, COALESCE(SUM(qty), 0) AS total_adjust
-        FROM stok_penyesuaian
-        WHERE tanggal <= (SELECT end_date FROM params)
-        GROUP BY sku
-      ),
-      rolling_stok AS (
-        SELECT 
-          p.sku,
-          p.nama_produk,
-          COALESCE(bs.stok_awal, 0) + COALESCE(pb.total_beli, 0) - COALESCE(pj.total_jual, 0) + COALESCE(pa.total_adjust, 0) AS stok_akhir
-        FROM produk p
-        LEFT JOIN base_stock bs ON bs.sku = p.sku
-        LEFT JOIN pembelian_total pb ON pb.sku = p.sku
-        LEFT JOIN penjualan_total pj ON pj.sku = p.sku
-        LEFT JOIN penyesuaian_total pa ON pa.sku = p.sku
-      )
-      SELECT COUNT(*) AS kritis_count
-      FROM rolling_stok
-      WHERE stok_akhir <= 0 OR stok_akhir < 10
-    `);
+    // 9. Stok Kritis - simplified query
+    let stokKritis = { rows: [{ kritis_count: 0 }] };
+    let stokKritisList = { rows: [] };
+    try {
+      // Try to get kriti products using available tables
+      stokKritis = await pool.query(`
+        WITH produk_stok AS (
+          SELECT 
+            p.sku,
+            p.nama_produk,
+            COALESCE(
+              (SELECT SUM(qty_awal) FROM stok_awal WHERE sku = p.sku GROUP BY sku),
+              0
+            ) + COALESCE(
+              (SELECT SUM(qty) FROM pembelian WHERE sku = p.sku GROUP BY sku),
+              0
+            ) - COALESCE(
+              (SELECT SUM(qty) FROM penjualan WHERE sku = p.sku GROUP BY sku),
+              0
+            ) + COALESCE(
+              (SELECT SUM(qty) FROM stok_penyesuaian WHERE sku = p.sku GROUP BY sku),
+              0
+            ) AS stok_akhir
+          FROM produk p
+        )
+        SELECT COUNT(*) AS kritis_count
+        FROM produk_stok
+        WHERE stok_akhir <= 0 OR stok_akhir < 10
+      `);
+      
+      // Get list of kriti products
+      stokKritisList = await pool.query(`
+        WITH produk_stok AS (
+          SELECT 
+            p.sku,
+            p.nama_produk,
+            COALESCE(
+              (SELECT SUM(qty_awal) FROM stok_awal WHERE sku = p.sku GROUP BY sku),
+              0
+            ) + COALESCE(
+              (SELECT SUM(qty) FROM pembelian WHERE sku = p.sku GROUP BY sku),
+              0
+            ) - COALESCE(
+              (SELECT SUM(qty) FROM penjualan WHERE sku = p.sku GROUP BY sku),
+              0
+            ) + COALESCE(
+              (SELECT SUM(qty) FROM stok_penyesuaian WHERE sku = p.sku GROUP BY sku),
+              0
+            ) AS stok_akhir
+          FROM produk p
+        )
+        SELECT sku, nama_produk, stok_akhir
+        FROM produk_stok
+        WHERE stok_akhir <= 0 OR stok_akhir < 10
+        ORDER BY stok_akhir ASC
+        LIMIT 20
+      `);
+    } catch (err) {
+      console.error('Stok kritis query error:', err.message);
+      // Fallback: try simpler query
+      try {
+        stokKritis = await pool.query(`
+          SELECT COUNT(*) AS kritis_count
+          FROM produk
+          WHERE COALESCE(stok, 0) < 10
+        `);
+        stokKritisList = await pool.query(`
+          SELECT sku, nama_produk, COALESCE(stok, 0) AS stok_akhir
+          FROM produk
+          WHERE COALESCE(stok, 0) < 10
+          ORDER BY stok ASC
+          LIMIT 20
+        `);
+      } catch (err2) {
+        console.error('Fallback stok kritis error:', err2.message);
+      }
+    }
 
     // 10. SO Berjalan
     const soBerjalan = await pool.query(`
@@ -197,6 +231,11 @@ export default async function handler(req, res) {
       },
       stok: {
         kritis: Number(stokKritis.rows[0]?.kritis_count || 0),
+        kritis_list: stokKritisList.rows.map(r => ({
+          sku: r.sku,
+          nama_produk: r.nama_produk,
+          stok: Number(r.stok_akhir || 0)
+        })),
         gudang: {
           awal: Number(stokGudang.rows[0]?.stok_awal || 0),
           pembelian: Number(stokGudang.rows[0]?.pembelian || 0),

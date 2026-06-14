@@ -115,6 +115,7 @@ const Dashboard = {
       this.renderCharts();
       this.renderSOProgress();
       this.renderModulLevelTable();
+      this.renderStokKritisList();
       this.renderRecentActivity();
       this.updateUserGreeting();
       
@@ -520,6 +521,36 @@ const Dashboard = {
       '</table></div>';
     
     container.innerHTML = tableHtml;
+  },
+  
+  renderStokKritisList() {
+    const container = document.getElementById('stokKritisList');
+    if (!container) return;
+    
+    const stokList = this.data.stok?.kritis_list || [];
+    console.log('Stok Kritis List:', stokList);
+    
+    if (!stokList.length) {
+      container.innerHTML = '<div class="table-card__empty"><i data-lucide="check-circle"></i><p class="table-card__empty-text">Tidak ada stok kritis</p></div>';
+      if (window.lucide) lucide.createIcons({ nodes: [container] });
+      return;
+    }
+    
+    const listHtml = stokList.map(item => {
+      const isZero = item.stok <= 0;
+      return '<div class="stok-item">' +
+        '<div class="stok-item__info">' +
+          '<span class="stok-item__sku">' + item.sku + '</span>' +
+          '<span class="stok-item__nama">' + item.nama_produk + '</span>' +
+        '</div>' +
+        '<div class="stok-item__stock">' +
+          '<span class="stok-item__qty">' + this.formatNumber(item.stok) + '</span>' +
+          (isZero ? '<span class="badge badge--danger">Habis</span>' : '<span class="badge badge--warning">Kritis</span>') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    
+    container.innerHTML = listHtml;
   },
   
   startAutoRefresh() {
