@@ -97,15 +97,17 @@ const Dashboard = {
     this.hideError();
     
     try {
-      // Run sequentially to avoid race condition
-      // loadDashboardData sets this.data first
-      // then loadChartData adds this.data.charts
+      // Run sequentially to preserve charts data
       await this.loadDashboardData();
       await this.loadChartData();
       
       console.log('=== DATA LOADED ===');
-      console.log('this.data:', JSON.stringify(this.data, null, 2));
-      console.log('this.data.charts:', JSON.stringify(this.data.charts, null, 2));
+      console.log('Dashboard Data:', this.data);
+      console.log('Charts Data:', this.data.charts);
+      console.log('this.data.charts.topProduk:', this.data.charts?.topProduk);
+      console.log('this.data.charts.outlet:', this.data.charts?.outlet);
+      console.log('this.data.charts.modulLevel:', this.data.charts?.modulLevel);
+      console.log('this.data.charts.trenPenjualan:', this.data.charts?.trenPenjualan);
       
       this.isLoading = false;
       this.hideLoadingOverlay();
@@ -128,8 +130,14 @@ const Dashboard = {
       const response = await fetch(`/api/v3-dashboard?bulan=${selectedMonth}&tahun=${selectedYear}`);
       if (!response.ok) throw new Error('Gagal memuat data dashboard');
       
-      this.data = await response.json();
+      const dashboardData = await response.json();
+      // Preserve existing charts data, merge with new dashboard data
+      this.data = {
+        charts: this.data?.charts || {},
+        ...dashboardData
+      };
       console.log('Dashboard data loaded:', this.data);
+      console.log('Charts after dashboard load:', this.data.charts);
       
     } catch (error) {
       console.error('Error loading dashboard data:', error);
