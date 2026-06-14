@@ -217,6 +217,14 @@
               </td>
             </tr>
           </tbody>
+          <tfoot id="kartuTableFoot" style="display: none;">
+            <tr class="summary-row">
+              <td colspan="3" class="text-right" style="font-weight: 600;">TOTAL</td>
+              <td class="text-right text-success" id="footerMasuk" style="font-weight: 600;">+0</td>
+              <td class="text-right text-danger" id="footerKeluar" style="font-weight: 600;">-0</td>
+              <td class="text-right" id="footerSaldo" style="font-weight: 600;">0</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       
@@ -393,6 +401,20 @@
   .kategori-chip {
     padding: 6px 12px;
     font-size: 12px;
+  }
+  
+  /* Table Footer */
+  .data-table tfoot {
+    background-color: #f8f9fa;
+    border-top: 2px solid #dee2e6;
+  }
+  
+  .data-table tfoot td {
+    padding: 12px 16px;
+  }
+  
+  .summary-row td {
+    background-color: #f8f9fa;
   }
 }
 </style>
@@ -771,6 +793,7 @@ function renderKartuTable(data) {
         </td>
       </tr>
     `;
+    document.getElementById('kartuTableFoot').style.display = 'none';
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -792,6 +815,16 @@ function renderKartuTable(data) {
   }).join('');
   
   document.getElementById('kartuTableBody').innerHTML = rows;
+  
+  // Calculate and show footer totals
+  const totalMasuk = data.reduce((sum, item) => sum + (parseInt(item.masuk) || 0), 0);
+  const totalKeluar = data.reduce((sum, item) => sum + (parseInt(item.keluar) || 0), 0);
+  const lastSaldo = data.length > 0 ? data[data.length - 1].saldo : 0;
+  
+  document.getElementById('footerMasuk').textContent = '+' + formatNumber(totalMasuk);
+  document.getElementById('footerKeluar').textContent = '-' + formatNumber(totalKeluar);
+  document.getElementById('footerSaldo').textContent = formatNumber(lastSaldo);
+  document.getElementById('kartuTableFoot').style.display = '';
 }
 
 function getAktivitasClass(aktivitas) {
