@@ -154,6 +154,12 @@ const Dashboard = {
       const outletData = outletResponse.ok ? await outletResponse.json() : { data: [] };
       const modulLevelData = modulLevelResponse.ok ? await modulLevelResponse.json() : { data: [] };
       
+      console.log('🔍 API Response Debug:');
+      console.log('1. trenData:', JSON.stringify(trenData, null, 2));
+      console.log('2. topProdukData:', JSON.stringify(topProdukData, null, 2));
+      console.log('3. outletData:', JSON.stringify(outletData, null, 2));
+      console.log('4. modulLevelData:', JSON.stringify(modulLevelData, null, 2));
+      
       // API returns { type, periode, data: [...] }, store directly
       this.data.charts = {
         trenPenjualan: trenData,
@@ -163,6 +169,10 @@ const Dashboard = {
       };
       
       console.log('Chart data stored:', this.data.charts);
+      console.log('this.data.charts.trenPenjualan.data:', this.data.charts.trenPenjualan?.data);
+      console.log('this.data.charts.topProduk.data:', this.data.charts.topProduk?.data);
+      console.log('this.data.charts.outlet.data:', this.data.charts.outlet?.data);
+      console.log('this.data.charts.modulLevel.data:', this.data.charts.modulLevel?.data);
       
     } catch (error) {
       console.error('Error loading chart data:', error);
