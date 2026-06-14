@@ -198,6 +198,12 @@ async function createPenjualan(req, res) {
       return send(res, 404, { success: false, message: "SKU tidak ditemukan di master produk" });
     }
 
+    // Check if outlet exists in master outlet table
+    const outletCheck = await pool.query("SELECT nama_outlet FROM outlet WHERE nama_outlet = $1", [nama_outlet]);
+    if (outletCheck.rows.length === 0) {
+      return send(res, 404, { success: false, message: "Nama outlet tidak ditemukan di master outlet. Gunakan nama outlet yang valid." });
+    }
+
     // Insert new penjualan
     const result = await pool.query(
       `INSERT INTO penjualan (tanggal, nama_outlet, sku, qty, created_at)
@@ -251,6 +257,14 @@ async function updatePenjualan(req, res, penjualanId) {
     const produkCheck = await pool.query("SELECT sku FROM produk WHERE sku = $1", [sku]);
     if (produkCheck.rows.length === 0) {
       return send(res, 404, { success: false, message: "SKU tidak ditemukan di master produk" });
+    }
+  }
+
+  // Validation for nama_outlet if provided
+  if (nama_outlet !== undefined && nama_outlet !== null && nama_outlet !== "") {
+    const outletCheck = await pool.query("SELECT nama_outlet FROM outlet WHERE nama_outlet = $1", [nama_outlet]);
+    if (outletCheck.rows.length === 0) {
+      return send(res, 404, { success: false, message: "Nama outlet tidak ditemukan di master outlet. Gunakan nama outlet yang valid." });
     }
   }
 
