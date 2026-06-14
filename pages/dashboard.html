@@ -5,7 +5,28 @@
   <div class="welcome">
     <div class="welcome__content">
       <h1 class="welcome__title" id="welcomeTitle">Selamat Datang, Admin</h1>
-      <p class="welcome__subtitle">Ringkasan operasional warehouse hari ini</p>
+      <p class="welcome__subtitle">Ringkasan operasional warehouse</p>
+    </div>
+    <div class="welcome__filter">
+      <select id="filterBulan" class="filter-select">
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+      <select id="filterTahun" class="filter-select">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
     </div>
     <div class="welcome__datetime">
       <div class="welcome__date" id="currentDate">-</div>
@@ -63,7 +84,7 @@
         <i data-lucide="send"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Distribusi Hari Ini</div>
+        <div class="kpi-card__label">Distribusi Periode</div>
         <div class="kpi-card__value" id="kpi-distribusi">0</div>
       </div>
     </div>
@@ -73,7 +94,7 @@
         <i data-lucide="shopping-cart"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Penjualan Hari Ini</div>
+        <div class="kpi-card__label">Penjualan Periode</div>
         <div class="kpi-card__value" id="kpi-penjualan">0</div>
       </div>
     </div>
@@ -113,21 +134,21 @@
     
     <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--warning">
-        <i data-lucide="clock"></i>
+        <i data-lucide="wallet"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Approval Pending</div>
-        <div class="kpi-card__value" id="kpi-approval-pending">0</div>
+        <div class="kpi-card__label">Profit</div>
+        <div class="kpi-card__value" id="kpi-profit">Rp 0</div>
       </div>
     </div>
     
     <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--primary">
-        <i data-lucide="trending-up"></i>
+        <i data-lucide="graduation-cap"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Forecast Bulan Depan</div>
-        <div class="kpi-card__value" id="kpi-forecast">0</div>
+        <div class="kpi-card__label">Total Siswa Aktif</div>
+        <div class="kpi-card__value" id="kpi-siswa-aktif">0</div>
       </div>
     </div>
     
@@ -136,8 +157,8 @@
         <i data-lucide="target"></i>
       </div>
       <div class="kpi-card__content">
-        <div class="kpi-card__label">Akurasi Stok</div>
-        <div class="kpi-card__value" id="kpi-akurasi">0%</div>
+        <div class="kpi-card__label">Produk Aktif</div>
+        <div class="kpi-card__value" id="kpi-produk-aktif">0</div>
       </div>
     </div>
   </div>
@@ -147,31 +168,15 @@
     <div class="chart-card">
       <div class="chart-card__header">
         <h3 class="chart-card__title">
-          <i data-lucide="bar-chart-2"></i>
-          Penjualan Bulanan
+          <i data-lucide="trending-up"></i>
+          Trend Penjualan Bulanan
         </h3>
       </div>
       <div class="chart-card__body">
         <canvas id="chartPenjualan"></canvas>
         <div class="chart-card__empty" id="chartPenjualanEmpty" style="display:none;">
-          <i data-lucide="bar-chart-2"></i>
+          <i data-lucide="trending-up"></i>
           <p class="chart-card__empty-text">Tidak ada data penjualan</p>
-        </div>
-      </div>
-    </div>
-    
-    <div class="chart-card">
-      <div class="chart-card__header">
-        <h3 class="chart-card__title">
-          <i data-lucide="send"></i>
-          Distribusi Bulanan
-        </h3>
-      </div>
-      <div class="chart-card__body">
-        <canvas id="chartDistribusi"></canvas>
-        <div class="chart-card__empty" id="chartDistribusiEmpty" style="display:none;">
-          <i data-lucide="send"></i>
-          <p class="chart-card__empty-text">Tidak ada data distribusi</p>
         </div>
       </div>
     </div>
@@ -183,8 +188,7 @@
           Top Produk
         </h3>
       </div>
-      <div class="chart-card__body">
-        <canvas id="chartTopProduk"></canvas>
+      <div class="chart-card__body" id="topProdukContainer">
         <div class="chart-card__empty" id="chartTopProdukEmpty" style="display:none;">
           <i data-lucide="package"></i>
           <p class="chart-card__empty-text">Tidak ada data produk</p>
@@ -199,70 +203,37 @@
           Top Outlet
         </h3>
       </div>
-      <div class="chart-card__body">
-        <canvas id="chartTopOutlet"></canvas>
+      <div class="chart-card__body" id="topOutletContainer">
         <div class="chart-card__empty" id="chartTopOutletEmpty" style="display:none;">
           <i data-lucide="store"></i>
           <p class="chart-card__empty-text">Tidak ada data outlet</p>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Operational Section - SO Progress -->
-  <div class="charts-grid">
-    <div class="progress-card">
-      <div class="progress-card__header">
-        <h3 class="progress-card__title">
+    
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">
           <i data-lucide="clipboard-check"></i>
           SO Progress
         </h3>
       </div>
-      <div class="progress-card__body">
-        <div class="progress-item">
-          <div>
-            <div class="progress-item__label">Menunggu</div>
-            <div class="progress-item__count" id="so-menunggu">0</div>
+      <div class="chart-card__body">
+        <div id="soProgressContainer" class="so-progress-container">
+          <div class="so-progress-item">
+            <div class="so-progress-label">Menunggu</div>
+            <div class="so-progress-bar"><div class="so-progress-fill so-progress-fill--waiting" id="so-menunggu-bar" style="width:0%"></div></div>
+            <div class="so-progress-count" id="so-menunggu">0</div>
           </div>
-          <div class="progress-bar" style="flex:1; margin:0 var(--space-md);">
-            <div class="progress-bar__fill progress-bar__fill--waiting" id="so-menunggu-bar" style="width:0%"></div>
+          <div class="so-progress-item">
+            <div class="so-progress-label">Proses</div>
+            <div class="so-progress-bar"><div class="so-progress-fill so-progress-fill--progress" id="so-proses-bar" style="width:0%"></div></div>
+            <div class="so-progress-count" id="so-proses">0</div>
           </div>
-        </div>
-        <div class="progress-item">
-          <div>
-            <div class="progress-item__label">Proses</div>
-            <div class="progress-item__count" id="so-proses">0</div>
-          </div>
-          <div class="progress-bar" style="flex:1; margin:0 var(--space-md);">
-            <div class="progress-bar__fill progress-bar__fill--progress" id="so-proses-bar" style="width:0%"></div>
-          </div>
-        </div>
-        <div class="progress-item">
-          <div>
-            <div class="progress-item__label">Selesai</div>
-            <div class="progress-item__count" id="so-selesai">0</div>
-          </div>
-          <div class="progress-bar" style="flex:1; margin:0 var(--space-md);">
-            <div class="progress-bar__fill progress-bar__fill--done" id="so-selesai-bar" style="width:0%"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Forecast Section -->
-    <div class="forecast-card">
-      <div class="forecast-card__header">
-        <h3 class="forecast-card__title">
-          <i data-lucide="trending-up"></i>
-          Forecast Ringkas
-        </h3>
-      </div>
-      <div class="forecast-card__body">
-        <div id="forecastList">
-          <div class="empty-state">
-            <i data-lucide="trending-up"></i>
-            <div class="empty-state__title">Tidak ada forecast</div>
-            <div class="empty-state__desc">Data forecast akan muncul di sini</div>
+          <div class="so-progress-item">
+            <div class="so-progress-label">Selesai</div>
+            <div class="so-progress-bar"><div class="so-progress-fill so-progress-fill--done" id="so-selesai-bar" style="width:0%"></div></div>
+            <div class="so-progress-count" id="so-selesai">0</div>
           </div>
         </div>
       </div>
@@ -271,6 +242,22 @@
 
   <!-- Tables Grid -->
   <div class="tables-grid">
+    <!-- Modul Terjual Per Level -->
+    <div class="table-card" style="grid-column: span 2;">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
+          <i data-lucide="package"></i>
+          Modul Terjual Per Level
+        </h3>
+      </div>
+      <div class="table-card__body" id="modulLevelTable">
+        <div class="table-card__empty">
+          <i data-lucide="package"></i>
+          <p class="table-card__empty-text">Tidak ada data modul terjual</p>
+        </div>
+      </div>
+    </div>
+    
     <!-- Stok Kritis Table -->
     <div class="table-card">
       <div class="table-card__header">
@@ -284,23 +271,6 @@
         <div class="table-card__empty">
           <i data-lucide="check-circle"></i>
           <p class="table-card__empty-text">Tidak ada stok kritis</p>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Distribusi Terbaru Table -->
-    <div class="table-card">
-      <div class="table-card__header">
-        <h3 class="table-card__title">
-          <i data-lucide="send"></i>
-          Distribusi Terbaru
-        </h3>
-        <a href="#" class="table-card__link" onclick="navigateTo('distribusi-outlet'); return false;">Lihat Semua</a>
-      </div>
-      <div class="table-card__body" id="distribusiTerbaruList">
-        <div class="table-card__empty">
-          <i data-lucide="inbox"></i>
-          <p class="table-card__empty-text">Belum ada distribusi</p>
         </div>
       </div>
     </div>
@@ -323,5 +293,11 @@
   </div>
 
 </section>
+
+<!-- Loading Overlay -->
+<div class="dashboard-loading-overlay" id="dashboardLoadingOverlay" style="display:none;">
+  <div class="dashboard-loading-spinner"></div>
+  <div class="dashboard-loading-text">Memuat data...</div>
+</div>
 
 <script src="/js/pages/dashboard.js"></script>

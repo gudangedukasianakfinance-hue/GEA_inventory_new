@@ -705,3 +705,276 @@
     font-size: 20px;
   }
 }
+/* Loading Overlay */
+.dashboard-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.dashboard-loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.dashboard-loading-text {
+  margin-top: 16px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modul Level Table */
+.modul-level-table-wrapper {
+  overflow-x: auto;
+}
+
+.modul-level-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.modul-level-table th,
+.modul-level-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modul-level-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.modul-level-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modul-level-table td {
+  color: #e2e8f0;
+}
+
+.modul-level-table .modul-jenis {
+  font-weight: 500;
+  color: #3b82f6;
+}
+
+.modul-level-table .modul-level {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.modul-level-table .modul-qty {
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.modul-level-table tfoot td {
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* SO Progress Container */
+.so-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.so-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.so-progress-label {
+  width: 80px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.so-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.so-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.so-progress-fill--waiting {
+  background: #f59e0b;
+}
+
+.so-progress-fill--progress {
+  background: #3b82f6;
+}
+
+.so-progress-fill--done {
+  background: #10b981;
+}
+
+.so-progress-count {
+  width: 30px;
+  text-align: right;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* Top Produk Table */
+.top-produk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.top-produk-table th,
+.top-produk-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.top-produk-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.top-produk-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.top-produk-table td {
+  color: #e2e8f0;
+}
+
+.top-produk-table .rank {
+  width: 32px;
+  font-weight: 700;
+  color: #3b82f6;
+  text-align: center;
+}
+
+.top-produk-table .rank:nth-child(1) {
+  color: #f59e0b;
+}
+
+.top-produk-table .rank:nth-child(2) {
+  color: #94a3b8;
+}
+
+.top-produk-table .rank:nth-child(3) {
+  color: #cd7f32;
+}
+
+.top-produk-table .produk-nama {
+  font-weight: 500;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-produk-table .qty {
+  font-weight: 700;
+  color: #10b981;
+  white-space: nowrap;
+}
+
+/* Top Outlet Table */
+.top-outlet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.top-outlet-table th,
+.top-outlet-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.top-outlet-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.top-outlet-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.top-outlet-table td {
+  color: #e2e8f0;
+}
+
+.top-outlet-table .rank {
+  width: 32px;
+  font-weight: 700;
+  color: #3b82f6;
+  text-align: center;
+}
+
+.top-outlet-table .rank:nth-child(1) {
+  color: #f59e0b;
+}
+
+.top-outlet-table .rank:nth-child(2) {
+  color: #94a3b8;
+}
+
+.top-outlet-table .rank:nth-child(3) {
+  color: #cd7f32;
+}
+
+.top-outlet-table .outlet-nama {
+  font-weight: 500;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-outlet-table .qty {
+  font-weight: 700;
+  color: #10b981;
+  white-space: nowrap;
+}
