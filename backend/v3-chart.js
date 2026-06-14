@@ -223,8 +223,8 @@ export default async function handler(req, res) {
                 WHEN nama_produk ILIKE '%Membaca Level 1.%' THEN 'Membaca'
                 WHEN nama_produk ILIKE '%Membaca Level 2.%' THEN 'Membaca'
                 WHEN nama_produk ILIKE '%Membaca Level 3.%' THEN 'Membaca'
-                WHEN nama_produk ILIKE '%Ekspro PU%' THEN 'Ekspro PU'
-                WHEN nama_produk ILIKE '%Ekspro MD%' THEN 'Ekspro MD'
+                WHEN nama_produk ILIKE '%Expro PU%' THEN 'Expro PU'
+                WHEN nama_produk ILIKE '%Expro MD%' THEN 'Expro MD'
                 ELSE 'Lainnya'
               END AS jenis,
               CASE
@@ -236,7 +236,7 @@ export default async function handler(req, res) {
               END AS level_num
             FROM produk
             WHERE nama_produk ILIKE 'Modul%' 
-               OR nama_produk ILIKE '%Ekspro%'
+               OR nama_produk ILIKE '%Expro%'
           ),
           penjualan_level AS (
             SELECT 
@@ -261,7 +261,7 @@ export default async function handler(req, res) {
           ORDER BY 
             CASE el.column1 
               WHEN 'Membaca' THEN 1 
-              WHEN 'Ekspro PU' THEN 2 
+              WHEN 'Expro PU' THEN 2 
               WHEN 'Expro MD' THEN 3 
             END,
             el.column2
