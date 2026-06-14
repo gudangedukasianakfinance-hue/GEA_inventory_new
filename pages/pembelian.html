@@ -596,7 +596,7 @@
   // Load produk for dropdowns
   async function loadProduk() {
     try {
-      const response = await fetch('/produk-list');
+      const response = await fetch('/api/produk-list');
       if (!response.ok) throw new Error('Failed to load produk');
 
       const data = await response.json();

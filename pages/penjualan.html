@@ -829,7 +829,8 @@
       const response = await fetch('/api/produk-list');
       if (!response.ok) throw new Error('Failed to load produk');
       
-      produkList = await response.json();
+      const data = await response.json();
+      produkList = data.produk || data.data || [];
       
       // DEBUG: Log produk data
       console.log('Produk API response:', produkList);
