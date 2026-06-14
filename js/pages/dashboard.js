@@ -97,10 +97,11 @@ const Dashboard = {
     this.hideError();
     
     try {
-      await Promise.all([
-        this.loadDashboardData(),
-        this.loadChartData()
-      ]);
+      // Run sequentially to avoid race condition
+      // loadDashboardData sets this.data first
+      // then loadChartData adds this.data.charts
+      await this.loadDashboardData();
+      await this.loadChartData();
       
       console.log('=== DATA LOADED ===');
       console.log('this.data:', JSON.stringify(this.data, null, 2));
