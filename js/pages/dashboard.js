@@ -357,17 +357,10 @@ const Dashboard = {
   },
   
   renderTopProdukChart() {
-    const canvas = document.getElementById('chartTopProduk');
+    const container = document.getElementById('topProdukContainer');
     const emptyEl = document.getElementById('chartTopProdukEmpty');
-    if (!canvas) return;
+    if (!container) return;
     
-    const ctx = canvas.getContext('2d');
-    if (this.charts.topProduk) {
-      this.charts.topProduk.destroy();
-      this.charts.topProduk = null;
-    }
-    
-    // API returns { type, periode, data: [...] }
     const topProdukData = this.data.charts?.topProduk?.data || [];
     console.log('Top Produk Data Array:', topProdukData);
     
@@ -375,51 +368,21 @@ const Dashboard = {
     
     if (!filteredData.length) {
       if (emptyEl) emptyEl.style.display = 'flex';
-      canvas.style.display = 'none';
       return;
     }
     
     if (emptyEl) emptyEl.style.display = 'none';
-    canvas.style.display = 'block';
     
-    const labels = filteredData.map(p => {
-      const name = p.nama_produk || p.label || 'Unknown';
-      return name.length > 15 ? name.substring(0, 15) + '...' : name;
-    });
+    const tableHtml = '<table class="top-produk-table">' +
+      '<thead><tr><th>#</th><th>Produk</th><th class="text-right">Qty</th></tr></thead>' +
+      '<tbody>' +
+      filteredData.map((p, i) => {
+        const nama = p.nama_produk || p.label || 'Unknown';
+        return '<tr><td class="rank">' + (i + 1) + '</td><td class="produk-nama">' + nama + '</td><td class="text-right qty">' + this.formatNumber(p.value) + '</td></tr>';
+      }).join('') +
+      '</tbody></table>';
     
-    this.charts.topProduk = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: filteredData.map(p => p.value),
-          backgroundColor: [
-            'rgba(255, 77, 58, 0.8)', 'rgba(59, 130, 246, 0.8)',
-            'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)',
-            'rgba(139, 92, 246, 0.8)', 'rgba(236, 72, 153, 0.8)',
-            'rgba(6, 182, 212, 0.8)', 'rgba(249, 115, 22, 0.8)',
-            'rgba(34, 197, 94, 0.8)', 'rgba(168, 85, 247, 0.8)'
-          ],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'right', labels: { color: '#94a3b8', padding: 10, font: { size: 11 } } },
-          tooltip: {
-            callbacks: {
-              label: (item) => {
-                const p = filteredData[item.dataIndex];
-                return [p.nama_produk || p.label, 'Qty: ' + this.formatNumber(p.value)];
-              }
-            }
-          }
-        },
-        cutout: '60%'
-      }
-    });
+    container.innerHTML = tableHtml;
   },
   
   renderTopOutletChart() {
