@@ -122,6 +122,7 @@ const routes = {
   "GET /v1/penjualan": apiPenjualanHandler,
   "GET /v1/penjualan/:id": apiPenjualanHandler,
   "POST /v1/penjualan": apiPenjualanHandler,
+  "POST /v1/penjualan/import": apiPenjualanHandler,
   "PUT /v1/penjualan/:id": apiPenjualanHandler,
   "DELETE /v1/penjualan/:id": apiPenjualanHandler,
 

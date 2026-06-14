@@ -366,6 +366,139 @@ async function deletePenjualan(req, res, penjualanId) {
 }
 
 // ============================================
+// POST /v1/penjualan/import - Import penjualan from CSV/Excel
+// ============================================
+async function importPenjualan(req, res) {
+  try {
+    // Parse body - expects { data: [[tanggal, nama_outlet, sku, qty], ...] }
+    const { data } = req.body || {};
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return send(res, 400, { 
+        success: false, 
+        message: "Data tidak ditemukan. Pastikan file Excel/CSV sudah benar." 
+      });
+    }
+
+    // Load master data for validation
+    const [produkResult, outletResult] = await Promise.all([
+      pool.query("SELECT sku FROM produk"),
+      pool.query("SELECT nama_outlet FROM outlet")
+    ]);
+
+    const validSkuSet = new Set(produkResult.rows.map(r => r.sku));
+    const validOutletSet = new Set(outletResult.rows.map(r => r.nama_outlet));
+
+    // Validate all rows first
+    const errors = [];
+    const validRows = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNum = i + 2; // Excel row (1 = header, data starts at 2)
+
+      // Expected: [tanggal, nama_outlet, sku, qty]
+      const tanggal = row[0] ? String(row[0]).trim() : "";
+      const nama_outlet = row[1] ? String(row[1]).trim() : "";
+      const sku = row[2] ? String(row[2]).trim() : "";
+      const qty = row[3] !== undefined ? parseInt(row[3]) : 0;
+
+      // Validation
+      if (!tanggal) {
+        errors.push({ row: rowNum, message: `Tanggal wajib diisi` });
+        continue;
+      }
+
+      if (!nama_outlet) {
+        errors.push({ row: rowNum, message: `Nama outlet wajib diisi` });
+        continue;
+      }
+
+      if (!sku) {
+        errors.push({ row: rowNum, message: `SKU wajib diisi` });
+        continue;
+      }
+
+      if (qty <= 0) {
+        errors.push({ row: rowNum, message: `Qty harus lebih dari 0` });
+        continue;
+      }
+
+      // Check SKU exists
+      if (!validSkuSet.has(sku)) {
+        errors.push({ row: rowNum, message: `SKU "${sku}" tidak ditemukan di master produk` });
+        continue;
+      }
+
+      // Check outlet exists
+      if (!validOutletSet.has(nama_outlet)) {
+        errors.push({ row: rowNum, message: `Outlet "${nama_outlet}" tidak ditemukan di master outlet` });
+        continue;
+      }
+
+      // Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(tanggal)) {
+        errors.push({ row: rowNum, message: `Format tanggal salah. Gunakan format: YYYY-MM-DD` });
+        continue;
+      }
+
+      validRows.push({ tanggal, nama_outlet, sku, qty });
+    }
+
+    // If any errors, return them without importing
+    if (errors.length > 0) {
+      return send(res, 400, {
+        success: false,
+        message: "Terdapat error pada data. Silakan perbaiki dan upload ulang.",
+        errors: errors.slice(0, 50), // Limit to 50 errors
+        summary: {
+          total_rows: data.length,
+          valid_rows: validRows.length,
+          error_rows: errors.length
+        }
+      });
+    }
+
+    // All valid - perform bulk insert
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      let importedCount = 0;
+      for (const row of validRows) {
+        await client.query(
+          `INSERT INTO penjualan (tanggal, nama_outlet, sku, qty, created_at)
+           VALUES ($1, $2, $3, $4, NOW())`,
+          [row.tanggal, row.nama_outlet, row.sku, row.qty]
+        );
+        importedCount++;
+      }
+
+      await client.query('COMMIT');
+
+      return send(res, 201, {
+        success: true,
+        message: `Berhasil import ${importedCount} data penjualan`,
+        summary: {
+          total_rows: data.length,
+          valid_rows: validRows.length,
+          imported: importedCount
+        }
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Error importing penjualan:", error);
+    return send(res, 500, { success: false, message: "Gagal import data penjualan" });
+  }
+}
+
+// ============================================
 // Main Route Handler
 // ============================================
 export default async function apiPenjualanHandler(req, res) {
@@ -382,6 +515,11 @@ export default async function apiPenjualanHandler(req, res) {
   // Route: POST /v1/penjualan
   if (method === "POST" && normalizedPath === "v1/penjualan") {
     return createPenjualan(req, res);
+  }
+
+  // Route: POST /v1/penjualan/import
+  if (method === "POST" && normalizedPath === "v1/penjualan/import") {
+    return importPenjualan(req, res);
   }
 
   // Route: GET /v1/penjualan/:id
