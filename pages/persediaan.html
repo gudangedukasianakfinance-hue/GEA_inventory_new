@@ -1,0 +1,828 @@
+<!-- Persediaan Page - Sprint 4.1 -->
+<section class="page-section">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h2 class="page-title">Persediaan</h2>
+      <p class="page-subtitle">Monitor stok gudang dan mutasi barang</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--secondary" onclick="exportExcel()">
+        <i data-lucide="download"></i>
+        <span>Export Excel</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-nav__item active" data-tab="realtime" onclick="switchTab('realtime')">
+      <i data-lucide="activity"></i>
+      <span>Stok Realtime</span>
+    </button>
+    <button class="tab-nav__item" data-tab="kartu" onclick="switchTab('kartu')">
+      <i data-lucide="credit-card"></i>
+      <span>Kartu Stok</span>
+    </button>
+    <button class="tab-nav__item" data-tab="mutasi" onclick="switchTab('mutasi')">
+      <i data-lucide="git-branch"></i>
+      <span>Mutasi Stok</span>
+    </button>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TAB 1: STOK REALTIME -->
+  <!-- ============================================ -->
+  <div id="tab-realtime" class="tab-content active">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group" style="flex: 1;">
+        <label>Search</label>
+        <input type="text" id="filterSearchRealtime" placeholder="Cari SKU atau nama produk..." oninput="debounceSearchRealtime()">
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--primary">
+          <i data-lucide="package"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryTotalSku">0</div>
+          <div class="stats-card__label">Total SKU</div>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--success">
+          <i data-lucide="boxes"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryTotalStok">0</div>
+          <div class="stats-card__label">Total Stok</div>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--danger">
+          <i data-lucide="alert-triangle"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryProdukMinus">0</div>
+          <div class="stats-card__label">Produk Minus</div>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--warning">
+          <i data-lucide="package-x"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryProdukKosong">0</div>
+          <div class="stats-card__label">Produk Kosong</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table" id="realtimeTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Nama Produk</th>
+              <th class="text-right">Stok Awal</th>
+              <th class="text-right">Pembelian</th>
+              <th class="text-right">Penjualan</th>
+              <th class="text-right">Penyesuaian</th>
+              <th class="text-right">Stok Akhir</th>
+            </tr>
+          </thead>
+          <tbody id="realtimeTableBody">
+            <tr>
+              <td colspan="7" class="text-center text-muted">
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <span>Memuat data...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination" id="paginationRealtime">
+        <div class="pagination__info" id="paginationInfoRealtime">Menampilkan 0 - 0 dari 0 data</div>
+        <div class="pagination__buttons" id="paginationButtonsRealtime"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TAB 2: KARTU STOK -->
+  <!-- ============================================ -->
+  <div id="tab-kartu" class="tab-content">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Tanggal Awal</label>
+        <input type="date" id="filterTanggalAwalKartu" onchange="loadKartuStok()">
+      </div>
+      <div class="filter-group">
+        <label>Tanggal Akhir</label>
+        <input type="date" id="filterTanggalAkhirKartu" onchange="loadKartuStok()">
+      </div>
+      <div class="filter-group">
+        <label>Produk</label>
+        <select id="filterProdukKartu" onchange="loadKartuStok()">
+          <option value="">Semua Produk</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table" id="kartuTable">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>SKU</th>
+              <th>Referensi</th>
+              <th class="text-right">Masuk</th>
+              <th class="text-right">Keluar</th>
+              <th class="text-right">Saldo</th>
+            </tr>
+          </thead>
+          <tbody id="kartuTableBody">
+            <tr>
+              <td colspan="6" class="text-center text-muted">
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <span>Memuat data...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination" id="paginationKartu">
+        <div class="pagination__info" id="paginationInfoKartu">Menampilkan 0 - 0 dari 0 data</div>
+        <div class="pagination__buttons" id="paginationButtonsKartu"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TAB 3: MUTASI STOK -->
+  <!-- ============================================ -->
+  <div id="tab-mutasi" class="tab-content">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Tanggal Awal</label>
+        <input type="date" id="filterTanggalAwalMutasi" onchange="loadMutasiStok()">
+      </div>
+      <div class="filter-group">
+        <label>Tanggal Akhir</label>
+        <input type="date" id="filterTanggalAkhirMutasi" onchange="loadMutasiStok()">
+      </div>
+      <div class="filter-group">
+        <label>Produk</label>
+        <select id="filterProdukMutasi" onchange="loadMutasiStok()">
+          <option value="">Semua Produk</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table" id="mutasiTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Nama Produk</th>
+              <th class="text-right">Masuk</th>
+              <th class="text-right">Keluar</th>
+              <th class="text-right">Penyesuaian</th>
+              <th class="text-right">Saldo</th>
+            </tr>
+          </thead>
+          <tbody id="mutasiTableBody">
+            <tr>
+              <td colspan="6" class="text-center text-muted">
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <span>Memuat data...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination" id="paginationMutasi">
+        <div class="pagination__info" id="paginationInfoMutasi">Menampilkan 0 - 0 dari 0 data</div>
+        <div class="pagination__buttons" id="paginationButtonsMutasi"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Tab Navigation Styles */
+.tab-nav {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-md);
+}
+
+.tab-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tab-nav__item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.tab-nav__item.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.tab-nav__item i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Stats Card Variants */
+.stats-card__icon--danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+}
+</style>
+
+<script>
+// ============================================
+// GLOBAL STATE
+// ============================================
+let realtimeData = [];
+let kartuData = [];
+let mutasiData = [];
+
+let realtimePage = 1;
+let kartuPage = 1;
+let mutasiPage = 1;
+
+const limit = 50;
+
+// ============================================
+// TAB SWITCHING
+// ============================================
+function switchTab(tabName) {
+  // Update tab buttons
+  document.querySelectorAll('.tab-nav__item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  
+  // Update tab content
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.toggle('active', content.id === `tab-${tabName}`);
+  });
+  
+  // Refresh icons
+  if (window.lucide) lucide.createIcons();
+  
+  // Load data for the tab if needed
+  if (tabName === 'kartu' && kartuData.length === 0) {
+    loadKartuStok();
+  } else if (tabName === 'mutasi' && mutasiData.length === 0) {
+    loadMutasiStok();
+  }
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function formatNumber(num) {
+  if (num === null || num === undefined) return '0';
+  return parseInt(num).toLocaleString('id-ID');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+const debounceSearchRealtime = debounce(() => loadRealtimeStok(), 300);
+
+// ============================================
+// TAB 1: STOK REALTIME
+// ============================================
+async function loadRealtimeStok() {
+  try {
+    const search = document.getElementById('filterSearchRealtime')?.value || '';
+    const url = new URL('/api/v1/stok/realtime', window.location.origin);
+    url.searchParams.set('page', realtimePage);
+    url.searchParams.set('limit', limit);
+    if (search) url.searchParams.set('sku', search);
+    
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error('Failed to load');
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      realtimeData = result.data || [];
+      renderRealtimeTable(realtimeData);
+      updateRealtimeSummary(realtimeData);
+      renderPagination(
+        result.pagination,
+        'realtime',
+        (page) => {
+          realtimePage = page;
+          loadRealtimeStok();
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Error loading realtime stok:', error);
+    document.getElementById('realtimeTableBody').innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted" style="color: #EF4444;">
+          Gagal memuat data
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderRealtimeTable(data) {
+  const tbody = document.getElementById('realtimeTableBody');
+  
+  if (data.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted">Tidak ada data</td>
+      </tr>
+    `;
+    return;
+  }
+  
+  tbody.innerHTML = data.map(item => {
+    const stokAkhir = parseInt(item.stok_akhir) || 0;
+    const rowClass = stokAkhir < 0 ? 'class="row-danger"' : stokAkhir === 0 ? 'class="row-warning"' : '';
+    
+    return `
+      <tr ${rowClass}>
+        <td><code>${item.sku || '-'}</code></td>
+        <td>${item.nama_produk || '-'}</td>
+        <td class="text-right">${formatNumber(item.stok_awal)}</td>
+        <td class="text-right">${formatNumber(item.pembelian)}</td>
+        <td class="text-right">${formatNumber(item.penjualan)}</td>
+        <td class="text-right">${formatNumber(item.penyesuaian)}</td>
+        <td class="text-right ${stokAkhir < 0 ? 'text-danger' : stokAkhir === 0 ? 'text-warning' : 'text-success'}" style="font-weight: 600;">
+          ${formatNumber(stokAkhir)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function updateRealtimeSummary(data) {
+  const totalSku = data.length;
+  const totalStok = data.reduce((sum, item) => sum + (parseInt(item.stok_akhir) || 0), 0);
+  const produkMinus = data.filter(item => (parseInt(item.stok_akhir) || 0) < 0).length;
+  const produkKosong = data.filter(item => (parseInt(item.stok_akhir) || 0) === 0).length;
+  
+  document.getElementById('summaryTotalSku').textContent = formatNumber(totalSku);
+  document.getElementById('summaryTotalStok').textContent = formatNumber(totalStok);
+  document.getElementById('summaryProdukMinus').textContent = formatNumber(produkMinus);
+  document.getElementById('summaryProdukKosong').textContent = formatNumber(produkKosong);
+}
+
+// ============================================
+// TAB 2: KARTU STOK
+// ============================================
+async function loadKartuStok() {
+  try {
+    const tanggalAwal = document.getElementById('filterTanggalAwalKartu')?.value || '';
+    const tanggalAkhir = document.getElementById('filterTanggalAkhirKartu')?.value || '';
+    const sku = document.getElementById('filterProdukKartu')?.value || '';
+    
+    const url = new URL('/api/v1/stok/kartu', window.location.origin);
+    url.searchParams.set('page', kartuPage);
+    url.searchParams.set('limit', limit);
+    if (tanggalAwal) url.searchParams.set('tanggal_awal', tanggalAwal);
+    if (tanggalAkhir) url.searchParams.set('tanggal_akhir', tanggalAkhir);
+    if (sku) url.searchParams.set('sku', sku);
+    
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error('Failed to load');
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      kartuData = result.data || [];
+      renderKartuTable(kartuData);
+      renderPagination(
+        result.pagination,
+        'kartu',
+        (page) => {
+          kartuPage = page;
+          loadKartuStok();
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Error loading kartu stok:', error);
+    document.getElementById('kartuTableBody').innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted" style="color: #EF4444;">
+          Gagal memuat data
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderKartuTable(data) {
+  const tbody = document.getElementById('kartuTableBody');
+  
+  if (data.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted">Tidak ada data</td>
+      </tr>
+    `;
+    return;
+  }
+  
+  tbody.innerHTML = data.map(item => {
+    const saldo = parseInt(item.saldo) || 0;
+    const saldoClass = saldo < 0 ? 'text-danger' : saldo === 0 ? 'text-warning' : 'text-success';
+    
+    return `
+      <tr>
+        <td>${formatDate(item.tanggal)}</td>
+        <td><code>${item.sku || '-'}</code></td>
+        <td>${item.referensi || '-'}</td>
+        <td class="text-right">${item.masuk > 0 ? formatNumber(item.masuk) : '-'}</td>
+        <td class="text-right">${item.keluar > 0 ? formatNumber(item.keluar) : '-'}</td>
+        <td class="text-right ${saldoClass}" style="font-weight: 600;">
+          ${formatNumber(saldo)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ============================================
+// TAB 3: MUTASI STOK
+// ============================================
+async function loadMutasiStok() {
+  try {
+    const tanggalAwal = document.getElementById('filterTanggalAwalMutasi')?.value || '';
+    const tanggalAkhir = document.getElementById('filterTanggalAkhirMutasi')?.value || '';
+    const sku = document.getElementById('filterProdukMutasi')?.value || '';
+    
+    const url = new URL('/api/v1/stok/mutasi', window.location.origin);
+    url.searchParams.set('page', mutasiPage);
+    url.searchParams.set('limit', limit);
+    if (tanggalAwal) url.searchParams.set('tanggal_awal', tanggalAwal);
+    if (tanggalAkhir) url.searchParams.set('tanggal_akhir', tanggalAkhir);
+    if (sku) url.searchParams.set('sku', sku);
+    
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error('Failed to load');
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      mutasiData = result.data || [];
+      renderMutasiTable(mutasiData);
+      renderPagination(
+        result.pagination,
+        'mutasi',
+        (page) => {
+          mutasiPage = page;
+          loadMutasiStok();
+        }
+      );
+    }
+  } catch (error) {
+    console.error('Error loading mutasi stok:', error);
+    document.getElementById('mutasiTableBody').innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted" style="color: #EF4444;">
+          Gagal memuat data
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderMutasiTable(data) {
+  const tbody = document.getElementById('mutasiTableBody');
+  
+  if (data.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted">Tidak ada data</td>
+      </tr>
+    `;
+    return;
+  }
+  
+  tbody.innerHTML = data.map(item => {
+    const saldo = parseInt(item.saldo) || 0;
+    const saldoClass = saldo < 0 ? 'text-danger' : saldo === 0 ? 'text-warning' : 'text-success';
+    
+    return `
+      <tr>
+        <td><code>${item.sku || '-'}</code></td>
+        <td>${item.nama_produk || '-'}</td>
+        <td class="text-right">${formatNumber(item.masuk)}</td>
+        <td class="text-right">${formatNumber(item.keluar)}</td>
+        <td class="text-right">${formatNumber(item.penyesuaian)}</td>
+        <td class="text-right ${saldoClass}" style="font-weight: 600;">
+          ${formatNumber(saldo)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ============================================
+// PAGINATION
+// ============================================
+function renderPagination(pagination, prefix, onPageChange) {
+  const { page, limit, total, total_pages } = pagination;
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
+  
+  // Update info
+  document.getElementById(`paginationInfo${capitalize(prefix)}`).textContent = 
+    `Menampilkan ${start} - ${end} dari ${total} data`;
+  
+  // Update buttons
+  const buttonsContainer = document.getElementById(`paginationButtons${capitalize(prefix)}`);
+  
+  if (total_pages <= 1) {
+    buttonsContainer.innerHTML = '';
+    return;
+  }
+  
+  let buttons = '';
+  
+  // Previous button
+  buttons += `
+    <button class="pagination__btn" ${page === 1 ? 'disabled' : ''} onclick="(${onPageChange.toString()})(${page - 1})">
+      <i data-lucide="chevron-left"></i>
+    </button>
+  `;
+  
+  // Page numbers
+  const maxVisible = 5;
+  let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+  let endPage = Math.min(total_pages, startPage + maxVisible - 1);
+  
+  if (endPage - startPage < maxVisible - 1) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+  
+  if (startPage > 1) {
+    buttons += `<button class="pagination__btn" onclick="(${onPageChange.toString()})(1)">1</button>`;
+    if (startPage > 2) {
+      buttons += `<span class="pagination__ellipsis">...</span>`;
+    }
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    buttons += `
+      <button class="pagination__btn ${i === page ? 'active' : ''}" onclick="(${onPageChange.toString()})(${i})">
+        ${i}
+      </button>
+    `;
+  }
+  
+  if (endPage < total_pages) {
+    if (endPage < total_pages - 1) {
+      buttons += `<span class="pagination__ellipsis">...</span>`;
+    }
+    buttons += `<button class="pagination__btn" onclick="(${onPageChange.toString()})(${total_pages})">${total_pages}</button>`;
+  }
+  
+  // Next button
+  buttons += `
+    <button class="pagination__btn" ${page === total_pages ? 'disabled' : ''} onclick="(${onPageChange.toString()})(${page + 1})">
+      <i data-lucide="chevron-right"></i>
+    </button>
+  `;
+  
+  buttonsContainer.innerHTML = buttons;
+  
+  // Re-init icons
+  if (window.lucide) lucide.createIcons({ nodes: [buttonsContainer] });
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ============================================
+// EXPORT
+// ============================================
+function exportExcel() {
+  const activeTab = document.querySelector('.tab-nav__item.active')?.dataset.tab || 'realtime';
+  
+  let data, headers, filename;
+  
+  if (activeTab === 'realtime') {
+    data = realtimeData;
+    headers = ['SKU', 'Nama Produk', 'Stok Awal', 'Pembelian', 'Penjualan', 'Penyesuaian', 'Stok Akhir'];
+    filename = 'stok_realtime';
+  } else if (activeTab === 'kartu') {
+    data = kartuData;
+    headers = ['Tanggal', 'SKU', 'Referensi', 'Masuk', 'Keluar', 'Saldo'];
+    filename = 'kartu_stok';
+  } else {
+    data = mutasiData;
+    headers = ['SKU', 'Nama Produk', 'Masuk', 'Keluar', 'Penyesuaian', 'Saldo'];
+    filename = 'mutasi_stok';
+  }
+  
+  if (data.length === 0) {
+    showToast('Tidak ada data untuk di-export', false);
+    return;
+  }
+  
+  const csvContent = [
+    headers.join(','),
+    ...data.map(item => {
+      if (activeTab === 'realtime') {
+        return [
+          `"${(item.sku || '').replace(/"/g, '""')}"`,
+          `"${(item.nama_produk || '').replace(/"/g, '""')}"`,
+          item.stok_awal || 0,
+          item.pembelian || 0,
+          item.penjualan || 0,
+          item.penyesuaian || 0,
+          item.stok_akhir || 0
+        ].join(',');
+      } else if (activeTab === 'kartu') {
+        return [
+          formatDate(item.tanggal),
+          `"${(item.sku || '').replace(/"/g, '""')}"`,
+          `"${(item.referensi || '').replace(/"/g, '""')}"`,
+          item.masuk || 0,
+          item.keluar || 0,
+          item.saldo || 0
+        ].join(',');
+      } else {
+        return [
+          `"${(item.sku || '').replace(/"/g, '""')}"`,
+          `"${(item.nama_produk || '').replace(/"/g, '""')}"`,
+          item.masuk || 0,
+          item.keluar || 0,
+          item.penyesuaian || 0,
+          item.saldo || 0
+        ].join(',');
+      }
+    })
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  
+  showToast('Export berhasil');
+}
+
+// ============================================
+// TOAST
+// ============================================
+function showToast(message, isSuccess = true) {
+  if (typeof window.showToastMessage === 'function') {
+    window.showToastMessage(message, isSuccess ? 'success' : 'error');
+    return;
+  }
+  
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${isSuccess ? 'success' : 'error'}`;
+  toast.innerHTML = `
+    <i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}"></i>
+    <span>${message}</span>
+  `;
+  
+  container.appendChild(toast);
+  if (window.lucide) lucide.createIcons({ nodes: [toast] });
+  
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ============================================
+// LOAD DROPDOWNS
+// ============================================
+async function loadProdukDropdown() {
+  try {
+    const response = await fetch('/api/produk-list');
+    if (!response.ok) throw new Error('Failed to load products');
+    
+    const result = await response.json();
+    const produkList = result.data || [];
+    
+    const options = produkList.map(p => 
+      `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`
+    ).join('');
+    
+    document.getElementById('filterProdukKartu').innerHTML = 
+      '<option value="">Semua Produk</option>' + options;
+    document.getElementById('filterProdukMutasi').innerHTML = 
+      '<option value="">Semua Produk</option>' + options;
+  } catch (error) {
+    console.error('Error loading produk:', error);
+  }
+}
+
+// ============================================
+// INITIALIZE
+// ============================================
+async function initPersediaanPage() {
+  // Set default date range for Kartu and Mutasi (current month)
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+  document.getElementById('filterTanggalAwalKartu').value = firstDay.toISOString().split('T')[0];
+  document.getElementById('filterTanggalAkhirKartu').value = now.toISOString().split('T')[0];
+  document.getElementById('filterTanggalAwalMutasi').value = firstDay.toISOString().split('T')[0];
+  document.getElementById('filterTanggalAkhirMutasi').value = now.toISOString().split('T')[0];
+  
+  // Load produk dropdown
+  await loadProdukDropdown();
+  
+  // Load initial data
+  await loadRealtimeStok();
+}
+
+// Page load handler
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPersediaanPage);
+} else {
+  initPersediaanPage();
+}
+</script>
