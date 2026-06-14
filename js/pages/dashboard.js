@@ -266,7 +266,6 @@ const Dashboard = {
       this.charts.penjualan = null;
     }
     
-    // API returns { type, periode, data: [...] }
     const trenData = this.data.charts?.trenPenjualan?.data || [];
     console.log('Tren Penjualan Data Array:', trenData);
     
@@ -286,17 +285,9 @@ const Dashboard = {
       }
     });
     
+    // Always show chart with all 12 months - never show empty state
     const labels = bulanIndonesia;
     const dataValues = monthlyData.map(d => d.value);
-    
-    // Hitung total untuk判断是否有数据
-    const hasData = dataValues.some(v => v > 0);
-    
-    if (!hasData) {
-      if (emptyEl) emptyEl.style.display = 'flex';
-      canvas.style.display = 'none';
-      return;
-    }
     
     if (emptyEl) emptyEl.style.display = 'none';
     canvas.style.display = 'block';
@@ -386,60 +377,32 @@ const Dashboard = {
   },
   
   renderTopOutletChart() {
-    const canvas = document.getElementById('chartTopOutlet');
+    const container = document.getElementById('topOutletContainer');
     const emptyEl = document.getElementById('chartTopOutletEmpty');
-    if (!canvas) return;
+    if (!container) return;
     
-    const ctx = canvas.getContext('2d');
-    if (this.charts.topOutlet) {
-      this.charts.topOutlet.destroy();
-      this.charts.topOutlet = null;
-    }
-    
-    // API returns { type, periode, data: [...] }
     const outletData = this.data.charts?.outlet?.data || [];
     console.log('Outlet Data Array:', outletData);
     
-    const filteredData = outletData.filter(d => d.value > 0);
+    const filteredData = outletData.filter(d => d.value > 0).slice(0, 10);
     
     if (!filteredData.length) {
       if (emptyEl) emptyEl.style.display = 'flex';
-      canvas.style.display = 'none';
       return;
     }
     
     if (emptyEl) emptyEl.style.display = 'none';
-    canvas.style.display = 'block';
     
-    const labels = filteredData.slice(0, 10).map(o => {
-      const name = o.label || 'Unknown';
-      return name.length > 12 ? name.substring(0, 12) + '..' : name;
-    });
+    const tableHtml = '<table class="top-outlet-table">' +
+      '<thead><tr><th>#</th><th>Nama Outlet</th><th class="text-right">Qty</th></tr></thead>' +
+      '<tbody>' +
+      filteredData.map((o, i) => {
+        const nama = o.label || 'Unknown';
+        return '<tr><td class="rank">' + (i + 1) + '</td><td class="outlet-nama">' + nama + '</td><td class="text-right qty">' + this.formatNumber(o.value) + '</td></tr>';
+      }).join('') +
+      '</tbody></table>';
     
-    this.charts.topOutlet = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Transaksi',
-          data: filteredData.slice(0, 10).map(o => o.value),
-          backgroundColor: 'rgba(16, 185, 129, 0.8)',
-          borderColor: '#10b981',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-          y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }
-        }
-      }
-    });
+    container.innerHTML = tableHtml;
   },
   
   renderSOProgress() {
@@ -507,30 +470,50 @@ const Dashboard = {
     const container = document.getElementById('modulLevelTable');
     if (!container) return;
     
-    // Data from API - check response structure
     const modulLevelResponse = this.data.charts?.modulLevel;
     const modulData = modulLevelResponse?.data || [];
     console.log('Modul Level Response:', modulLevelResponse);
     console.log('Modul Level Data:', modulData);
     
-    if (!modulData.length || !modulData.some(d => d.value > 0)) {
-      container.innerHTML = '<div class="table-card__empty"><i data-lucide="package"></i><p class="table-card__empty-text">Tidak ada data modul terjual</p></div>';
-      if (window.lucide) lucide.createIcons({ nodes: [container] });
-      return;
-    }
+    // Define all expected levels
+    const expectedLevels = [
+      { label: 'Membaca', level: 1 },
+      { label: 'Membaca', level: 2 },
+      { label: 'Membaca', level: 3 },
+      { label: 'Expro PU', level: 1 },
+      { label: 'Expro PU', level: 2 },
+      { label: 'Expro MD', level: 1 },
+      { label: 'Expro MD', level: 2 },
+      { label: 'Expro MD', level: 3 },
+      { label: 'Expro MD', level: 4 }
+    ];
     
-    const total = modulData.reduce((sum, d) => sum + (d.value || 0), 0);
+    // Map data to lookup
+    const dataMap = {};
+    modulData.forEach(item => {
+      const key = item.label + '|' + item.level_num;
+      dataMap[key] = item.value || 0;
+    });
+    
+    // Build rows with all levels
+    const rows = expectedLevels.map(exp => {
+      const key = exp.label + '|' + exp.level;
+      const qty = dataMap[key] || 0;
+      return {
+        label: exp.label,
+        level: 'Level ' + exp.level,
+        value: qty
+      };
+    });
+    
+    const total = rows.reduce((sum, r) => sum + r.value, 0);
     
     const tableHtml = '<div class="modul-level-table-wrapper">' +
       '<table class="modul-level-table">' +
       '<thead><tr><th>Jenis Modul</th><th>Level</th><th class="text-right">Qty Terjual</th></tr></thead>' +
       '<tbody>' +
-      modulData.filter(d => d.value > 0).map(item => {
-        // Use label for jenis (Membaca, Ekspro PU, Ekspro MD)
-        // Use level_num for level number (1, 2, 3, 4)
-        const jenis = item.label || '-';
-        const level = item.level_num ? String(item.level_num) : '-';
-        return '<tr><td class="modul-jenis">' + jenis + '</td><td class="modul-level">' + level + '</td><td class="modul-qty text-right">' + this.formatNumber(item.value) + '</td></tr>';
+      rows.map(item => {
+        return '<tr><td class="modul-jenis">' + item.label + '</td><td class="modul-level">' + item.level + '</td><td class="modul-qty text-right">' + this.formatNumber(item.value) + '</td></tr>';
       }).join('') +
       '</tbody>' +
       '<tfoot><tr><td colspan="2" class="text-right"><strong>Total:</strong></td><td class="text-right"><strong>' + this.formatNumber(total) + '</strong></td></tr></tfoot>' +
