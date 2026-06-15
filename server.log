@@ -1,7 +1,0 @@
-
-> inventory-app@3.0.0 dev
-> node server.js
-
-⚠️ DATABASE_URL belum di-set. API database akan gagal sampai env tersedia.
-   Untuk Vercel: Tambahkan DATABASE_URL di Settings → Environment Variables
-Server running on http://localhost:3000
