@@ -422,13 +422,13 @@
 <script>
 // State - Namespace pattern to prevent redeclaration
 window.PersediaanPage = window.PersediaanPage || {
-  S.stokPeriodeData: [],
-  S.kartuStokData: [],
-  S.currentPagePeriode: 1,
-  S.currentPageKartu: 1,
-  S.debounceTimerPeriode: null,
-  S.debounceTimerKartu: null,
-  S.selectedKategori: 'semua'
+  stokPeriodeData: [],
+  kartuStokData: [],
+  currentPagePeriode: 1,
+  currentPageKartu: 1,
+  debounceTimerPeriode: null,
+  debounceTimerKartu: null,
+  selectedKategori: 'semua'
 };
 const S = window.PersediaanPage;
 
@@ -758,7 +758,7 @@ async function loadKartuStok(page = 1) {
       tahun,
       bulan,
       page,
-      limit: 50
+      limit: 500
     });
     
     if (produk) {

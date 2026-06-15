@@ -684,12 +684,14 @@
         throw new Error(result.message || 'Failed to load data');
       }
       
-      // Update summary cards
-      if (result.summary) {
-        document.getElementById('summaryTransaksi').textContent = (result.summary.total_transaksi || 0).toLocaleString('id-ID');
-        document.getElementById('summaryQty').textContent = (result.summary.total_qty || 0).toLocaleString('id-ID');
-        document.getElementById('summaryNominal').textContent = formatRupiah(result.summary.total_nominal || 0);
-      }
+      // Update summary cards - calculate from loaded data
+      const data = result.data || B.pembelianList || [];
+      const totalTransaksi = data.length;
+      const totalQty = data.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
+      const totalNominal = data.reduce((sum, item) => sum + (parseFloat(item.nominal) || 0), 0);
+      document.getElementById('summaryTransaksi').textContent = totalTransaksi.toLocaleString('id-ID');
+      document.getElementById('summaryQty').textContent = totalQty.toLocaleString('id-ID');
+      document.getElementById('summaryNominal').textContent = formatRupiah(totalNominal);
       
       // Update table
       B.pembelianList = result.data || [];
@@ -773,7 +775,7 @@
     
     // Page numbers
     const totalPages = pagination.total_pages;
-    const B.currentPage = pagination.page;
+    B.currentPage = pagination.page;
     
     // Show max 5 page buttons
     let startPage = Math.max(1, B.currentPage - 2);

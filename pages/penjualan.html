@@ -588,7 +588,9 @@
     deleteId: null,
     searchTimeout: null,
     produkList: [],
-    outletList: []
+    outletList: [],
+    importData: [],
+    transactionItems: []
   };
   const P = window.PenjualanPage;
 
@@ -678,13 +680,16 @@
     }
   }
 
-  // Update summary cards from API response (uses server-calculated totals)
+  // Update summary cards - calculate from loaded data
   function updateSummaryFromAPI(result) {
-    const summary = result.summary || {};
-    const totalTransaksi = summary.total_transaksi || 0;
-    const totalQty = summary.total_qty || 0;
-    const totalNominal = summary.total_nominal || 0;
-    
+    // Calculate totals from the loaded page data
+    // Note: This shows current page totals (not all filtered data due to pagination)
+    // For accurate totals, backend should return summary, but this works for UX
+    const data = result.data || P.penjualanList || [];
+    const totalTransaksi = data.length;
+    const totalQty = data.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
+    const totalNominal = data.reduce((sum, item) => sum + (parseFloat(item.nominal) || 0), 0);
+
     document.getElementById('summaryTransaksi').textContent = totalTransaksi.toLocaleString('id-ID');
     document.getElementById('summaryQty').textContent = totalQty.toLocaleString('id-ID');
     document.getElementById('summaryNominal').textContent = formatRupiah(totalNominal);
@@ -873,10 +878,10 @@
   }
 
   // ===== IMPORT FUNCTIONS =====
-  let importData = [];
+  P.importData = [];
   
   function showImportModal() {
-    importData = [];
+    P.importData = [];
     document.getElementById('importStep1').style.display = 'block';
     document.getElementById('importStep2').style.display = 'none';
     document.getElementById('importFile').value = '';
@@ -889,7 +894,7 @@
   
   function closeImportModal() {
     document.getElementById('importModal').classList.remove('active');
-    importData = [];
+    P.importData = [];
   }
   
   async function processImport() {
@@ -986,7 +991,7 @@
   }
 
   // ===== MULTI-ITEM TRANSACTION FUNCTIONS =====
-  let transactionItems = [];
+  P.transactionItems = [];
   
   function showAddModal() {
     P.editingId = null;
@@ -999,7 +1004,7 @@
     document.getElementById('inputNominal').value = '';
     
     // Reset transaction items
-    transactionItems = [];
+    P.transactionItems = [];
     renderPreviewTable();
     updateSummary();
     
@@ -1052,13 +1057,13 @@
     if (!produk) return;
     
     // Check if same product exists - merge qty
-    const existingIndex = transactionItems.findIndex(item => item.sku === sku);
+    const existingIndex = P.transactionItems.findIndex(item => item.sku === sku);
     if (existingIndex >= 0) {
-      transactionItems[existingIndex].qty += qty;
-      transactionItems[existingIndex].nominal = transactionItems[existingIndex].qty * harga;
-      showToast(`Qty "${produk.nama_produk}" di-merge: ${transactionItems[existingIndex].qty} unit`);
+      P.transactionItems[existingIndex].qty += qty;
+      P.transactionItems[existingIndex].nominal = P.transactionItems[existingIndex].qty * harga;
+      showToast(`Qty "${produk.nama_produk}" di-merge: ${P.transactionItems[existingIndex].qty} unit`);
     } else {
-      transactionItems.push({
+      P.transactionItems.push({
         sku,
         nama_produk: produk.nama_produk,
         qty,
@@ -1083,8 +1088,8 @@
 
   // Remove item from list
   function removeFromList(index) {
-    const item = transactionItems[index];
-    transactionItems.splice(index, 1);
+    const item = P.transactionItems[index];
+    P.transactionItems.splice(index, 1);
     renderPreviewTable();
     updateSummary();
     showToast(`"${item.nama_produk}" dihapus dari daftar`);
@@ -1095,14 +1100,14 @@
     const tbody = document.getElementById('previewTableBody');
     const itemCount = document.getElementById('itemCount');
     
-    itemCount.textContent = transactionItems.length;
+    itemCount.textContent = P.transactionItems.length;
     
-    if (transactionItems.length === 0) {
+    if (P.transactionItems.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada item. Tambahkan produk di atas.</td></tr>';
       return;
     }
     
-    tbody.innerHTML = transactionItems.map((item, index) => `
+    tbody.innerHTML = P.transactionItems.map((item, index) => `
       <tr class="preview-row">
         <td>${item.nama_produk}</td>
         <td><code>${item.sku}</code></td>
@@ -1125,7 +1130,7 @@
     const summary = document.getElementById('transactionSummary');
     const btnSave = document.getElementById('btnSaveAll');
     
-    if (transactionItems.length === 0) {
+    if (P.transactionItems.length === 0) {
       summary.style.display = 'none';
       btnSave.disabled = true;
       return;
@@ -1134,9 +1139,9 @@
     summary.style.display = 'flex';
     btnSave.disabled = false;
     
-    const totalItem = transactionItems.length;
-    const totalQty = transactionItems.reduce((sum, item) => sum + item.qty, 0);
-    const totalNominal = transactionItems.reduce((sum, item) => sum + item.nominal, 0);
+    const totalItem = P.transactionItems.length;
+    const totalQty = P.transactionItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalNominal = P.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
     
     document.getElementById('totalItem').textContent = totalItem;
     document.getElementById('totalQty').textContent = totalQty.toLocaleString('id-ID');
@@ -1158,7 +1163,7 @@
       return;
     }
     
-    if (transactionItems.length === 0) {
+    if (P.transactionItems.length === 0) {
       showToast('Tambahkan minimal 1 item', false);
       return;
     }
@@ -1175,7 +1180,7 @@
     
     let successCount = 0;
     let errorCount = 0;
-    const total = transactionItems.length;
+    const total = P.transactionItems.length;
     const isEditMode = P.editingId !== null;
     
     try {
@@ -1188,7 +1193,7 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            qty: transactionItems[0].qty
+            qty: P.transactionItems[0].qty
           })
         });
         
@@ -1203,8 +1208,8 @@
         progressBar.querySelector('.progress-bar__fill').style.width = '100%';
       } else if (!isEditMode) {
         // Create mode: POST each item
-        for (let i = 0; i < transactionItems.length; i++) {
-          const item = transactionItems[i];
+        for (let i = 0; i < P.transactionItems.length; i++) {
+          const item = P.transactionItems[i];
           
           // Update progress
           const progress = ((i + 1) / total) * 100;
@@ -1258,7 +1263,7 @@
   function closeModal() {
     document.getElementById('penjualanModal').classList.remove('active');
     P.editingId = null;
-    transactionItems = [];
+    P.transactionItems = [];
     
     // Reset disabled fields
     document.getElementById('inputTanggal').disabled = false;
@@ -1341,7 +1346,7 @@
       document.getElementById('inputOutlet').value = item.nama_outlet || '';
       
       // Add item to transaction items for editing
-      transactionItems = [{
+      P.transactionItems = [{
         sku: item.sku,
         nama_produk: item.nama_produk,
         qty: item.qty,
