@@ -581,17 +581,17 @@
     debounceTimer: null,
     currentPage: 1
   };
-  const B = window.PembelianPage;
+  
 
   // Get filter parameters
   function getFilterParams() {
     return {
-      tanggal_awal: document.getElementById('filterTanggalAwal').value,
-      tanggal_akhir: document.getElementById('filterTanggalAkhir').value,
-      supplier: document.getElementById('filterSupplier').value,
-      sku: document.getElementById('filterProduk').value,
-      search: document.getElementById('filterSearch').value,
-      page: B.currentPage,
+      tanggal_awal: document.getElementById('filterTanggalAwal')?.value || '',
+      tanggal_akhir: document.getElementById('filterTanggalAkhir')?.value || '',
+      supplier: document.getElementById('filterSupplier')?.value || '',
+      sku: document.getElementById('filterProduk')?.value || '',
+      search: document.getElementById('filterSearch')?.value || '',
+      page: window.PembelianPage?.currentPage || 1,
       limit: 20
     };
   }
@@ -694,12 +694,12 @@
       document.getElementById('summaryNominal').textContent = formatRupiah(totalNominal);
       
       // Update table
-      B.pembelianList = result.data || [];
-      renderPembelianTable(B.pembelianList);
+      window.PembelianPage.pembelianList = result.data || [];
+      renderPembelianTable(window.PembelianPage.pembelianList);
       
       // Update pagination
       if (result.pagination) {
-        B.currentPage = result.pagination.page;
+        window.PembelianPage.currentPage = result.pagination.page;
         renderPagination(result.pagination);
       }
     } catch (error) {
@@ -775,11 +775,11 @@
     
     // Page numbers
     const totalPages = pagination.total_pages;
-    B.currentPage = pagination.page;
+    window.PembelianPage.currentPage = pagination.page;
     
     // Show max 5 page buttons
-    let startPage = Math.max(1, B.currentPage - 2);
-    let endPage = Math.min(totalPages, B.currentPage + 2);
+    let startPage = Math.max(1, window.PembelianPage.currentPage - 2);
+    let endPage = Math.min(totalPages, window.PembelianPage.currentPage + 2);
     
     if (endPage - startPage < 4) {
       if (startPage === 1) {
@@ -797,7 +797,7 @@
     }
     
     for (let i = startPage; i <= endPage; i++) {
-      buttonsHtml += `<button class="pagination__btn ${i === B.currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      buttonsHtml += `<button class="pagination__btn ${i === window.PembelianPage.currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
     }
     
     if (endPage < totalPages) {
@@ -819,15 +819,15 @@
 
   // Go to page
   function goToPage(page) {
-    B.currentPage = page;
+    window.PembelianPage.currentPage = page;
     loadPembelian();
   }
 
   // Debounce search
   function debounceSearch() {
-    clearTimeout(B.debounceTimer);
-    B.debounceTimer = setTimeout(() => {
-      B.currentPage = 1;
+    clearTimeout(window.PembelianPage.debounceTimer);
+    window.PembelianPage.debounceTimer = setTimeout(() => {
+      window.PembelianPage.currentPage = 1;
       loadPembelian();
     }, 300);
   }
@@ -855,7 +855,7 @@
 
   // Show add modal
   function showAddModal() {
-    B.editingId = null;
+    window.PembelianPage.editingId = null;
     document.getElementById('modalTitle').textContent = 'Tambah Pembelian';
     document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
     document.getElementById('inputSupplier').value = '';
@@ -865,7 +865,7 @@
     document.getElementById('inputNominal').value = '';
     document.getElementById('inputProduk').dataset.harga_beli = '0';
 
-    B.transactionItems = [];
+    window.PembelianPage.transactionItems = [];
     renderPreviewTable();
     updateSummary();
 
@@ -1004,7 +1004,7 @@
     const selectedText = produkSelect.options[produkSelect.selectedIndex].text;
     const [namaProduk, sku] = selectedText.split(' (').map(s => s.replace(')', ''));
     
-    B.transactionItems.push({
+    window.PembelianPage.transactionItems.push({
       sku: produkSelect.value,
       nama_produk: namaProduk,
       qty: qty,
@@ -1026,8 +1026,8 @@
 
   // Remove item from list
   function removeFromList(index) {
-    const item = B.transactionItems[index];
-    B.transactionItems.splice(index, 1);
+    const item = window.PembelianPage.transactionItems[index];
+    window.PembelianPage.transactionItems.splice(index, 1);
     renderPreviewTable();
     updateSummary();
     showToast(`"${item.nama_produk}" dihapus dari daftar`);
@@ -1038,14 +1038,14 @@
     const tbody = document.getElementById('previewTableBody');
     const itemCount = document.getElementById('itemCount');
 
-    itemCount.textContent = B.transactionItems.length;
+    itemCount.textContent = window.PembelianPage.transactionItems.length;
 
-    if (B.transactionItems.length === 0) {
+    if (window.PembelianPage.transactionItems.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada item. Tambahkan produk di atas.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = B.transactionItems.map((item, index) => `
+    tbody.innerHTML = window.PembelianPage.transactionItems.map((item, index) => `
       <tr class="preview-row">
         <td>${item.nama_produk}</td>
         <td><code>${item.sku}</code></td>
@@ -1068,7 +1068,7 @@
     const summary = document.getElementById('transactionSummary');
     const btnSave = document.getElementById('btnSaveAll');
 
-    if (B.transactionItems.length === 0) {
+    if (window.PembelianPage.transactionItems.length === 0) {
       summary.style.display = 'none';
       btnSave.disabled = true;
       return;
@@ -1077,9 +1077,9 @@
     summary.style.display = 'flex';
     btnSave.disabled = false;
 
-    const totalItem = B.transactionItems.length;
-    const totalQty = B.transactionItems.reduce((sum, item) => sum + item.qty, 0);
-    const totalNominal = B.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
+    const totalItem = window.PembelianPage.transactionItems.length;
+    const totalQty = window.PembelianPage.transactionItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalNominal = window.PembelianPage.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
 
     document.getElementById('totalItem').textContent = totalItem;
     document.getElementById('totalQty').textContent = totalQty.toLocaleString('id-ID');
@@ -1101,7 +1101,7 @@
       return;
     }
 
-    if (B.transactionItems.length === 0) {
+    if (window.PembelianPage.transactionItems.length === 0) {
       showToast('Tambahkan minimal 1 item', false);
       return;
     }
@@ -1118,8 +1118,8 @@
 
     let successCount = 0;
     let errorCount = 0;
-    const total = B.transactionItems.length;
-    const isEditMode = B.editingId !== null;
+    const total = window.PembelianPage.transactionItems.length;
+    const isEditMode = window.PembelianPage.editingId !== null;
 
     try {
       if (isEditMode && total === 1) {
@@ -1127,11 +1127,11 @@
         const progress = 50;
         progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
 
-        const response = await fetch('/api/v1/pembelian/' + B.editingId, {
+        const response = await fetch('/api/v1/pembelian/' + window.PembelianPage.editingId, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            qty: B.transactionItems[0].qty
+            qty: window.PembelianPage.transactionItems[0].qty
           })
         });
 
@@ -1146,8 +1146,8 @@
         progressBar.querySelector('.progress-bar__fill').style.width = '100%';
       } else if (!isEditMode) {
         // Create mode: POST each item
-        for (let i = 0; i < B.transactionItems.length; i++) {
-          const item = B.transactionItems[i];
+        for (let i = 0; i < window.PembelianPage.transactionItems.length; i++) {
+          const item = window.PembelianPage.transactionItems[i];
 
           // Update progress
           const progress = ((i + 1) / total) * 100;
@@ -1200,8 +1200,8 @@
   // Close modal
   function closeModal() {
     document.getElementById('pembelianModal').classList.remove('active');
-    B.editingId = null;
-    B.transactionItems = [];
+    window.PembelianPage.editingId = null;
+    window.PembelianPage.transactionItems = [];
 
     // Reset disabled fields
     document.getElementById('inputTanggal').disabled = false;
@@ -1275,13 +1275,13 @@
       const item = result.data;
       
       // Open the multi-item modal in edit mode
-      B.editingId = id;
+      window.PembelianPage.editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit Pembelian';
       document.getElementById('inputTanggal').value = item.tanggal ? item.tanggal.split('T')[0] : '';
       document.getElementById('inputSupplier').value = item.supplier_id || '';
 
       // Add item to transaction items for editing
-      B.transactionItems = [{
+      window.PembelianPage.transactionItems = [{
         sku: item.sku,
         nama_produk: item.nama_produk,
         qty: item.qty,
@@ -1316,8 +1316,8 @@
 
   // Delete pembelian
   function deletePembelian(id) {
-    B.deleteId = id;
-    const item = B.pembelianList.find(p => p.id === id);
+    window.PembelianPage.deleteId = id;
+    const item = window.PembelianPage.pembelianList.find(p => p.id === id);
     document.getElementById('deleteItemInfo').textContent = item 
       ? `${item.nama_produk || item.sku} - ${item.qty} unit` 
       : `ID: ${id}`;
@@ -1327,19 +1327,19 @@
   // Close delete modal
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
-    B.deleteId = null;
+    window.PembelianPage.deleteId = null;
   }
 
   // Confirm delete
   async function confirmDelete() {
-    if (!B.deleteId) return;
+    if (!window.PembelianPage.deleteId) return;
     
     const btn = document.getElementById('btnConfirmDelete');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Menghapus...</span>';
     
     try {
-      const response = await fetch('/api/v1/pembelian/' + B.deleteId, {
+      const response = await fetch('/api/v1/pembelian/' + window.PembelianPage.deleteId, {
         method: 'DELETE'
       });
       
@@ -1366,7 +1366,7 @@
   function exportExcel() {
     const csvContent = [
       ['Tanggal', 'Supplier', 'SKU', 'Nama Produk', 'Qty', 'Harga Beli', 'Nominal'].join(','),
-      ...B.pembelianList.map(item => [
+      ...window.PembelianPage.pembelianList.map(item => [
         formatDate(item.tanggal),
         `"${(item.nama_supplier || '').replace(/"/g, '""')}"`,
         item.sku || '',

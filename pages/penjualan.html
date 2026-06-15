@@ -592,7 +592,7 @@
     importData: [],
     transactionItems: []
   };
-  const P = window.PenjualanPage;
+  
 
   // Format currency
   function formatRupiah(num) {
@@ -612,9 +612,9 @@
 
   // Debounced search
   function debounceSearch() {
-    if (P.searchTimeout) clearTimeout(P.searchTimeout);
-    P.searchTimeout = setTimeout(() => {
-      P.currentPage = 1;
+    if (window.PenjualanPage.searchTimeout) clearTimeout(window.PenjualanPage.searchTimeout);
+    window.PenjualanPage.searchTimeout = setTimeout(() => {
+      window.PenjualanPage.currentPage = 1;
       loadPenjualan();
     }, 300);
   }
@@ -622,13 +622,13 @@
   // Get filter params
   function getFilterParams() {
     return {
-      page: P.currentPage,
+      page: window.PenjualanPage?.currentPage || 1,
       limit: 20,
-      tanggal_awal: document.getElementById('filterTanggalAwal').value,
-      tanggal_akhir: document.getElementById('filterTanggalAkhir').value,
-      outlet: document.getElementById('filterOutlet').value,
-      sku: document.getElementById('filterProduk').value,
-      search: document.getElementById('filterSearch').value
+      tanggal_awal: document.getElementById('filterTanggalAwal')?.value || '',
+      tanggal_akhir: document.getElementById('filterTanggalAkhir')?.value || '',
+      outlet: document.getElementById('filterOutlet')?.value || '',
+      sku: document.getElementById('filterProduk')?.value || '',
+      search: document.getElementById('filterSearch')?.value || ''
     };
   }
 
@@ -656,9 +656,9 @@
       
       if (!result.success) throw new Error(result.message || 'Load failed');
       
-      P.penjualanList = result.data || [];
-      P.totalData = result.pagination?.total || 0;
-      P.totalPages = result.pagination?.total_pages || 1;
+      window.PenjualanPage.penjualanList = result.data || [];
+      window.PenjualanPage.totalData = result.pagination?.total || 0;
+      window.PenjualanPage.totalPages = result.pagination?.total_pages || 1;
       
       // Update summary from API (uses server-side calculated totals, not just page data)
       updateSummaryFromAPI(result);
@@ -696,7 +696,7 @@
   function renderTable() {
     const tbody = document.getElementById('penjualanTableBody');
     
-    if (P.penjualanList.length === 0) {
+    if (window.PenjualanPage.penjualanList.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="8" class="text-center text-muted">
@@ -712,7 +712,7 @@
       return;
     }
     
-    tbody.innerHTML = P.penjualanList.map(item => `
+    tbody.innerHTML = window.PenjualanPage.penjualanList.map(item => `
       <tr>
         <td>${formatDate(item.tanggal)}</td>
         <td>${item.nama_outlet || '-'}</td>
@@ -747,25 +747,25 @@
     const info = document.getElementById('paginationInfo');
     const buttons = document.getElementById('paginationButtons');
     const limit = 20;
-    const start = (P.currentPage - 1) * limit + 1;
-    const end = Math.min(P.currentPage * limit, P.totalData);
+    const start = (window.PenjualanPage.currentPage - 1) * limit + 1;
+    const end = Math.min(window.PenjualanPage.currentPage * limit, window.PenjualanPage.totalData);
     
-    info.textContent = `Menampilkan ${start} - ${end} dari ${P.totalData.toLocaleString('id-ID')} data`;
+    info.textContent = `Menampilkan ${start} - ${end} dari ${window.PenjualanPage.totalData.toLocaleString('id-ID')} data`;
     
     // Generate page buttons
     let pageButtons = '';
     
     // Prev button
     pageButtons += `
-      <button class="pagination__btn" onclick="goToPage(${P.currentPage - 1})" ${P.currentPage === 1 ? 'disabled' : ''}>
+      <button class="pagination__btn" onclick="goToPage(${window.PenjualanPage.currentPage - 1})" ${window.PenjualanPage.currentPage === 1 ? 'disabled' : ''}>
         <i data-lucide="chevron-left"></i>
       </button>
     `;
     
     // Page numbers
     const maxVisible = 5;
-    let startPage = Math.max(1, P.currentPage - Math.floor(maxVisible / 2));
-    let endPage = Math.min(P.totalPages, startPage + maxVisible - 1);
+    let startPage = Math.max(1, window.PenjualanPage.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(window.PenjualanPage.totalPages, startPage + maxVisible - 1);
     
     if (endPage - startPage < maxVisible - 1) {
       startPage = Math.max(1, endPage - maxVisible + 1);
@@ -778,20 +778,20 @@
     
     for (let i = startPage; i <= endPage; i++) {
       pageButtons += `
-        <button class="pagination__btn ${i === P.currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+        <button class="pagination__btn ${i === window.PenjualanPage.currentPage ? 'active' : ''}" onclick="goToPage(${i})">
           ${i}
         </button>
       `;
     }
     
-    if (endPage < P.totalPages) {
-      if (endPage < P.totalPages - 1) pageButtons += `<span class="pagination__btn" style="cursor: default;">...</span>`;
-      pageButtons += `<button class="pagination__btn" onclick="goToPage(${P.totalPages})">${P.totalPages}</button>`;
+    if (endPage < window.PenjualanPage.totalPages) {
+      if (endPage < window.PenjualanPage.totalPages - 1) pageButtons += `<span class="pagination__btn" style="cursor: default;">...</span>`;
+      pageButtons += `<button class="pagination__btn" onclick="goToPage(${window.PenjualanPage.totalPages})">${window.PenjualanPage.totalPages}</button>`;
     }
     
     // Next button
     pageButtons += `
-      <button class="pagination__btn" onclick="goToPage(${P.currentPage + 1})" ${P.currentPage === P.totalPages ? 'disabled' : ''}>
+      <button class="pagination__btn" onclick="goToPage(${window.PenjualanPage.currentPage + 1})" ${window.PenjualanPage.currentPage === window.PenjualanPage.totalPages ? 'disabled' : ''}>
         <i data-lucide="chevron-right"></i>
       </button>
     `;
@@ -802,8 +802,8 @@
 
   // Go to page
   function goToPage(page) {
-    if (page < 1 || page > P.totalPages) return;
-    P.currentPage = page;
+    if (page < 1 || page > window.PenjualanPage.totalPages) return;
+    window.PenjualanPage.currentPage = page;
     loadPenjualan();
   }
 
@@ -813,17 +813,17 @@
       const response = await fetch('/api/outlet-list');
       if (!response.ok) throw new Error('Failed to load outlets');
       
-      P.outletList = await response.json();
+      window.PenjualanPage.outletList = await response.json();
       
       // Populate filter outlet
       const filterOutlet = document.getElementById('filterOutlet');
       filterOutlet.innerHTML = '<option value="">Semua Outlet</option>' + 
-        P.outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
+        window.PenjualanPage.outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
       
       // Populate input outlet
       const inputOutlet = document.getElementById('inputOutlet');
       inputOutlet.innerHTML = '<option value="">Pilih Outlet</option>' + 
-        P.outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
+        window.PenjualanPage.outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
     } catch (error) {
       console.error('Error loading outlets:', error);
     }
@@ -833,7 +833,7 @@
   async function loadProduk() {
     // Use cached data if available
     if (window.masterProdukCache) {
-      P.produkList = window.masterProdukCache;
+      window.PenjualanPage.produkList = window.masterProdukCache;
       populateProdukDropdowns();
       return;
     }
@@ -843,14 +843,14 @@
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
-      P.produkList = data.produk || data.data || [];
+      window.PenjualanPage.produkList = data.produk || data.data || [];
       
       // Cache the data globally
-      window.masterProdukCache = P.produkList;
+      window.masterProdukCache = window.PenjualanPage.produkList;
       
       // DEBUG: Log produk data
-      console.log('Produk API response:', P.produkList);
-      console.log('Produk count:', P.produkList?.length);
+      console.log('Produk API response:', window.PenjualanPage.produkList);
+      console.log('Produk count:', window.PenjualanPage.produkList?.length);
       
       populateProdukDropdowns();
     } catch (error) {
@@ -862,23 +862,23 @@
     // Populate filter produk
     const filterProduk = document.getElementById('filterProduk');
     filterProduk.innerHTML = '<option value="">Semua Produk</option>' + 
-      P.produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+      window.PenjualanPage.produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
     
     // Populate input produk
     const inputProduk = document.getElementById('inputProduk');
     if (inputProduk) {
       inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + 
-        P.produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+        window.PenjualanPage.produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
       console.log('inputProduk options count:', inputProduk.options.length);
       console.log('inputProduk HTML generated:', inputProduk.innerHTML.substring(0, 200) + '...');
     }
   }
 
   // ===== IMPORT FUNCTIONS =====
-  P.importData = [];
+  window.PenjualanPage.importData = [];
   
   function showImportModal() {
-    P.importData = [];
+    window.PenjualanPage.importData = [];
     document.getElementById('importStep1').style.display = 'block';
     document.getElementById('importStep2').style.display = 'none';
     document.getElementById('importFile').value = '';
@@ -891,7 +891,7 @@
   
   function closeImportModal() {
     document.getElementById('importModal').classList.remove('active');
-    P.importData = [];
+    window.PenjualanPage.importData = [];
   }
   
   async function processImport() {
@@ -988,25 +988,35 @@
   }
 
   // ===== MULTI-ITEM TRANSACTION FUNCTIONS =====
-  P.transactionItems = [];
+  window.PenjualanPage.transactionItems = [];
   
   function showAddModal() {
-    P.editingId = null;
-    document.getElementById('modalTitle').textContent = 'Tambah Penjualan';
-    document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
-    document.getElementById('inputOutlet').value = '';
-    document.getElementById('inputProduk').value = '';
-    document.getElementById('inputQty').value = '1';
-    document.getElementById('inputHarga').value = '';
-    document.getElementById('inputNominal').value = '';
+    window.PenjualanPage.editingId = null;
     
+    const elModalTitle = document.getElementById('modalTitle');
+    const elInputTanggal = document.getElementById('inputTanggal');
+    const elInputOutlet = document.getElementById('inputOutlet');
+    const elInputProduk = document.getElementById('inputProduk');
+    const elInputQty = document.getElementById('inputQty');
+    const elInputHarga = document.getElementById('inputHarga');
+    const elInputNominal = document.getElementById('inputNominal');
+    
+    if (elModalTitle) elModalTitle.textContent = 'Tambah Penjualan';
+    if (elInputTanggal) elInputTanggal.value = new Date().toISOString().split('T')[0];
+    if (elInputOutlet) elInputOutlet.value = '';
+    if (elInputProduk) elInputProduk.value = '';
+    if (elInputQty) elInputQty.value = '1';
+    if (elInputHarga) elInputHarga.value = '';
+    if (elInputNominal) elInputNominal.value = '';
+
     // Reset transaction items
-    P.transactionItems = [];
+    window.PenjualanPage.transactionItems = [];
     renderPreviewTable();
     updateSummary();
-    
+
     openModal('penjualanModal');
   }
+
 
   // Update harga when produk changes
   function updateHarga() {
@@ -1018,7 +1028,7 @@
       return;
     }
     
-    const produk = P.produkList.find(p => p.sku === sku);
+    const produk = window.PenjualanPage.produkList.find(p => p.sku === sku);
     if (produk) {
       document.getElementById('inputHarga').value = formatRupiah(parseFloat(produk.harga_jual) || 0);
       document.getElementById('inputProduk').dataset.harga = produk.harga_jual || 0;
@@ -1050,17 +1060,17 @@
       return;
     }
     
-    const produk = P.produkList.find(p => p.sku === sku);
+    const produk = window.PenjualanPage.produkList.find(p => p.sku === sku);
     if (!produk) return;
     
     // Check if same product exists - merge qty
-    const existingIndex = P.transactionItems.findIndex(item => item.sku === sku);
+    const existingIndex = window.PenjualanPage.transactionItems.findIndex(item => item.sku === sku);
     if (existingIndex >= 0) {
-      P.transactionItems[existingIndex].qty += qty;
-      P.transactionItems[existingIndex].nominal = P.transactionItems[existingIndex].qty * harga;
-      showToast(`Qty "${produk.nama_produk}" di-merge: ${P.transactionItems[existingIndex].qty} unit`);
+      window.PenjualanPage.transactionItems[existingIndex].qty += qty;
+      window.PenjualanPage.transactionItems[existingIndex].nominal = window.PenjualanPage.transactionItems[existingIndex].qty * harga;
+      showToast(`Qty "${produk.nama_produk}" di-merge: ${window.PenjualanPage.transactionItems[existingIndex].qty} unit`);
     } else {
-      P.transactionItems.push({
+      window.PenjualanPage.transactionItems.push({
         sku,
         nama_produk: produk.nama_produk,
         qty,
@@ -1085,8 +1095,8 @@
 
   // Remove item from list
   function removeFromList(index) {
-    const item = P.transactionItems[index];
-    P.transactionItems.splice(index, 1);
+    const item = window.PenjualanPage.transactionItems[index];
+    window.PenjualanPage.transactionItems.splice(index, 1);
     renderPreviewTable();
     updateSummary();
     showToast(`"${item.nama_produk}" dihapus dari daftar`);
@@ -1097,14 +1107,14 @@
     const tbody = document.getElementById('previewTableBody');
     const itemCount = document.getElementById('itemCount');
     
-    itemCount.textContent = P.transactionItems.length;
+    itemCount.textContent = window.PenjualanPage.transactionItems.length;
     
-    if (P.transactionItems.length === 0) {
+    if (window.PenjualanPage.transactionItems.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada item. Tambahkan produk di atas.</td></tr>';
       return;
     }
     
-    tbody.innerHTML = P.transactionItems.map((item, index) => `
+    tbody.innerHTML = window.PenjualanPage.transactionItems.map((item, index) => `
       <tr class="preview-row">
         <td>${item.nama_produk}</td>
         <td><code>${item.sku}</code></td>
@@ -1127,7 +1137,7 @@
     const summary = document.getElementById('transactionSummary');
     const btnSave = document.getElementById('btnSaveAll');
     
-    if (P.transactionItems.length === 0) {
+    if (window.PenjualanPage.transactionItems.length === 0) {
       summary.style.display = 'none';
       btnSave.disabled = true;
       return;
@@ -1136,9 +1146,9 @@
     summary.style.display = 'flex';
     btnSave.disabled = false;
     
-    const totalItem = P.transactionItems.length;
-    const totalQty = P.transactionItems.reduce((sum, item) => sum + item.qty, 0);
-    const totalNominal = P.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
+    const totalItem = window.PenjualanPage.transactionItems.length;
+    const totalQty = window.PenjualanPage.transactionItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalNominal = window.PenjualanPage.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
     
     document.getElementById('totalItem').textContent = totalItem;
     document.getElementById('totalQty').textContent = totalQty.toLocaleString('id-ID');
@@ -1160,7 +1170,7 @@
       return;
     }
     
-    if (P.transactionItems.length === 0) {
+    if (window.PenjualanPage.transactionItems.length === 0) {
       showToast('Tambahkan minimal 1 item', false);
       return;
     }
@@ -1177,8 +1187,8 @@
     
     let successCount = 0;
     let errorCount = 0;
-    const total = P.transactionItems.length;
-    const isEditMode = P.editingId !== null;
+    const total = window.PenjualanPage.transactionItems.length;
+    const isEditMode = window.PenjualanPage.editingId !== null;
     
     try {
       if (isEditMode && total === 1) {
@@ -1186,11 +1196,11 @@
         const progress = 50;
         progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
         
-        const response = await fetch('/api/v1/penjualan/' + P.editingId, {
+        const response = await fetch('/api/v1/penjualan/' + window.PenjualanPage.editingId, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            qty: P.transactionItems[0].qty
+            qty: window.PenjualanPage.transactionItems[0].qty
           })
         });
         
@@ -1205,8 +1215,8 @@
         progressBar.querySelector('.progress-bar__fill').style.width = '100%';
       } else if (!isEditMode) {
         // Create mode: POST each item
-        for (let i = 0; i < P.transactionItems.length; i++) {
-          const item = P.transactionItems[i];
+        for (let i = 0; i < window.PenjualanPage.transactionItems.length; i++) {
+          const item = window.PenjualanPage.transactionItems[i];
           
           // Update progress
           const progress = ((i + 1) / total) * 100;
@@ -1259,8 +1269,8 @@
   // Close modal
   function closeModal() {
     document.getElementById('penjualanModal').classList.remove('active');
-    P.editingId = null;
-    P.transactionItems = [];
+    window.PenjualanPage.editingId = null;
+    window.PenjualanPage.transactionItems = [];
     
     // Reset disabled fields
     document.getElementById('inputTanggal').disabled = false;
@@ -1337,13 +1347,13 @@
       showToast(`Edit: ${item.nama_produk || item.sku} - Qty: ${item.qty}`);
       
       // Open the multi-item modal in edit mode
-      P.editingId = id;
+      window.PenjualanPage.editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit Penjualan';
       document.getElementById('inputTanggal').value = item.tanggal ? item.tanggal.split('T')[0] : '';
       document.getElementById('inputOutlet').value = item.nama_outlet || '';
       
       // Add item to transaction items for editing
-      P.transactionItems = [{
+      window.PenjualanPage.transactionItems = [{
         sku: item.sku,
         nama_produk: item.nama_produk,
         qty: item.qty,
@@ -1378,8 +1388,8 @@
 
   // Delete penjualan
   function deletePenjualan(id) {
-    P.deleteId = id;
-    const item = P.penjualanList.find(p => p.id === id);
+    window.PenjualanPage.deleteId = id;
+    const item = window.PenjualanPage.penjualanList.find(p => p.id === id);
     document.getElementById('deleteItemInfo').textContent = item 
       ? `${item.nama_produk || item.sku} - ${item.qty} unit` 
       : `ID: ${id}`;
@@ -1389,19 +1399,19 @@
   // Close delete modal
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
-    P.deleteId = null;
+    window.PenjualanPage.deleteId = null;
   }
 
   // Confirm delete
   async function confirmDelete() {
-    if (!P.deleteId) return;
+    if (!window.PenjualanPage.deleteId) return;
     
     const btn = document.getElementById('btnConfirmDelete');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Menghapus...</span>';
     
     try {
-      const response = await fetch('/api/v1/penjualan/' + P.deleteId, {
+      const response = await fetch('/api/v1/penjualan/' + window.PenjualanPage.deleteId, {
         method: 'DELETE'
       });
       
@@ -1429,7 +1439,7 @@
     const params = new URLSearchParams({ ...getFilterParams(), limit: 10000 });
     const csvContent = [
       ['Tanggal', 'Outlet', 'SKU', 'Nama Produk', 'Qty', 'Harga', 'Nominal'].join(','),
-      ...P.penjualanList.map(item => [
+      ...window.PenjualanPage.penjualanList.map(item => [
         formatDate(item.tanggal),
         `"${(item.nama_outlet || '').replace(/"/g, '""')}"`,
         item.sku || '',

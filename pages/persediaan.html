@@ -430,7 +430,7 @@ window.PersediaanPage = window.PersediaanPage || {
   debounceTimerKartu: null,
   selectedKategori: 'semua'
 };
-const S = window.PersediaanPage;
+
 
 // Global produk cache for all pages
 window.masterProdukCache = window.masterProdukCache || null;
@@ -540,9 +540,9 @@ function renderProdukDropdown(produkList) {
 // TAB 1: STOK PERIODE
 // ============================================
 function debounceSearchPeriode() {
-  clearTimeout(S.debounceTimerPeriode);
-  S.debounceTimerPeriode = setTimeout(() => {
-    S.currentPagePeriode = 1;
+  clearTimeout(window.PersediaanPage.debounceTimerPeriode);
+  window.PersediaanPage.debounceTimerPeriode = setTimeout(() => {
+    window.PersediaanPage.currentPagePeriode = 1;
     loadStokPeriode();
   }, 300);
 }
@@ -553,13 +553,13 @@ function filterKategori(element, kategori) {
   });
   element.classList.add('active');
   
-  S.selectedKategori = kategori;
-  S.currentPagePeriode = 1;
+  window.PersediaanPage.selectedKategori = kategori;
+  window.PersediaanPage.currentPagePeriode = 1;
   loadStokPeriode();
 }
 
 async function loadStokPeriode(page = 1) {
-  S.currentPagePeriode = page;
+  window.PersediaanPage.currentPagePeriode = page;
   
   const tahun = document.getElementById('filterTahunPeriode').value;
   const bulan = document.getElementById('filterBulanPeriode').value;
@@ -582,7 +582,7 @@ async function loadStokPeriode(page = 1) {
       bulan,
       page,
       limit: 50,
-      kategori: S.selectedKategori
+      kategori: window.PersediaanPage.selectedKategori
     });
     
     if (search) {
@@ -606,8 +606,8 @@ async function loadStokPeriode(page = 1) {
     document.getElementById('summaryProdukMinus').textContent = formatNumber(result.summary?.produk_minus);
     document.getElementById('summaryProdukKosong').textContent = formatNumber(result.summary?.produk_kosong);
     
-    S.stokPeriodeData = result.data || [];
-    renderPeriodeTable(S.stokPeriodeData);
+    window.PersediaanPage.stokPeriodeData = result.data || [];
+    renderPeriodeTable(window.PersediaanPage.stokPeriodeData);
     renderPaginationPeriode(result.pagination);
     
   } catch (error) {
@@ -727,15 +727,15 @@ function renderPaginationPeriode(pagination) {
 // TAB 2: KARTU STOK
 // ============================================
 function debounceSearchKartu() {
-  clearTimeout(S.debounceTimerKartu);
-  S.debounceTimerKartu = setTimeout(() => {
-    S.currentPageKartu = 1;
+  clearTimeout(window.PersediaanPage.debounceTimerKartu);
+  window.PersediaanPage.debounceTimerKartu = setTimeout(() => {
+    window.PersediaanPage.currentPageKartu = 1;
     loadKartuStok();
   }, 300);
 }
 
 async function loadKartuStok(page = 1) {
-  S.currentPageKartu = page;
+  window.PersediaanPage.currentPageKartu = page;
   
   const tahun = document.getElementById('filterTahunKartu').value;
   const bulan = document.getElementById('filterBulanKartu').value;
@@ -781,8 +781,8 @@ async function loadKartuStok(page = 1) {
       throw new Error(result.message || 'Gagal memuat data');
     }
     
-    S.kartuStokData = result.data || [];
-    renderKartuTable(S.kartuStokData);
+    window.PersediaanPage.kartuStokData = result.data || [];
+    renderKartuTable(window.PersediaanPage.kartuStokData);
     renderPaginationKartu(result.pagination);
     
   } catch (error) {
@@ -935,11 +935,11 @@ function exportExcel() {
   let data, headers, filename;
   
   if (activeTab === 'periode') {
-    data = S.stokPeriodeData;
+    data = window.PersediaanPage.stokPeriodeData;
     headers = ['SKU', 'Nama Produk', 'Stok Awal', 'Pembelian', 'Penjualan', 'Penyesuaian', 'Stok Akhir'];
     filename = 'stok_periode';
   } else if (activeTab === 'kartu') {
-    data = S.kartuStokData;
+    data = window.PersediaanPage.kartuStokData;
     headers = ['Tanggal', 'Aktivitas', 'Partner', 'Masuk', 'Keluar', 'Saldo'];
     filename = 'kartu_stok';
   } else {
