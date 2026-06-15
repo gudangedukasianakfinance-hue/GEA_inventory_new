@@ -250,7 +250,8 @@ async function getStokRealtime(req, res) {
 async function getKartuStok(req, res) {
   try {
     const page = parseInt(req.query?.page) || 1;
-    const limit = Math.min(parseInt(req.query?.limit) || 50, 200);
+    // Higher limit for single product view, but still capped to prevent browser freeze
+    const limit = Math.min(parseInt(req.query?.limit) || 200, 500);
     const offset = (page - 1) * limit;
     const tahun = parseInt(req.query?.tahun) || new Date().getFullYear();
     const bulan = parseInt(req.query?.bulan) || (new Date().getMonth() + 1);
@@ -263,7 +264,7 @@ async function getKartuStok(req, res) {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
-    // Check if single product selected - if so, show ALL transactions without pagination
+    // Check if single product selected - use higher limit for better UX
     const isSingleProduct = produk && produk.trim() !== "";
 
     // Get all transactions for this period with partner info
@@ -406,8 +407,8 @@ async function getKartuStok(req, res) {
       FROM with_balance
       WHERE ($4::text IS NULL OR $4::text = '' OR LOWER(nama_produk) LIKE LOWER($4) OR LOWER(sku) LIKE LOWER($4))
       ORDER BY sku, tanggal ASC, sort_order
-      ${isSingleProduct ? '' : 'LIMIT $5 OFFSET $6'}
-    `, [startDateStr, endDateStr, produk || null, search ? `%${search}%` : null, ...(isSingleProduct ? [] : [limit, offset])]);
+      LIMIT $5 OFFSET $6
+    `, [startDateStr, endDateStr, produk || null, search ? `%${search}%` : null, limit, offset]);
 
     // Get total count
     const countResult = await pool.query(`
@@ -429,7 +430,20 @@ async function getKartuStok(req, res) {
       SELECT COUNT(*) as total FROM all_transactions
     `, [startDateStr, endDateStr, produk || null]);
     
-    const total = isSingleProduct ? dataResult.rows.length : parseInt(countResult.rows[0]?.total || 0, 10);
+    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+    
+    // Calculate summary stats for single product view
+    let transactionSummary = null;
+    if (isSingleProduct && dataResult.rows.length > 0) {
+      const totalMasuk = dataResult.rows.reduce((sum, item) => sum + (parseInt(item.masuk) || 0), 0);
+      const totalKeluar = dataResult.rows.reduce((sum, item) => sum + (parseInt(item.keluar) || 0), 0);
+      const lastSaldo = dataResult.rows.length > 0 ? dataResult.rows[dataResult.rows.length - 1].saldo : 0;
+      transactionSummary = {
+        total_masuk: totalMasuk,
+        total_keluar: totalKeluar,
+        saldo_akhir: lastSaldo
+      };
+    }
 
     return send(res, 200, {
       success: true,
@@ -441,17 +455,18 @@ async function getKartuStok(req, res) {
         end_date: endDateStr
       },
       pagination: {
-        page: isSingleProduct ? 1 : page,
-        limit: isSingleProduct ? total : limit,
+        page,
+        limit,
         total,
-        total_pages: isSingleProduct ? 1 : Math.ceil(total / limit)
+        total_pages: Math.ceil(total / limit)
       },
       filters: {
         tahun,
         bulan,
         produk: produk || null,
         search: search || null
-      }
+      },
+      transaction_summary: transactionSummary
     });
   } catch (error) {
     console.error("Error getting kartu stok:", error);

@@ -101,9 +101,11 @@ const AppRouter = {
     }
     
     if (this.loadedPages[page]) {
-      container.innerHTML = this.loadedPages[page];
-      this.executeScripts(container);
+      // Clone the cached content to avoid mutating the cache
+      container.innerHTML = '';
+      container.appendChild(this.loadedPages[page].cloneNode(true));
       this.initPage(page);
+      console.log('Page loaded from cache:', page);
       return;
     }
     
@@ -114,9 +116,12 @@ const AppRouter = {
       if (!response.ok) throw new Error('Failed to load page: ' + response.status);
       
       const html = await response.text();
-      this.loadedPages[page] = html;
       container.innerHTML = html;
       this.executeScripts(container);
+      
+      // Clone the executed DOM for cache (preserves data-executed attributes)
+      this.loadedPages[page] = container.cloneNode(true);
+      
       this.initPage(page);
       console.log('Page loaded:', page);
     } catch (error) {
@@ -129,20 +134,11 @@ const AppRouter = {
   executeScripts(container) {
     const scripts = container.querySelectorAll('script');
     scripts.forEach(oldScript => {
-      // Skip if script already executed (has data-executed attribute)
-      if (oldScript.dataset && oldScript.dataset.executed === 'true') return;
-      
       const newScript = document.createElement('script');
       Array.from(oldScript.attributes).forEach(attr => {
         newScript.setAttribute(attr.name, attr.value);
       });
       newScript.textContent = oldScript.textContent;
-      // Mark as executed to prevent double execution on cached page load
-      if (newScript.dataset) {
-        newScript.dataset.executed = 'true';
-      } else {
-        newScript.setAttribute('data-executed', 'true');
-      }
       oldScript.parentNode.replaceChild(newScript, oldScript);
     });
   },
