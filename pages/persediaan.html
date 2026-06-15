@@ -864,8 +864,11 @@ function renderPaginationKartu(pagination) {
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
   
-  document.getElementById('paginationInfoKartu').textContent = 
-    `Menampilkan ${start} - ${end} dari ${total} data`;
+  // Show transaction count info
+  const infoText = total_pages > 1 
+    ? `Menampilkan ${start} - ${end} dari ${total} transaksi (Halaman ${page} dari ${total_pages})`
+    : `Menampilkan ${total} transaksi`;
+  document.getElementById('paginationInfoKartu').textContent = infoText;
   
   const buttonsContainer = document.getElementById('paginationButtonsKartu');
   
