@@ -680,15 +680,12 @@
     }
   }
 
-  // Update summary cards - calculate from loaded data
+  // Update summary cards from backend summary (all filtered data)
   function updateSummaryFromAPI(result) {
-    // Calculate totals from the loaded page data
-    // Note: This shows current page totals (not all filtered data due to pagination)
-    // For accurate totals, backend should return summary, but this works for UX
-    const data = result.data || P.penjualanList || [];
-    const totalTransaksi = data.length;
-    const totalQty = data.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
-    const totalNominal = data.reduce((sum, item) => sum + (parseFloat(item.nominal) || 0), 0);
+    const summary = result.summary || {};
+    const totalTransaksi = summary.total_transaksi || 0;
+    const totalQty = summary.total_qty || 0;
+    const totalNominal = summary.total_nominal || 0;
 
     document.getElementById('summaryTransaksi').textContent = totalTransaksi.toLocaleString('id-ID');
     document.getElementById('summaryQty').textContent = totalQty.toLocaleString('id-ID');

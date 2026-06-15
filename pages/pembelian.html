@@ -684,11 +684,11 @@
         throw new Error(result.message || 'Failed to load data');
       }
       
-      // Update summary cards - calculate from loaded data
-      const data = result.data || B.pembelianList || [];
-      const totalTransaksi = data.length;
-      const totalQty = data.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
-      const totalNominal = data.reduce((sum, item) => sum + (parseFloat(item.nominal) || 0), 0);
+      // Update summary cards from backend summary (all filtered data)
+      const summary = result.summary || {};
+      const totalTransaksi = summary.total_transaksi || 0;
+      const totalQty = summary.total_qty || 0;
+      const totalNominal = summary.total_nominal || 0;
       document.getElementById('summaryTransaksi').textContent = totalTransaksi.toLocaleString('id-ID');
       document.getElementById('summaryQty').textContent = totalQty.toLocaleString('id-ID');
       document.getElementById('summaryNominal').textContent = formatRupiah(totalNominal);
