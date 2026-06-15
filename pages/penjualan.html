@@ -578,16 +578,19 @@
 </style>
 
 <script>
-  // State
-  let penjualanList = [];
-  let currentPage = 1;
-  let totalPages = 1;
-  let totalData = 0;
-  let editingId = null;
-  let deleteId = null;
-  let searchTimeout = null;
-  let produkList = [];
-  let outletList = [];
+  // State - Namespace pattern to prevent redeclaration
+  window.PenjualanPage = window.PenjualanPage || {
+    penjualanList: [],
+    currentPage: 1,
+    totalPages: 1,
+    totalData: 0,
+    editingId: null,
+    deleteId: null,
+    searchTimeout: null,
+    produkList: [],
+    outletList: []
+  };
+  const P = window.PenjualanPage;
 
   // Format currency
   function formatRupiah(num) {
@@ -607,9 +610,9 @@
 
   // Debounced search
   function debounceSearch() {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      currentPage = 1;
+    if (P.searchTimeout) clearTimeout(P.searchTimeout);
+    P.searchTimeout = setTimeout(() => {
+      P.currentPage = 1;
       loadPenjualan();
     }, 300);
   }
@@ -617,7 +620,7 @@
   // Get filter params
   function getFilterParams() {
     return {
-      page: currentPage,
+      page: P.currentPage,
       limit: 20,
       tanggal_awal: document.getElementById('filterTanggalAwal').value,
       tanggal_akhir: document.getElementById('filterTanggalAkhir').value,
@@ -651,9 +654,9 @@
       
       if (!result.success) throw new Error(result.message || 'Load failed');
       
-      penjualanList = result.data || [];
-      totalData = result.pagination?.total || 0;
-      totalPages = result.pagination?.total_pages || 1;
+      P.penjualanList = result.data || [];
+      P.totalData = result.pagination?.total || 0;
+      P.totalPages = result.pagination?.total_pages || 1;
       
       // Update summary from API (uses server-side calculated totals, not just page data)
       updateSummaryFromAPI(result);
@@ -691,7 +694,7 @@
   function renderTable() {
     const tbody = document.getElementById('penjualanTableBody');
     
-    if (penjualanList.length === 0) {
+    if (P.penjualanList.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="8" class="text-center text-muted">
@@ -707,7 +710,7 @@
       return;
     }
     
-    tbody.innerHTML = penjualanList.map(item => `
+    tbody.innerHTML = P.penjualanList.map(item => `
       <tr>
         <td>${formatDate(item.tanggal)}</td>
         <td>${item.nama_outlet || '-'}</td>
@@ -742,25 +745,25 @@
     const info = document.getElementById('paginationInfo');
     const buttons = document.getElementById('paginationButtons');
     const limit = 20;
-    const start = (currentPage - 1) * limit + 1;
-    const end = Math.min(currentPage * limit, totalData);
+    const start = (P.currentPage - 1) * limit + 1;
+    const end = Math.min(P.currentPage * limit, P.totalData);
     
-    info.textContent = `Menampilkan ${start} - ${end} dari ${totalData.toLocaleString('id-ID')} data`;
+    info.textContent = `Menampilkan ${start} - ${end} dari ${P.totalData.toLocaleString('id-ID')} data`;
     
     // Generate page buttons
     let pageButtons = '';
     
     // Prev button
     pageButtons += `
-      <button class="pagination__btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+      <button class="pagination__btn" onclick="goToPage(${P.currentPage - 1})" ${P.currentPage === 1 ? 'disabled' : ''}>
         <i data-lucide="chevron-left"></i>
       </button>
     `;
     
     // Page numbers
     const maxVisible = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    let startPage = Math.max(1, P.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(P.totalPages, startPage + maxVisible - 1);
     
     if (endPage - startPage < maxVisible - 1) {
       startPage = Math.max(1, endPage - maxVisible + 1);
@@ -773,20 +776,20 @@
     
     for (let i = startPage; i <= endPage; i++) {
       pageButtons += `
-        <button class="pagination__btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+        <button class="pagination__btn ${i === P.currentPage ? 'active' : ''}" onclick="goToPage(${i})">
           ${i}
         </button>
       `;
     }
     
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pageButtons += `<span class="pagination__btn" style="cursor: default;">...</span>`;
-      pageButtons += `<button class="pagination__btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+    if (endPage < P.totalPages) {
+      if (endPage < P.totalPages - 1) pageButtons += `<span class="pagination__btn" style="cursor: default;">...</span>`;
+      pageButtons += `<button class="pagination__btn" onclick="goToPage(${P.totalPages})">${P.totalPages}</button>`;
     }
     
     // Next button
     pageButtons += `
-      <button class="pagination__btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+      <button class="pagination__btn" onclick="goToPage(${P.currentPage + 1})" ${P.currentPage === P.totalPages ? 'disabled' : ''}>
         <i data-lucide="chevron-right"></i>
       </button>
     `;
@@ -797,8 +800,8 @@
 
   // Go to page
   function goToPage(page) {
-    if (page < 1 || page > totalPages) return;
-    currentPage = page;
+    if (page < 1 || page > P.totalPages) return;
+    P.currentPage = page;
     loadPenjualan();
   }
 
@@ -808,17 +811,17 @@
       const response = await fetch('/api/outlet-list');
       if (!response.ok) throw new Error('Failed to load outlets');
       
-      outletList = await response.json();
+      P.outletList = await response.json();
       
       // Populate filter outlet
       const filterOutlet = document.getElementById('filterOutlet');
       filterOutlet.innerHTML = '<option value="">Semua Outlet</option>' + 
-        outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
+        P.outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
       
       // Populate input outlet
       const inputOutlet = document.getElementById('inputOutlet');
       inputOutlet.innerHTML = '<option value="">Pilih Outlet</option>' + 
-        outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
+        P.outletList.map(o => `<option value="${o.nama_outlet}">${o.nama_outlet}</option>`).join('');
     } catch (error) {
       console.error('Error loading outlets:', error);
     }
@@ -828,7 +831,7 @@
   async function loadProduk() {
     // Use cached data if available
     if (window.masterProdukCache) {
-      produkList = window.masterProdukCache;
+      P.produkList = window.masterProdukCache;
       populateProdukDropdowns();
       return;
     }
@@ -838,14 +841,14 @@
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
-      produkList = data.produk || data.data || [];
+      P.produkList = data.produk || data.data || [];
       
       // Cache the data globally
-      window.masterProdukCache = produkList;
+      window.masterProdukCache = P.produkList;
       
       // DEBUG: Log produk data
-      console.log('Produk API response:', produkList);
-      console.log('Produk count:', produkList?.length);
+      console.log('Produk API response:', P.produkList);
+      console.log('Produk count:', P.produkList?.length);
       
       populateProdukDropdowns();
     } catch (error) {
@@ -857,13 +860,13 @@
     // Populate filter produk
     const filterProduk = document.getElementById('filterProduk');
     filterProduk.innerHTML = '<option value="">Semua Produk</option>' + 
-      produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+      P.produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
     
     // Populate input produk
     const inputProduk = document.getElementById('inputProduk');
     if (inputProduk) {
       inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + 
-        produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+        P.produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
       console.log('inputProduk options count:', inputProduk.options.length);
       console.log('inputProduk HTML generated:', inputProduk.innerHTML.substring(0, 200) + '...');
     }
@@ -986,7 +989,7 @@
   let transactionItems = [];
   
   function showAddModal() {
-    editingId = null;
+    P.editingId = null;
     document.getElementById('modalTitle').textContent = 'Tambah Penjualan';
     document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
     document.getElementById('inputOutlet').value = '';
@@ -1013,7 +1016,7 @@
       return;
     }
     
-    const produk = produkList.find(p => p.sku === sku);
+    const produk = P.produkList.find(p => p.sku === sku);
     if (produk) {
       document.getElementById('inputHarga').value = formatRupiah(parseFloat(produk.harga_jual) || 0);
       document.getElementById('inputProduk').dataset.harga = produk.harga_jual || 0;
@@ -1045,7 +1048,7 @@
       return;
     }
     
-    const produk = produkList.find(p => p.sku === sku);
+    const produk = P.produkList.find(p => p.sku === sku);
     if (!produk) return;
     
     // Check if same product exists - merge qty
@@ -1173,7 +1176,7 @@
     let successCount = 0;
     let errorCount = 0;
     const total = transactionItems.length;
-    const isEditMode = editingId !== null;
+    const isEditMode = P.editingId !== null;
     
     try {
       if (isEditMode && total === 1) {
@@ -1181,7 +1184,7 @@
         const progress = 50;
         progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
         
-        const response = await fetch('/api/v1/penjualan/' + editingId, {
+        const response = await fetch('/api/v1/penjualan/' + P.editingId, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1254,7 +1257,7 @@
   // Close modal
   function closeModal() {
     document.getElementById('penjualanModal').classList.remove('active');
-    editingId = null;
+    P.editingId = null;
     transactionItems = [];
     
     // Reset disabled fields
@@ -1332,7 +1335,7 @@
       showToast(`Edit: ${item.nama_produk || item.sku} - Qty: ${item.qty}`);
       
       // Open the multi-item modal in edit mode
-      editingId = id;
+      P.editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit Penjualan';
       document.getElementById('inputTanggal').value = item.tanggal ? item.tanggal.split('T')[0] : '';
       document.getElementById('inputOutlet').value = item.nama_outlet || '';
@@ -1373,8 +1376,8 @@
 
   // Delete penjualan
   function deletePenjualan(id) {
-    deleteId = id;
-    const item = penjualanList.find(p => p.id === id);
+    P.deleteId = id;
+    const item = P.penjualanList.find(p => p.id === id);
     document.getElementById('deleteItemInfo').textContent = item 
       ? `${item.nama_produk || item.sku} - ${item.qty} unit` 
       : `ID: ${id}`;
@@ -1384,19 +1387,19 @@
   // Close delete modal
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
-    deleteId = null;
+    P.deleteId = null;
   }
 
   // Confirm delete
   async function confirmDelete() {
-    if (!deleteId) return;
+    if (!P.deleteId) return;
     
     const btn = document.getElementById('btnConfirmDelete');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Menghapus...</span>';
     
     try {
-      const response = await fetch('/api/v1/penjualan/' + deleteId, {
+      const response = await fetch('/api/v1/penjualan/' + P.deleteId, {
         method: 'DELETE'
       });
       
@@ -1424,7 +1427,7 @@
     const params = new URLSearchParams({ ...getFilterParams(), limit: 10000 });
     const csvContent = [
       ['Tanggal', 'Outlet', 'SKU', 'Nama Produk', 'Qty', 'Harga', 'Nominal'].join(','),
-      ...penjualanList.map(item => [
+      ...P.penjualanList.map(item => [
         formatDate(item.tanggal),
         `"${(item.nama_outlet || '').replace(/"/g, '""')}"`,
         item.sku || '',

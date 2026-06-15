@@ -572,13 +572,16 @@
 </style>
 
 <script>
-  // State
-  let pembelianList = [];
-  let transactionItems = [];
-  let editingId = null;
-  let deleteId = null;
-  let debounceTimer = null;
-  let currentPage = 1;
+  // State - Namespace pattern to prevent redeclaration
+  window.PembelianPage = window.PembelianPage || {
+    pembelianList: [],
+    transactionItems: [],
+    editingId: null,
+    deleteId: null,
+    debounceTimer: null,
+    currentPage: 1
+  };
+  const B = window.PembelianPage;
 
   // Get filter parameters
   function getFilterParams() {
@@ -588,7 +591,7 @@
       supplier: document.getElementById('filterSupplier').value,
       sku: document.getElementById('filterProduk').value,
       search: document.getElementById('filterSearch').value,
-      page: currentPage,
+      page: B.currentPage,
       limit: 20
     };
   }
@@ -689,12 +692,12 @@
       }
       
       // Update table
-      pembelianList = result.data || [];
-      renderPembelianTable(pembelianList);
+      B.pembelianList = result.data || [];
+      renderPembelianTable(B.pembelianList);
       
       // Update pagination
       if (result.pagination) {
-        currentPage = result.pagination.page;
+        B.currentPage = result.pagination.page;
         renderPagination(result.pagination);
       }
     } catch (error) {
@@ -770,11 +773,11 @@
     
     // Page numbers
     const totalPages = pagination.total_pages;
-    const currentPage = pagination.page;
+    const B.currentPage = pagination.page;
     
     // Show max 5 page buttons
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
+    let startPage = Math.max(1, B.currentPage - 2);
+    let endPage = Math.min(totalPages, B.currentPage + 2);
     
     if (endPage - startPage < 4) {
       if (startPage === 1) {
@@ -792,7 +795,7 @@
     }
     
     for (let i = startPage; i <= endPage; i++) {
-      buttonsHtml += `<button class="pagination__btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      buttonsHtml += `<button class="pagination__btn ${i === B.currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
     }
     
     if (endPage < totalPages) {
@@ -814,15 +817,15 @@
 
   // Go to page
   function goToPage(page) {
-    currentPage = page;
+    B.currentPage = page;
     loadPembelian();
   }
 
   // Debounce search
   function debounceSearch() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      currentPage = 1;
+    clearTimeout(B.debounceTimer);
+    B.debounceTimer = setTimeout(() => {
+      B.currentPage = 1;
       loadPembelian();
     }, 300);
   }
@@ -850,7 +853,7 @@
 
   // Show add modal
   function showAddModal() {
-    editingId = null;
+    B.editingId = null;
     document.getElementById('modalTitle').textContent = 'Tambah Pembelian';
     document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
     document.getElementById('inputSupplier').value = '';
@@ -860,7 +863,7 @@
     document.getElementById('inputNominal').value = '';
     document.getElementById('inputProduk').dataset.harga_beli = '0';
 
-    transactionItems = [];
+    B.transactionItems = [];
     renderPreviewTable();
     updateSummary();
 
@@ -999,7 +1002,7 @@
     const selectedText = produkSelect.options[produkSelect.selectedIndex].text;
     const [namaProduk, sku] = selectedText.split(' (').map(s => s.replace(')', ''));
     
-    transactionItems.push({
+    B.transactionItems.push({
       sku: produkSelect.value,
       nama_produk: namaProduk,
       qty: qty,
@@ -1021,8 +1024,8 @@
 
   // Remove item from list
   function removeFromList(index) {
-    const item = transactionItems[index];
-    transactionItems.splice(index, 1);
+    const item = B.transactionItems[index];
+    B.transactionItems.splice(index, 1);
     renderPreviewTable();
     updateSummary();
     showToast(`"${item.nama_produk}" dihapus dari daftar`);
@@ -1033,14 +1036,14 @@
     const tbody = document.getElementById('previewTableBody');
     const itemCount = document.getElementById('itemCount');
 
-    itemCount.textContent = transactionItems.length;
+    itemCount.textContent = B.transactionItems.length;
 
-    if (transactionItems.length === 0) {
+    if (B.transactionItems.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada item. Tambahkan produk di atas.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = transactionItems.map((item, index) => `
+    tbody.innerHTML = B.transactionItems.map((item, index) => `
       <tr class="preview-row">
         <td>${item.nama_produk}</td>
         <td><code>${item.sku}</code></td>
@@ -1063,7 +1066,7 @@
     const summary = document.getElementById('transactionSummary');
     const btnSave = document.getElementById('btnSaveAll');
 
-    if (transactionItems.length === 0) {
+    if (B.transactionItems.length === 0) {
       summary.style.display = 'none';
       btnSave.disabled = true;
       return;
@@ -1072,9 +1075,9 @@
     summary.style.display = 'flex';
     btnSave.disabled = false;
 
-    const totalItem = transactionItems.length;
-    const totalQty = transactionItems.reduce((sum, item) => sum + item.qty, 0);
-    const totalNominal = transactionItems.reduce((sum, item) => sum + item.nominal, 0);
+    const totalItem = B.transactionItems.length;
+    const totalQty = B.transactionItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalNominal = B.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
 
     document.getElementById('totalItem').textContent = totalItem;
     document.getElementById('totalQty').textContent = totalQty.toLocaleString('id-ID');
@@ -1096,7 +1099,7 @@
       return;
     }
 
-    if (transactionItems.length === 0) {
+    if (B.transactionItems.length === 0) {
       showToast('Tambahkan minimal 1 item', false);
       return;
     }
@@ -1113,8 +1116,8 @@
 
     let successCount = 0;
     let errorCount = 0;
-    const total = transactionItems.length;
-    const isEditMode = editingId !== null;
+    const total = B.transactionItems.length;
+    const isEditMode = B.editingId !== null;
 
     try {
       if (isEditMode && total === 1) {
@@ -1122,11 +1125,11 @@
         const progress = 50;
         progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
 
-        const response = await fetch('/api/v1/pembelian/' + editingId, {
+        const response = await fetch('/api/v1/pembelian/' + B.editingId, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            qty: transactionItems[0].qty
+            qty: B.transactionItems[0].qty
           })
         });
 
@@ -1141,8 +1144,8 @@
         progressBar.querySelector('.progress-bar__fill').style.width = '100%';
       } else if (!isEditMode) {
         // Create mode: POST each item
-        for (let i = 0; i < transactionItems.length; i++) {
-          const item = transactionItems[i];
+        for (let i = 0; i < B.transactionItems.length; i++) {
+          const item = B.transactionItems[i];
 
           // Update progress
           const progress = ((i + 1) / total) * 100;
@@ -1195,8 +1198,8 @@
   // Close modal
   function closeModal() {
     document.getElementById('pembelianModal').classList.remove('active');
-    editingId = null;
-    transactionItems = [];
+    B.editingId = null;
+    B.transactionItems = [];
 
     // Reset disabled fields
     document.getElementById('inputTanggal').disabled = false;
@@ -1270,13 +1273,13 @@
       const item = result.data;
       
       // Open the multi-item modal in edit mode
-      editingId = id;
+      B.editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit Pembelian';
       document.getElementById('inputTanggal').value = item.tanggal ? item.tanggal.split('T')[0] : '';
       document.getElementById('inputSupplier').value = item.supplier_id || '';
 
       // Add item to transaction items for editing
-      transactionItems = [{
+      B.transactionItems = [{
         sku: item.sku,
         nama_produk: item.nama_produk,
         qty: item.qty,
@@ -1311,8 +1314,8 @@
 
   // Delete pembelian
   function deletePembelian(id) {
-    deleteId = id;
-    const item = pembelianList.find(p => p.id === id);
+    B.deleteId = id;
+    const item = B.pembelianList.find(p => p.id === id);
     document.getElementById('deleteItemInfo').textContent = item 
       ? `${item.nama_produk || item.sku} - ${item.qty} unit` 
       : `ID: ${id}`;
@@ -1322,19 +1325,19 @@
   // Close delete modal
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
-    deleteId = null;
+    B.deleteId = null;
   }
 
   // Confirm delete
   async function confirmDelete() {
-    if (!deleteId) return;
+    if (!B.deleteId) return;
     
     const btn = document.getElementById('btnConfirmDelete');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Menghapus...</span>';
     
     try {
-      const response = await fetch('/api/v1/pembelian/' + deleteId, {
+      const response = await fetch('/api/v1/pembelian/' + B.deleteId, {
         method: 'DELETE'
       });
       
@@ -1361,7 +1364,7 @@
   function exportExcel() {
     const csvContent = [
       ['Tanggal', 'Supplier', 'SKU', 'Nama Produk', 'Qty', 'Harga Beli', 'Nominal'].join(','),
-      ...pembelianList.map(item => [
+      ...B.pembelianList.map(item => [
         formatDate(item.tanggal),
         `"${(item.nama_supplier || '').replace(/"/g, '""')}"`,
         item.sku || '',

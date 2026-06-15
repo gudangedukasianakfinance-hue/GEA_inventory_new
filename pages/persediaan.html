@@ -420,16 +420,17 @@
 </style>
 
 <script>
-// ============================================
-// GLOBAL STATE
-// ============================================
-let stokPeriodeData = [];
-let kartuStokData = [];
-let currentPagePeriode = 1;
-let currentPageKartu = 1;
-let debounceTimerPeriode = null;
-let debounceTimerKartu = null;
-let selectedKategori = 'semua';
+// State - Namespace pattern to prevent redeclaration
+window.PersediaanPage = window.PersediaanPage || {
+  S.stokPeriodeData: [],
+  S.kartuStokData: [],
+  S.currentPagePeriode: 1,
+  S.currentPageKartu: 1,
+  S.debounceTimerPeriode: null,
+  S.debounceTimerKartu: null,
+  S.selectedKategori: 'semua'
+};
+const S = window.PersediaanPage;
 
 // Global produk cache for all pages
 window.masterProdukCache = window.masterProdukCache || null;
@@ -539,9 +540,9 @@ function renderProdukDropdown(produkList) {
 // TAB 1: STOK PERIODE
 // ============================================
 function debounceSearchPeriode() {
-  clearTimeout(debounceTimerPeriode);
-  debounceTimerPeriode = setTimeout(() => {
-    currentPagePeriode = 1;
+  clearTimeout(S.debounceTimerPeriode);
+  S.debounceTimerPeriode = setTimeout(() => {
+    S.currentPagePeriode = 1;
     loadStokPeriode();
   }, 300);
 }
@@ -552,13 +553,13 @@ function filterKategori(element, kategori) {
   });
   element.classList.add('active');
   
-  selectedKategori = kategori;
-  currentPagePeriode = 1;
+  S.selectedKategori = kategori;
+  S.currentPagePeriode = 1;
   loadStokPeriode();
 }
 
 async function loadStokPeriode(page = 1) {
-  currentPagePeriode = page;
+  S.currentPagePeriode = page;
   
   const tahun = document.getElementById('filterTahunPeriode').value;
   const bulan = document.getElementById('filterBulanPeriode').value;
@@ -581,7 +582,7 @@ async function loadStokPeriode(page = 1) {
       bulan,
       page,
       limit: 50,
-      kategori: selectedKategori
+      kategori: S.selectedKategori
     });
     
     if (search) {
@@ -605,8 +606,8 @@ async function loadStokPeriode(page = 1) {
     document.getElementById('summaryProdukMinus').textContent = formatNumber(result.summary?.produk_minus);
     document.getElementById('summaryProdukKosong').textContent = formatNumber(result.summary?.produk_kosong);
     
-    stokPeriodeData = result.data || [];
-    renderPeriodeTable(stokPeriodeData);
+    S.stokPeriodeData = result.data || [];
+    renderPeriodeTable(S.stokPeriodeData);
     renderPaginationPeriode(result.pagination);
     
   } catch (error) {
@@ -726,15 +727,15 @@ function renderPaginationPeriode(pagination) {
 // TAB 2: KARTU STOK
 // ============================================
 function debounceSearchKartu() {
-  clearTimeout(debounceTimerKartu);
-  debounceTimerKartu = setTimeout(() => {
-    currentPageKartu = 1;
+  clearTimeout(S.debounceTimerKartu);
+  S.debounceTimerKartu = setTimeout(() => {
+    S.currentPageKartu = 1;
     loadKartuStok();
   }, 300);
 }
 
 async function loadKartuStok(page = 1) {
-  currentPageKartu = page;
+  S.currentPageKartu = page;
   
   const tahun = document.getElementById('filterTahunKartu').value;
   const bulan = document.getElementById('filterBulanKartu').value;
@@ -780,8 +781,8 @@ async function loadKartuStok(page = 1) {
       throw new Error(result.message || 'Gagal memuat data');
     }
     
-    kartuStokData = result.data || [];
-    renderKartuTable(kartuStokData);
+    S.kartuStokData = result.data || [];
+    renderKartuTable(S.kartuStokData);
     renderPaginationKartu(result.pagination);
     
   } catch (error) {
@@ -934,11 +935,11 @@ function exportExcel() {
   let data, headers, filename;
   
   if (activeTab === 'periode') {
-    data = stokPeriodeData;
+    data = S.stokPeriodeData;
     headers = ['SKU', 'Nama Produk', 'Stok Awal', 'Pembelian', 'Penjualan', 'Penyesuaian', 'Stok Akhir'];
     filename = 'stok_periode';
   } else if (activeTab === 'kartu') {
-    data = kartuStokData;
+    data = S.kartuStokData;
     headers = ['Tanggal', 'Aktivitas', 'Partner', 'Masuk', 'Keluar', 'Saldo'];
     filename = 'kartu_stok';
   } else {
