@@ -188,11 +188,15 @@ const NAMA_BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
 
 // Update jam dan tanggal
 function updateDateTime() {
+  const dateEl = document.getElementById('currentDate');
+  const timeEl = document.getElementById('currentTime');
+  if (!dateEl || !timeEl) return;
+  
   const now = new Date();
-  document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', {
+  dateEl.textContent = now.toLocaleDateString('id-ID', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
-  document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID');
+  timeEl.textContent = now.toLocaleTimeString('id-ID');
 }
 
 // Format tanggal Indonesia
@@ -374,11 +378,20 @@ function initDashboardSo() {
   if (window.lucide) lucide.createIcons();
 }
 
-// Auto init on page load
+// Auto init on page load - hanya jalankan jika page container ada
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initDashboardSo);
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('currentDate')) {
+      initDashboardSo();
+    }
+  });
 } else {
-  initDashboardSo();
+  // Tunda sebentar untuk memastikan DOM sudah di-render
+  setTimeout(function() {
+    if (document.getElementById('currentDate')) {
+      initDashboardSo();
+    }
+  }, 100);
 }
 </script>
 
