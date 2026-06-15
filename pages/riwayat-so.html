@@ -89,8 +89,10 @@
 </div>
 
 <script>
-  let historyData = [];
-  let currentDetailData = null;
+  // Namespace untuk state (hindari redeclare saat SPA cache reload)
+  window.SORiwayat = window.SORiwayat || {};
+  window.SORiwayat.historyData = window.SORiwayat.historyData || [];
+  window.SORiwayat.currentDetailData = window.SORiwayat.currentDetailData || null;
 
   function getStatusClass(status) {
     const statusMap = {
@@ -134,11 +136,11 @@
       const response = await fetch(`/api/opname-history?bulan=${bulan}&tahun=${tahun}`);
       if (!response.ok) throw new Error('Failed to load');
       
-      historyData = await response.json();
-      if (!Array.isArray(historyData)) historyData = [];
+      window.SORiwayat.historyData = await response.json();
+      if (!Array.isArray(window.SORiwayat.historyData)) window.SORiwayat.historyData = [];
       
-      document.getElementById('historyCount').textContent = `${historyData.length} hasil`;
-      renderHistoryTable(historyData);
+      document.getElementById('historyCount').textContent = `${window.SORiwayat.historyData.length} hasil`;
+      renderHistoryTable(window.SORiwayat.historyData);
     } catch (error) {
       console.error('Error loading history:', error);
       document.getElementById('historyTableBody').innerHTML = 
@@ -193,8 +195,8 @@
       const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
       if (!response.ok) throw new Error('Failed to load detail');
       
-      currentDetailData = await response.json();
-      renderDetailModal(currentDetailData);
+      window.SORiwayat.currentDetailData = await response.json();
+      renderDetailModal(window.SORiwayat.currentDetailData);
       document.getElementById('detailSoModal').style.display = 'flex';
     } catch (error) {
       console.error('Error loading detail:', error);
@@ -300,16 +302,16 @@
 
   function closeDetailSo() {
     document.getElementById('detailSoModal').style.display = 'none';
-    currentDetailData = null;
+    window.SORiwayat.currentDetailData = null;
   }
 
   function downloadDetailCsv() {
-    if (!currentDetailData || !currentDetailData.details) {
+    if (!window.SORiwayat.currentDetailData || !window.SORiwayat.currentDetailData.details) {
       showToast('Tidak ada data untuk diunduh', false);
       return;
     }
     
-    const { header, details } = currentDetailData;
+    const { header, details } = window.SORiwayat.currentDetailData;
     const csvContent = [
       ['Kode SO', 'SKU', 'Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'],
       ...details.map(d => [

@@ -117,7 +117,9 @@
 </div>
 
 <script>
-  let perintahList = [];
+  // Namespace untuk state (hindari redeclare saat SPA cache reload)
+  window.SOPerintah = window.SOPerintah || {};
+  window.SOPerintah.perintahList = window.SOPerintah.perintahList || [];
 
   function formatBulan(bulan) {
     const namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
@@ -154,7 +156,7 @@
       if (!response.ok) throw new Error('Failed to load');
       
       const data = await response.json();
-      perintahList = data.items || [];
+      window.SOPerintah.perintahList = data.items || [];
       renderPerintahTable();
     } catch (error) {
       console.error('Error loading perintah:', error);
@@ -165,12 +167,12 @@
 
   function renderPerintahTable() {
     const tbody = document.getElementById('perintahTableBody');
-    if (perintahList.length === 0) {
+    if (window.SOPerintah.perintahList.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Tidak ada perintah SO periode ini</td></tr>';
       return;
     }
     
-    tbody.innerHTML = perintahList.map(item => {
+    tbody.innerHTML = window.SOPerintah.perintahList.map(item => {
       const progress = item.progress_percent || 0;
       const targetSku = item.target_sku || 0;
       const checkedSku = item.checked_sku || 0;

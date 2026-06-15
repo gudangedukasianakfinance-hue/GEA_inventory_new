@@ -368,20 +368,25 @@
 </style>
 
 <script>
-  let activePerintahId = null;
-  let activePerintahKode = null;
-  let activeOpnameId = null;
-  let activeStatus = 'menunggu';
-  let scanHistory = [];
-  let produkList = [];
-  let produkMap = {};
+  // Namespace untuk state (hindari redeclare saat SPA cache reload)
+  window.SOPelaksanaan = window.SOPelaksanaan || {};
+  if (!window.SOPelaksanaan.hasInit) {
+    window.SOPelaksanaan.window.SOPelaksanaan.activePerintahId = null;
+    window.SOPelaksanaan.window.SOPelaksanaan.activePerintahKode = null;
+    window.SOPelaksanaan.window.SOPelaksanaan.activeOpnameId = null;
+    window.SOPelaksanaan.window.SOPelaksanaan.activeStatus = 'menunggu';
+    window.SOPelaksanaan.window.SOPelaksanaan.scanHistory = [];
+    window.SOPelaksanaan.window.SOPelaksanaan.produkList = [];
+    window.SOPelaksanaan.window.SOPelaksanaan.produkMap = {};
+    window.SOPelaksanaan.hasInit = true;
+  }
 
   function initPelaksanaanSo() {
     // Ambil active perintah dari localStorage
-    activePerintahId = localStorage.getItem('activePerintahId');
-    activePerintahKode = localStorage.getItem('activePerintahKode');
+    window.SOPelaksanaan.activePerintahId = localStorage.getItem('activePerintahId');
+    window.SOPelaksanaan.activePerintahKode = localStorage.getItem('activePerintahKode');
     
-    if (!activePerintahId) {
+    if (!window.SOPelaksanaan.activePerintahId) {
       document.getElementById('noActiveSoMessage').style.display = 'block';
       document.getElementById('activeSoContainer').style.display = 'none';
       return;
@@ -395,12 +400,12 @@
 
   async function loadActiveSoDetails() {
     try {
-      const response = await fetch(`/api/opname-perintah?id=${activePerintahId}`);
+      const response = await fetch(`/api/opname-perintah?id=${window.SOPelaksanaan.activePerintahId}`);
       if (!response.ok) throw new Error('Failed to load');
       
       const data = await response.json();
-      activeStatus = data.status || 'menunggu';
-      activeOpnameId = data.opname_id;
+      window.SOPelaksanaan.activeStatus = data.status || 'menunggu';
+      window.SOPelaksanaan.activeOpnameId = data.opname_id;
       
       // Update UI
       document.getElementById('soKode').textContent = data.kode_so || activePerintahKode;
@@ -421,16 +426,16 @@
   async function loadProdukList() {
     try {
       // Load dari v3-opname-detail endpoint
-      const response = await fetch(`/api/v3-opname-detail?perintah_id=${activePerintahId}`);
+      const response = await fetch(`/api/v3-opname-detail?perintah_id=${window.SOPelaksanaan.activePerintahId}`);
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
-      produkList = data.produk || [];
+      window.SOPelaksanaan.produkList = data.produk || [];
       
       // Build map untuk quick lookup
-      produkMap = {};
-      produkList.forEach(p => {
-        produkMap[p.sku] = p;
+      window.SOPelaksanaan.produkMap = {};
+      window.SOPelaksanaan.produkList.forEach(p => {
+        window.SOPelaksanaan.produkMap[p.sku] = p;
       });
       
       // Update progress table
@@ -454,8 +459,8 @@
   }
 
   function updateSoStats() {
-    const total = produkList.length;
-    const checked = produkList.filter(p => Number(p.stok_fisik) > 0 || p.detail_id).length;
+    const total = window.SOPelaksanaan.produkList.length;
+    const checked = window.SOPelaksanaan.produkList.filter(p => Number(p.stok_fisik) > 0 || p.detail_id).length;
     const remaining = total - checked;
     const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
     
@@ -466,15 +471,15 @@
     
     // Update submit button state
     const btnSubmit = document.getElementById('btnSubmitSo');
-    btnSubmit.disabled = activeStatus === 'selesai' || checked === 0;
-    if (activeStatus === 'selesai') {
+    btnSubmit.disabled = window.SOPelaksanaan.activeStatus === 'selesai' || checked === 0;
+    if (window.SOPelaksanaan.activeStatus === 'selesai') {
       btnSubmit.innerHTML = '<i data-lucide="check-circle"></i><span>SO Sudah Selesai</span>';
     }
     if (window.lucide) lucide.createIcons();
   }
 
   async function startSoIfNeeded() {
-    if (activeStatus === 'menunggu') {
+    if (window.SOPelaksanaan.activeStatus === 'menunggu') {
       try {
         const response = await fetch('/api/v3-opname', {
           method: 'PUT',
@@ -488,8 +493,8 @@
         
         if (response.ok) {
           const data = await response.json();
-          activeOpnameId = data.opname_id;
-          activeStatus = 'proses';
+          window.SOPelaksanaan.activeOpnameId = data.opname_id;
+          window.SOPelaksanaan.activeStatus = 'proses';
           updateStatusBadge('proses');
           showToast('SO dimulai, siap untuk scan');
         }
@@ -507,17 +512,17 @@
     if (!sku) return;
     
     // Auto-start SO jika belum dimulai
-    if (activeStatus === 'menunggu') {
+    if (window.SOPelaksanaan.activeStatus === 'menunggu') {
       await startSoIfNeeded();
     }
     
-    if (!activeOpnameId) {
+    if (!window.SOPelaksanaan.activeOpnameId) {
       showToast('ID opname tidak ditemukan', false);
       return;
     }
     
     // Cek apakah SKU ada di list
-    const produk = produkMap[sku];
+    const produk = window.SOPelaksanaan.produkMap[sku];
     if (!produk) {
       showToast(`SKU ${sku} tidak ditemukan`, false);
       input.value = '';
@@ -551,7 +556,7 @@
     const sku = document.getElementById('manualSku').value.trim();
     const stokFisik = parseInt(document.getElementById('manualQty').value) || 0;
     
-    if (!sku || !activeOpnameId) {
+    if (!sku || !window.SOPelaksanaan.activeOpnameId) {
       showToast('Data tidak valid', false);
       return;
     }
@@ -578,7 +583,7 @@
       const data = await response.json();
       
       // Update produk in memory
-      const produk = produkMap[sku];
+      const produk = window.SOPelaksanaan.produkMap[sku];
       if (produk) {
         produk.stok_fisik = stokFisik;
         produk.selisih = stokFisik - produk.stok_sistem;
@@ -590,7 +595,7 @@
       showLastScanResult(produk, stokFisik);
       
       // Add to history
-      scanHistory.unshift({
+      window.SOPelaksanaan.scanHistory.unshift({
         sku: sku,
         stok_fisik: stokFisik,
         waktu: new Date().toLocaleTimeString('id-ID')
@@ -636,12 +641,12 @@
   function renderScanHistory() {
     const container = document.getElementById('recentScansList');
     
-    if (scanHistory.length === 0) {
+    if (window.SOPelaksanaan.scanHistory.length === 0) {
       container.innerHTML = '<div class="empty-state">Belum ada scan</div>';
       return;
     }
     
-    container.innerHTML = scanHistory.slice(0, 10).map(scan => `
+    container.innerHTML = window.SOPelaksanaan.scanHistory.slice(0, 10).map(scan => `
       <div class="recent-scans-item">
         <span class="recent-scans-item__sku">${scan.sku}</span>
         <span class="recent-scans-item__time">${scan.waktu} - Qty: ${scan.stok_fisik}</span>
@@ -652,12 +657,12 @@
   function renderProgressTable() {
     const tbody = document.getElementById('progressTableBody');
     
-    if (produkList.length === 0) {
+    if (window.SOPelaksanaan.produkList.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada produk</td></tr>';
       return;
     }
     
-    tbody.innerHTML = produkList.map(p => {
+    tbody.innerHTML = window.SOPelaksanaan.produkList.map(p => {
       const selisih = Number(p.selisih || 0);
       const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
       const selisihPrefix = selisih > 0 ? '+' : '';
@@ -691,7 +696,7 @@
   }
 
   async function submitHasilSo() {
-    if (activeStatus === 'selesai') {
+    if (window.SOPelaksanaan.activeStatus === 'selesai') {
       showToast('SO sudah selesai', false);
       return;
     }
@@ -718,7 +723,7 @@
         throw new Error(err.error || 'Failed to submit');
       }
       
-      activeStatus = 'selesai';
+      window.SOPelaksanaan.activeStatus = 'selesai';
       updateStatusBadge('selesai');
       updateSoStats();
       
@@ -739,11 +744,11 @@
     
     localStorage.removeItem('activePerintahId');
     localStorage.removeItem('activePerintahKode');
-    activePerintahId = null;
-    activePerintahKode = null;
-    activeOpnameId = null;
-    activeStatus = 'menunggu';
-    scanHistory = [];
+    window.SOPelaksanaan.activePerintahId = null;
+    window.SOPelaksanaan.activePerintahKode = null;
+    window.SOPelaksanaan.activeOpnameId = null;
+    window.SOPelaksanaan.activeStatus = 'menunggu';
+    window.SOPelaksanaan.scanHistory = [];
     
     AppRouter.navigateTo('perintah-so');
   }
