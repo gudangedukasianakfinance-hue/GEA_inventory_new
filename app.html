@@ -518,6 +518,37 @@
         console.log('Search:', e.target.value.trim());
       }
     });
+
+    // ============================================
+    // GLOBAL LOADER (Reusable by all modules)
+    // ============================================
+
+    window.showLoader = function(message = 'Memuat...') {
+      const loader = document.getElementById('globalLoader');
+      const msgEl = document.getElementById('globalLoaderMessage');
+      if (loader) {
+        if (msgEl) msgEl.textContent = message;
+        loader.style.display = 'flex';
+      }
+    };
+
+    window.hideLoader = function() {
+      const loader = document.getElementById('globalLoader');
+      if (loader) loader.style.display = 'none';
+    };
+
+    window.updateLoaderMessage = function(message) {
+      const msgEl = document.getElementById('globalLoaderMessage');
+      if (msgEl) msgEl.textContent = message;
+    };
   </script>
+
+  <!-- Global Loader Overlay -->
+  <div id="globalLoader" class="global-loader" style="display: none;">
+    <div class="global-loader__content">
+      <div class="global-loader__spinner"></div>
+      <p id="globalLoaderMessage" class="global-loader__message">Memuat...</p>
+    </div>
+  </div>
 </body>
 </html>
