@@ -129,11 +129,20 @@ const AppRouter = {
   executeScripts(container) {
     const scripts = container.querySelectorAll('script');
     scripts.forEach(oldScript => {
+      // Skip if script already executed (has data-executed attribute)
+      if (oldScript.dataset && oldScript.dataset.executed === 'true') return;
+      
       const newScript = document.createElement('script');
       Array.from(oldScript.attributes).forEach(attr => {
         newScript.setAttribute(attr.name, attr.value);
       });
       newScript.textContent = oldScript.textContent;
+      // Mark as executed to prevent double execution on cached page load
+      if (newScript.dataset) {
+        newScript.dataset.executed = 'true';
+      } else {
+        newScript.setAttribute('data-executed', 'true');
+      }
       oldScript.parentNode.replaceChild(newScript, oldScript);
     });
   },
@@ -141,7 +150,10 @@ const AppRouter = {
   initPage(page) {
     if (window.lucide) lucide.createIcons();
     
-    // Call page-specific init functions
+    // Dispatch page-specific event for clean re-initialization
+    window.dispatchEvent(new CustomEvent('pageInit', { detail: { page } }));
+    
+    // Call page-specific init functions - each handles its own cleanup
     if (page === 'dashboard' && typeof initDashboard === 'function') initDashboard();
     if (page === 'user' && typeof initUserManagement === 'function') initUserManagement();
     if (page === 'persediaan' && typeof initPersediaanPage === 'function') initPersediaanPage();

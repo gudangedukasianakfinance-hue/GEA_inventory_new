@@ -655,8 +655,8 @@
       totalData = result.pagination?.total || 0;
       totalPages = result.pagination?.total_pages || 1;
       
-      // Update summary
-      updateSummary(result.data);
+      // Update summary from API (uses server-side calculated totals, not just page data)
+      updateSummaryFromAPI(result);
       
       // Render table
       renderTable();
@@ -675,11 +675,12 @@
     }
   }
 
-  // Update summary cards
-  function updateSummary(data) {
-    const totalTransaksi = data.length;
-    const totalQty = data.reduce((sum, item) => sum + (parseInt(item.qty) || 0), 0);
-    const totalNominal = data.reduce((sum, item) => sum + (parseFloat(item.nominal) || 0), 0);
+  // Update summary cards from API response (uses server-calculated totals)
+  function updateSummaryFromAPI(result) {
+    const summary = result.summary || {};
+    const totalTransaksi = summary.total_transaksi || 0;
+    const totalQty = summary.total_qty || 0;
+    const totalNominal = summary.total_nominal || 0;
     
     document.getElementById('summaryTransaksi').textContent = totalTransaksi.toLocaleString('id-ID');
     document.getElementById('summaryQty').textContent = totalQty.toLocaleString('id-ID');
@@ -823,8 +824,15 @@
     }
   }
 
-  // Load produk list for dropdowns
+  // Load produk list for dropdowns (with caching)
   async function loadProduk() {
+    // Use cached data if available
+    if (window.masterProdukCache) {
+      produkList = window.masterProdukCache;
+      populateProdukDropdowns();
+      return;
+    }
+    
     try {
       const response = await fetch('/api/produk-list');
       if (!response.ok) throw new Error('Failed to load produk');
@@ -832,25 +840,32 @@
       const data = await response.json();
       produkList = data.produk || data.data || [];
       
+      // Cache the data globally
+      window.masterProdukCache = produkList;
+      
       // DEBUG: Log produk data
       console.log('Produk API response:', produkList);
       console.log('Produk count:', produkList?.length);
       
-      // Populate filter produk
-      const filterProduk = document.getElementById('filterProduk');
-      filterProduk.innerHTML = '<option value="">Semua Produk</option>' + 
-        produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
-      
-      // Populate input produk
-      const inputProduk = document.getElementById('inputProduk');
-      if (inputProduk) {
-        inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + 
-          produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
-        console.log('inputProduk options count:', inputProduk.options.length);
-        console.log('inputProduk HTML generated:', inputProduk.innerHTML.substring(0, 200) + '...');
-      }
+      populateProdukDropdowns();
     } catch (error) {
       console.error('Error loading produk:', error);
+    }
+  }
+  
+  function populateProdukDropdowns() {
+    // Populate filter produk
+    const filterProduk = document.getElementById('filterProduk');
+    filterProduk.innerHTML = '<option value="">Semua Produk</option>' + 
+      produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+    
+    // Populate input produk
+    const inputProduk = document.getElementById('inputProduk');
+    if (inputProduk) {
+      inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + 
+        produkList.map(p => `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`).join('');
+      console.log('inputProduk options count:', inputProduk.options.length);
+      console.log('inputProduk HTML generated:', inputProduk.innerHTML.substring(0, 200) + '...');
     }
   }
 

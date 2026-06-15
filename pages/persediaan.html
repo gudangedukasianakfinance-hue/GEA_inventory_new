@@ -184,7 +184,7 @@
       <div class="filter-group">
         <label>Produk</label>
         <select id="filterProdukKartu" onchange="loadKartuStok()">
-          <option value="" disabled selected>Pilih Produk</option>
+          <option value="">Pilih Produk</option>
         </select>
       </div>
       <div class="filter-group" style="flex: 1;">
@@ -431,6 +431,9 @@ let debounceTimerPeriode = null;
 let debounceTimerKartu = null;
 let selectedKategori = 'semua';
 
+// Global produk cache for all pages
+window.masterProdukCache = window.masterProdukCache || null;
+
 // ============================================
 // TAB SWITCHING
 // ============================================
@@ -497,9 +500,15 @@ function initializeDropdowns() {
 }
 
 // ============================================
-// LOAD PRODUK DROPDOWN
+// LOAD PRODUK DROPDOWN (with caching)
 // ============================================
 async function loadProdukDropdown() {
+  // Use cached data if available
+  if (window.masterProdukCache) {
+    renderProdukDropdown(window.masterProdukCache);
+    return;
+  }
+  
   try {
     const response = await fetch('/api/produk-list');
     if (!response.ok) throw new Error('Failed to load products');
@@ -508,15 +517,22 @@ async function loadProdukDropdown() {
     // API returns 'produk' not 'data'
     const produkList = result.produk || result.data || [];
     
-    const options = produkList.map(p => 
-      `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`
-    ).join('');
+    // Cache the data globally
+    window.masterProdukCache = produkList;
     
-    document.getElementById('filterProdukKartu').innerHTML = 
-      '<option value="" disabled selected>Pilih Produk</option>' + options;
+    renderProdukDropdown(produkList);
   } catch (error) {
     console.error('Error loading produk:', error);
   }
+}
+
+function renderProdukDropdown(produkList) {
+  const options = produkList.map(p => 
+    `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`
+  ).join('');
+  
+  document.getElementById('filterProdukKartu').innerHTML = 
+    '<option value="">Pilih Produk</option>' + options;
 }
 
 // ============================================

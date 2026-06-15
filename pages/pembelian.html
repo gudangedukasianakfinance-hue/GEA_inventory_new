@@ -593,35 +593,48 @@
     };
   }
 
-  // Load produk for dropdowns
+  // Load produk for dropdowns (with caching)
   async function loadProduk() {
+    // Use cached data if available
+    if (window.masterProdukCache) {
+      populateProdukDropdowns(window.masterProdukCache);
+      return;
+    }
+    
     try {
       const response = await fetch('/api/produk-list');
       if (!response.ok) throw new Error('Failed to load produk');
 
       const data = await response.json();
       const produk = data.produk || data.data || [];
+      
+      // Cache the data globally
+      window.masterProdukCache = produk;
 
-      // Populate filter dropdown
-      const filterProduk = document.getElementById('filterProduk');
-      const inputProduk = document.getElementById('inputProduk');
-
-      const filterOptions = produk.map(p =>
-        `<option value="${p.sku}">${p.nama_produk} (${p.sku})</option>`
-      ).join('');
-
-      // Input options with harga_beli as data attribute
-      const inputOptions = produk.map(p =>
-        `<option value="${p.sku}" data-harga_beli="${p.harga_beli || 0}">${p.nama_produk} (${p.sku})</option>`
-      ).join('');
-
-      filterProduk.innerHTML = '<option value="">Semua Produk</option>' + filterOptions;
-      inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + inputOptions;
-
-      if (window.lucide) lucide.createIcons();
+      populateProdukDropdowns(produk);
     } catch (error) {
       console.error('Error loading produk:', error);
     }
+  }
+  
+  function populateProdukDropdowns(produk) {
+    // Populate filter dropdown
+    const filterProduk = document.getElementById('filterProduk');
+    const inputProduk = document.getElementById('inputProduk');
+
+    const filterOptions = produk.map(p =>
+      `<option value="${p.sku}">${p.nama_produk} (${p.sku})</option>`
+    ).join('');
+
+    // Input options with harga_beli as data attribute
+    const inputOptions = produk.map(p =>
+      `<option value="${p.sku}" data-harga_beli="${p.harga_beli || 0}">${p.nama_produk} (${p.sku})</option>`
+    ).join('');
+
+    filterProduk.innerHTML = '<option value="">Semua Produk</option>' + filterOptions;
+    inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + inputOptions;
+
+    if (window.lucide) lucide.createIcons();
   }
 
   // Load supplier for dropdowns

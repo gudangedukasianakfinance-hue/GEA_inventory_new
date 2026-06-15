@@ -263,6 +263,9 @@ async function getKartuStok(req, res) {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
+    // Check if single product selected - if so, show ALL transactions without pagination
+    const isSingleProduct = produk && produk.trim() !== "";
+
     // Get all transactions for this period with partner info
     // Running balance calculated per SKU
     const dataResult = await pool.query(`
@@ -403,8 +406,8 @@ async function getKartuStok(req, res) {
       FROM with_balance
       WHERE ($4::text IS NULL OR $4::text = '' OR LOWER(nama_produk) LIKE LOWER($4) OR LOWER(sku) LIKE LOWER($4))
       ORDER BY sku, tanggal ASC, sort_order
-      LIMIT $5 OFFSET $6
-    `, [startDateStr, endDateStr, produk || null, search ? `%${search}%` : null, limit, offset]);
+      ${isSingleProduct ? '' : 'LIMIT $5 OFFSET $6'}
+    `, [startDateStr, endDateStr, produk || null, search ? `%${search}%` : null, ...(isSingleProduct ? [] : [limit, offset])]);
 
     // Get total count
     const countResult = await pool.query(`
@@ -425,7 +428,8 @@ async function getKartuStok(req, res) {
       )
       SELECT COUNT(*) as total FROM all_transactions
     `, [startDateStr, endDateStr, produk || null]);
-    const total = parseInt(countResult.rows[0]?.total || 0, 10);
+    
+    const total = isSingleProduct ? dataResult.rows.length : parseInt(countResult.rows[0]?.total || 0, 10);
 
     return send(res, 200, {
       success: true,
@@ -437,10 +441,10 @@ async function getKartuStok(req, res) {
         end_date: endDateStr
       },
       pagination: {
-        page,
-        limit,
+        page: isSingleProduct ? 1 : page,
+        limit: isSingleProduct ? total : limit,
         total,
-        total_pages: Math.ceil(total / limit)
+        total_pages: isSingleProduct ? 1 : Math.ceil(total / limit)
       },
       filters: {
         tahun,
