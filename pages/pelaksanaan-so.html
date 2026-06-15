@@ -2,151 +2,271 @@
 <section class="page-section">
   <div class="page-header">
     <h2 class="page-title">Pelaksanaan SO</h2>
-    <p class="page-subtitle">Scan dan input qty fisik stok opname</p>
+    <p class="page-subtitle">Scan dan input qty fisik stok opname gudang</p>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tabs__item active" data-tab="scan">
-      <i data-lucide="scan-line"></i>
-      <span>Scan & Input</span>
-    </button>
-    <button class="tabs__item" data-tab="progress">
-      <i data-lucide="clipboard-list"></i>
-      <span>Progress</span>
-    </button>
-  </div>
-
-  <!-- Scan Tab -->
-  <div id="scanTab" class="tab-content active">
-    <div class="scan-container">
-      <div class="scan-header">
-        <div class="scan-info">
-          <h3 id="currentSoCode">SO001</h3>
-          <p id="currentSoInfo">Perintah SO - Gudang Utama</p>
-        </div>
-        <div class="scan-stats">
-          <div class="scan-stat">
-            <span class="scan-stat__value" id="scanCount">0</span>
-            <span class="scan-stat__label">Item Diinput</span>
-          </div>
-          <div class="scan-stat">
-            <span class="scan-stat__value" id="scanProgress">0%</span>
-            <span class="scan-stat__label">Progress</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Scan Input -->
-      <div class="scan-input-area">
-        <div class="scan-input-wrapper">
-          <i data-lucide="scan-line"></i>
-          <input type="text" id="scanInput" class="scan-input" placeholder="Scan barcode atau input SKU..." autofocus>
-        </div>
-        <button class="btn btn--primary" onclick="processScan()">
-          <i data-lucide="plus"></i>
-        </button>
-      </div>
-
-      <!-- Recent Scans -->
-      <div class="recent-scans">
-        <h4>Scan Terbaru</h4>
-        <div id="recentScansList">
-          <div class="empty-state">Belum ada scan</div>
-        </div>
-      </div>
+  <!-- Active SO Info -->
+  <div id="noActiveSoMessage" class="card" style="display:none;">
+    <div class="empty-state">
+      <i data-lucide="clipboard-x"></i>
+      <h3>Tidak Ada Perintah SO Aktif</h3>
+      <p>Pilih perintah SO dari halaman Perintah SO terlebih dahulu</p>
+      <button class="btn btn--primary" onclick="AppRouter.navigateTo('perintah-so')">
+        <i data-lucide="arrow-left"></i>
+        <span>Kembali ke Perintah SO</span>
+      </button>
     </div>
   </div>
 
-  <!-- Progress Tab -->
-  <div id="progressTab" class="tab-content" style="display:none;">
-    <div class="card">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Produk</th>
-            <th>Stok Sistem</th>
-            <th>Stok Fisik</th>
-            <th>Selisih</th>
-          </tr>
-        </thead>
-        <tbody id="progressTableBody">
-          <tr>
-            <td colspan="5" class="text-center text-muted">Pilih perintah SO terlebih dahulu</td>
-          </tr>
-        </tbody>
-      </table>
+  <div id="activeSoContainer" style="display:none;">
+    <!-- SO Header -->
+    <div class="so-header-card">
+      <div class="so-header-info">
+        <div class="so-header-kode">
+          <span class="so-header-label">Kode SO</span>
+          <span class="so-header-value" id="soKode">-</span>
+        </div>
+        <div class="so-header-status">
+          <span id="soStatusBadge" class="badge badge--pending">Menunggu</span>
+        </div>
+      </div>
+      <div class="so-header-stats">
+        <div class="so-stat">
+          <span class="so-stat__value" id="soTargetSku">0</span>
+          <span class="so-stat__label">Target SKU</span>
+        </div>
+        <div class="so-stat">
+          <span class="so-stat__value" id="soCheckedSku">0</span>
+          <span class="so-stat__label">Sudah Dicek</span>
+        </div>
+        <div class="so-stat">
+          <span class="so-stat__value text-danger" id="soRemainingSku">0</span>
+          <span class="so-stat__label">Belum Dicek</span>
+        </div>
+        <div class="so-stat">
+          <span class="so-stat__value" id="soProgress">0%</span>
+          <span class="so-stat__label">Progress</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tabs__item active" data-tab="scan">
+        <i data-lucide="scan-line"></i>
+        <span>Scan & Input</span>
+      </button>
+      <button class="tabs__item" data-tab="progress">
+        <i data-lucide="clipboard-list"></i>
+        <span>Progress</span>
+      </button>
+    </div>
+
+    <!-- Scan Tab -->
+    <div id="scanTab" class="tab-content active">
+      <div class="scan-container">
+        <div class="scan-header">
+          <h3>Scan Barcode</h3>
+          <button class="btn btn--secondary btn--sm" onclick="showManualInput()">
+            <i data-lucide="keyboard"></i>
+            <span>Input Manual</span>
+          </button>
+        </div>
+
+        <!-- Scan Input -->
+        <div class="scan-input-area">
+          <div class="scan-input-wrapper">
+            <i data-lucide="scan-line"></i>
+            <input type="text" id="scanInput" class="scan-input" placeholder="Scan barcode atau input SKU..." autofocus autocomplete="off">
+          </div>
+          <button class="btn btn--primary" onclick="processScanInput()">
+            <i data-lucide="plus"></i>
+          </button>
+        </div>
+
+        <!-- Last Scan Result -->
+        <div id="lastScanResult" class="scan-result" style="display:none;">
+          <div class="scan-result__header">
+            <span class="scan-result__sku" id="lastScanSku">-</span>
+            <span class="scan-result__time" id="lastScanTime">-</span>
+          </div>
+          <div class="scan-result__body">
+            <div class="scan-result__item">
+              <span class="scan-result__label">Produk</span>
+              <span class="scan-result__value" id="lastScanProduk">-</span>
+            </div>
+            <div class="scan-result__item">
+              <span class="scan-result__label">Stok Sistem</span>
+              <span class="scan-result__value" id="lastScanSistem">-</span>
+            </div>
+            <div class="scan-result__item">
+              <span class="scan-result__label">Stok Fisik</span>
+              <span class="scan-result__value" id="lastScanFisik">-</span>
+            </div>
+            <div class="scan-result__item">
+              <span class="scan-result__label">Selisih</span>
+              <span class="scan-result__value" id="lastScanSelisih">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Scans -->
+        <div class="recent-scans">
+          <h4>Scan Terbaru</h4>
+          <div id="recentScansList">
+            <div class="empty-state">Belum ada scan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Tab -->
+    <div id="progressTab" class="tab-content" style="display:none;">
+      <div class="card">
+        <div class="card__header">
+          <h3>Daftar Produk</h3>
+          <input type="text" id="progressSearch" class="form-input" placeholder="Cari SKU atau produk..." oninput="filterProgressTable()">
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Produk</th>
+              <th>Stok Sistem</th>
+              <th>Stok Fisik</th>
+              <th>Selisih</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="progressTableBody">
+            <tr>
+              <td colspan="6" class="text-center text-muted">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="so-action-bar">
+      <button class="btn btn--secondary" onclick="resetSoSession()">
+        <i data-lucide="refresh-cw"></i>
+        <span>Reset</span>
+      </button>
+      <button class="btn btn--primary btn--lg" id="btnSubmitSo" onclick="submitHasilSo()">
+        <i data-lucide="check-circle"></i>
+        <span>Submit Hasil SO</span>
+      </button>
     </div>
   </div>
 </section>
 
+<!-- Manual Input Modal -->
+<div id="manualInputModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Input Manual Qty Fisik</h3>
+      <button class="modal__close" onclick="closeManualInput()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="manualInputForm" onsubmit="saveManualInput(event)">
+      <div class="form-group">
+        <label>SKU / Barcode</label>
+        <input type="text" id="manualSku" class="form-input" required placeholder="Masukkan SKU">
+      </div>
+      <div class="form-group">
+        <label>Qty Fisik</label>
+        <input type="number" id="manualQty" class="form-input" required min="0" placeholder="Masukkan jumlah fisik">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn--secondary" onclick="closeManualInput()">Batal</button>
+        <button type="submit" class="btn btn--primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <style>
+  .so-header-card {
+    background: linear-gradient(135deg, rgba(255, 77, 58, 0.15), rgba(255, 107, 91, 0.05));
+    border: 1px solid rgba(255, 77, 58, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .so-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .so-header-kode {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .so-header-label {
+    font-size: 12px;
+    color: #94A3B8;
+  }
+  .so-header-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #FFF;
+  }
+  .so-header-stats {
+    display: flex;
+    gap: 32px;
+  }
+  .so-stat {
+    text-align: center;
+  }
+  .so-stat__value {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFF;
+  }
+  .so-stat__label {
+    font-size: 11px;
+    color: #94A3B8;
+    text-transform: uppercase;
+  }
   .scan-container {
     background: #101827;
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 18px;
     padding: 24px;
+    margin-bottom: 24px;
   }
-  
   .scan-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 24px;
+    align-items: center;
+    margin-bottom: 20px;
   }
-  
-  .scan-info h3 {
-    font-size: 20px;
+  .scan-header h3 {
+    font-size: 16px;
     color: #FFF;
-    margin-bottom: 4px;
+    margin: 0;
   }
-  
-  .scan-info p {
-    color: #94A3B8;
-    font-size: 13px;
-  }
-  
-  .scan-stats {
-    display: flex;
-    gap: 24px;
-  }
-  
-  .scan-stat {
-    text-align: center;
-  }
-  
-  .scan-stat__value {
-    display: block;
-    font-size: 24px;
-    font-weight: 700;
-    color: #FF4D3A;
-  }
-  
-  .scan-stat__label {
-    font-size: 11px;
-    color: #94A3B8;
-  }
-  
   .scan-input-area {
     display: flex;
     gap: 12px;
     margin-bottom: 24px;
   }
-  
   .scan-input-wrapper {
     flex: 1;
     position: relative;
     display: flex;
     align-items: center;
   }
-  
   .scan-input-wrapper i {
     position: absolute;
     left: 16px;
     color: #94A3B8;
   }
-  
   .scan-input {
     width: 100%;
     padding: 16px 16px 16px 48px;
@@ -156,51 +276,477 @@
     color: #FFF;
     font-size: 16px;
   }
-  
   .scan-input:focus {
     outline: none;
     border-color: #FF4D3A;
   }
-  
+  .scan-result {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .scan-result__header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .scan-result__sku {
+    font-weight: 700;
+    color: #22C55E;
+  }
+  .scan-result__time {
+    font-size: 12px;
+    color: #94A3B8;
+  }
+  .scan-result__body {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .scan-result__item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .scan-result__label {
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  .scan-result__value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFF;
+  }
   .recent-scans h4 {
     color: #94A3B8;
     font-size: 13px;
     margin-bottom: 12px;
   }
-  
-  .tabs {
+  .recent-scans-item {
     display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    margin-bottom: 8px;
   }
-  
-  .tabs__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 10px;
+  .recent-scans-item__sku {
+    font-family: monospace;
+    color: #FFF;
+  }
+  .recent-scans-item__time {
+    font-size: 12px;
     color: #94A3B8;
-    cursor: pointer;
-    transition: all 0.2s;
   }
-  
-  .tabs__item:hover {
-    background: rgba(255,255,255,.08);
+  .so-action-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 16px 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
   }
-  
-  .tabs__item.active {
-    background: rgba(255, 77, 58, 0.12);
-    border-color: #FF4D3A;
-    color: #FF4D3A;
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+  }
+  .empty-state i {
+    width: 64px;
+    height: 64px;
+    color: #94A3B8;
+    margin-bottom: 16px;
+  }
+  .empty-state h3 {
+    color: #FFF;
+    margin-bottom: 8px;
+  }
+  .empty-state p {
+    color: #94A3B8;
+    margin-bottom: 24px;
   }
 </style>
 
 <script>
-  let currentSoId = null;
+  let activePerintahId = null;
+  let activePerintahKode = null;
+  let activeOpnameId = null;
+  let activeStatus = 'menunggu';
   let scanHistory = [];
+  let produkList = [];
+  let produkMap = {};
+
+  function initPelaksanaanSo() {
+    // Ambil active perintah dari localStorage
+    activePerintahId = localStorage.getItem('activePerintahId');
+    activePerintahKode = localStorage.getItem('activePerintahKode');
+    
+    if (!activePerintahId) {
+      document.getElementById('noActiveSoMessage').style.display = 'block';
+      document.getElementById('activeSoContainer').style.display = 'none';
+      return;
+    }
+    
+    document.getElementById('noActiveSoMessage').style.display = 'none';
+    document.getElementById('activeSoContainer').style.display = 'block';
+    
+    loadActiveSoDetails();
+  }
+
+  async function loadActiveSoDetails() {
+    try {
+      const response = await fetch(`/api/opname-perintah?id=${activePerintahId}`);
+      if (!response.ok) throw new Error('Failed to load');
+      
+      const data = await response.json();
+      activeStatus = data.status || 'menunggu';
+      activeOpnameId = data.opname_id;
+      
+      // Update UI
+      document.getElementById('soKode').textContent = data.kode_so || activePerintahKode;
+      updateStatusBadge(data.status);
+      
+      // Load produk list untuk opname
+      await loadProdukList();
+      
+      // Update stats
+      updateSoStats();
+      
+    } catch (error) {
+      console.error('Error loading SO details:', error);
+      showToast('Gagal memuat detail SO', false);
+    }
+  }
+
+  async function loadProdukList() {
+    try {
+      // Load dari v3-opname-detail endpoint
+      const response = await fetch(`/api/v3-opname-detail?perintah_id=${activePerintahId}`);
+      if (!response.ok) throw new Error('Failed to load produk');
+      
+      const data = await response.json();
+      produkList = data.produk || [];
+      
+      // Build map untuk quick lookup
+      produkMap = {};
+      produkList.forEach(p => {
+        produkMap[p.sku] = p;
+      });
+      
+      // Update progress table
+      renderProgressTable();
+      
+    } catch (error) {
+      console.error('Error loading produk list:', error);
+    }
+  }
+
+  function updateStatusBadge(status) {
+    const badge = document.getElementById('soStatusBadge');
+    const statusMap = {
+      'menunggu': { class: 'badge--pending', text: 'Menunggu' },
+      'proses': { class: 'badge--process', text: 'Proses' },
+      'selesai': { class: 'badge--done', text: 'Selesai' }
+    };
+    const info = statusMap[status] || statusMap['menunggu'];
+    badge.className = `badge ${info.class}`;
+    badge.textContent = info.text;
+  }
+
+  function updateSoStats() {
+    const total = produkList.length;
+    const checked = produkList.filter(p => Number(p.stok_fisik) > 0 || p.detail_id).length;
+    const remaining = total - checked;
+    const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
+    
+    document.getElementById('soTargetSku').textContent = total;
+    document.getElementById('soCheckedSku').textContent = checked;
+    document.getElementById('soRemainingSku').textContent = remaining;
+    document.getElementById('soProgress').textContent = progress + '%';
+    
+    // Update submit button state
+    const btnSubmit = document.getElementById('btnSubmitSo');
+    btnSubmit.disabled = activeStatus === 'selesai' || checked === 0;
+    if (activeStatus === 'selesai') {
+      btnSubmit.innerHTML = '<i data-lucide="check-circle"></i><span>SO Sudah Selesai</span>';
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  async function startSoIfNeeded() {
+    if (activeStatus === 'menunggu') {
+      try {
+        const response = await fetch('/api/v3-opname', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            id: activePerintahId, 
+            action: 'start',
+            checker: 'Checker SO'
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          activeOpnameId = data.opname_id;
+          activeStatus = 'proses';
+          updateStatusBadge('proses');
+          showToast('SO dimulai, siap untuk scan');
+        }
+      } catch (error) {
+        console.error('Error starting SO:', error);
+        showToast('Gagal memulai SO', false);
+      }
+    }
+  }
+
+  async function processScanInput() {
+    const input = document.getElementById('scanInput');
+    const sku = input.value.trim();
+    
+    if (!sku) return;
+    
+    // Auto-start SO jika belum dimulai
+    if (activeStatus === 'menunggu') {
+      await startSoIfNeeded();
+    }
+    
+    if (!activeOpnameId) {
+      showToast('ID opname tidak ditemukan', false);
+      return;
+    }
+    
+    // Cek apakah SKU ada di list
+    const produk = produkMap[sku];
+    if (!produk) {
+      showToast(`SKU ${sku} tidak ditemukan`, false);
+      input.value = '';
+      input.focus();
+      return;
+    }
+    
+    // Show manual input untuk qty fisik
+    document.getElementById('manualSku').value = sku;
+    document.getElementById('manualQty').value = '';
+    document.getElementById('manualInputModal').style.display = 'flex';
+    document.getElementById('manualQty').focus();
+    
+    input.value = '';
+  }
+
+  function showManualInput() {
+    document.getElementById('manualSku').value = '';
+    document.getElementById('manualQty').value = '';
+    document.getElementById('manualInputModal').style.display = 'flex';
+    document.getElementById('manualSku').focus();
+  }
+
+  function closeManualInput() {
+    document.getElementById('manualInputModal').style.display = 'none';
+  }
+
+  async function saveManualInput(event) {
+    event.preventDefault();
+    
+    const sku = document.getElementById('manualSku').value.trim();
+    const stokFisik = parseInt(document.getElementById('manualQty').value) || 0;
+    
+    if (!sku || !activeOpnameId) {
+      showToast('Data tidak valid', false);
+      return;
+    }
+    
+    try {
+      showLoader();
+      
+      const response = await fetch('/api/v3-opname-detail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          opname_id: activeOpnameId,
+          sku: sku,
+          stok_fisik: stokFisik,
+          checker: 'Checker SO'
+        })
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to save');
+      }
+      
+      const data = await response.json();
+      
+      // Update produk in memory
+      const produk = produkMap[sku];
+      if (produk) {
+        produk.stok_fisik = stokFisik;
+        produk.selisih = stokFisik - produk.stok_sistem;
+        produk.detail_id = data.detail?.id;
+        produk.input_at = new Date().toISOString();
+      }
+      
+      // Show result
+      showLastScanResult(produk, stokFisik);
+      
+      // Add to history
+      scanHistory.unshift({
+        sku: sku,
+        stok_fisik: stokFisik,
+        waktu: new Date().toLocaleTimeString('id-ID')
+      });
+      renderScanHistory();
+      
+      // Update stats
+      updateSoStats();
+      
+      // Update progress table
+      renderProgressTable();
+      
+      closeManualInput();
+      showToast(`Qty fisik untuk ${sku} disimpan`);
+      
+    } catch (error) {
+      console.error('Error saving:', error);
+      showToast(error.message || 'Gagal menyimpan', false);
+    } finally {
+      hideLoader();
+    }
+  }
+
+  function showLastScanResult(produk, stokFisik) {
+    const resultDiv = document.getElementById('lastScanResult');
+    const selisih = stokFisik - produk.stok_sistem;
+    const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
+    const selisihPrefix = selisih > 0 ? '+' : '';
+    
+    document.getElementById('lastScanSku').textContent = produk.sku;
+    document.getElementById('lastScanTime').textContent = new Date().toLocaleTimeString('id-ID');
+    document.getElementById('lastScanProduk').textContent = produk.nama_produk || '-';
+    document.getElementById('lastScanSistem').textContent = produk.stok_sistem;
+    document.getElementById('lastScanFisik').textContent = stokFisik;
+    
+    const selisihEl = document.getElementById('lastScanSelisih');
+    selisihEl.textContent = `${selisihPrefix}${selisih}`;
+    selisihEl.className = `scan-result__value ${selisihClass}`;
+    
+    resultDiv.style.display = 'block';
+  }
+
+  function renderScanHistory() {
+    const container = document.getElementById('recentScansList');
+    
+    if (scanHistory.length === 0) {
+      container.innerHTML = '<div class="empty-state">Belum ada scan</div>';
+      return;
+    }
+    
+    container.innerHTML = scanHistory.slice(0, 10).map(scan => `
+      <div class="recent-scans-item">
+        <span class="recent-scans-item__sku">${scan.sku}</span>
+        <span class="recent-scans-item__time">${scan.waktu} - Qty: ${scan.stok_fisik}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderProgressTable() {
+    const tbody = document.getElementById('progressTableBody');
+    
+    if (produkList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada produk</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = produkList.map(p => {
+      const selisih = Number(p.selisih || 0);
+      const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
+      const selisihPrefix = selisih > 0 ? '+' : '';
+      const isChecked = Number(p.stok_fisik) > 0 || p.detail_id;
+      const statusClass = isChecked ? 'badge--done' : 'badge--pending';
+      const statusText = isChecked ? 'Dicek' : 'Belum';
+      
+      return `
+        <tr data-sku="${p.sku}" data-nama="${(p.nama_produk || '').toLowerCase()}">
+          <td><code>${p.sku}</code></td>
+          <td>${p.nama_produk || '-'}</td>
+          <td>${p.stok_sistem}</td>
+          <td>${p.stok_fisik || 0}</td>
+          <td class="${selisihClass}">${selisihPrefix}${selisih}</td>
+          <td><span class="badge ${statusClass}">${statusText}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function filterProgressTable() {
+    const search = document.getElementById('progressSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#progressTableBody tr');
+    
+    rows.forEach(row => {
+      const sku = row.dataset.sku?.toLowerCase() || '';
+      const nama = row.dataset.nama || '';
+      const match = sku.includes(search) || nama.includes(search);
+      row.style.display = match ? '' : 'none';
+    });
+  }
+
+  async function submitHasilSo() {
+    if (activeStatus === 'selesai') {
+      showToast('SO sudah selesai', false);
+      return;
+    }
+    
+    if (!confirm('Submit hasil SO? Status akan berubah menjadi Selesai.')) {
+      return;
+    }
+    
+    try {
+      showLoader();
+      
+      // Update status ke selesai via v3-opname PUT
+      const response = await fetch('/api/v3-opname', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activePerintahId,
+          action: 'submit'
+        })
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to submit');
+      }
+      
+      activeStatus = 'selesai';
+      updateStatusBadge('selesai');
+      updateSoStats();
+      
+      showToast('Hasil SO berhasil disubmit');
+      
+    } catch (error) {
+      console.error('Error submitting:', error);
+      showToast(error.message || 'Gagal submit hasil SO', false);
+    } finally {
+      hideLoader();
+    }
+  }
+
+  function resetSoSession() {
+    if (!confirm('Reset session SO? Data yang sudah tersimpan tidak akan hilang.')) {
+      return;
+    }
+    
+    localStorage.removeItem('activePerintahId');
+    localStorage.removeItem('activePerintahKode');
+    activePerintahId = null;
+    activePerintahKode = null;
+    activeOpnameId = null;
+    activeStatus = 'menunggu';
+    scanHistory = [];
+    
+    AppRouter.navigateTo('perintah-so');
+  }
 
   // Tab switching
   document.querySelectorAll('.tabs__item').forEach(tab => {
@@ -213,47 +759,18 @@
     });
   });
 
-  function processScan() {
-    const input = document.getElementById('scanInput');
-    const sku = input.value.trim();
-    
-    if (!sku) return;
-    
-    // Add to history
-    scanHistory.unshift({
-      sku: sku,
-      waktu: new Date().toLocaleTimeString('id-ID')
-    });
-    
-    // Update UI
-    document.getElementById('scanCount').textContent = scanHistory.length;
-    input.value = '';
-    input.focus();
-    
-    renderScanHistory();
-  }
-
-  function renderScanHistory() {
-    const container = document.getElementById('recentScansList');
-    
-    if (scanHistory.length === 0) {
-      container.innerHTML = '<div class="empty-state">Belum ada scan</div>';
-      return;
-    }
-    
-    container.innerHTML = scanHistory.slice(0, 10).map(scan => `
-      <div class="scan-item">
-        <span class="scan-item__sku">${scan.sku}</span>
-        <span class="scan-item__time">${scan.waktu}</span>
-      </div>
-    `).join('');
-  }
-
-  // Enter key to submit
+  // Enter key to submit scan
   document.getElementById('scanInput')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      processScan();
+      processScanInput();
     }
   });
+
+  // Init on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPelaksanaanSo);
+  } else {
+    initPelaksanaanSo();
+  }
 </script>

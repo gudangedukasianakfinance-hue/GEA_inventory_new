@@ -2,7 +2,7 @@
 <section class="page-section">
   <div class="page-header">
     <h2 class="page-title">Riwayat Stok Opname</h2>
-    <p class="page-subtitle">Lihat histori hasil stok opname</p>
+    <p class="page-subtitle">Lihat histori hasil stok opname gudang</p>
   </div>
 
   <!-- Filter -->
@@ -10,16 +10,15 @@
     <div class="filter-group">
       <label>Bulan</label>
       <select id="filterBulan">
-        <option value="">Semua Bulan</option>
-        <option value="01">Januari</option>
-        <option value="02">Februari</option>
-        <option value="03">Maret</option>
-        <option value="04">April</option>
-        <option value="05">Mei</option>
-        <option value="06">Juni</option>
-        <option value="07">Juli</option>
-        <option value="08">Agustus</option>
-        <option value="09">September</option>
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6" selected>Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
         <option value="10">Oktober</option>
         <option value="11">November</option>
         <option value="12">Desember</option>
@@ -28,16 +27,23 @@
     <div class="filter-group">
       <label>Tahun</label>
       <select id="filterTahun">
-        <option value="">Semua Tahun</option>
-        <option value="2026">2026</option>
+        <option value="2026" selected>2026</option>
         <option value="2025">2025</option>
         <option value="2024">2024</option>
       </select>
     </div>
+    <button class="btn btn--secondary btn--sm" onclick="loadHistory()">
+      <i data-lucide="search"></i>
+      <span>Cari</span>
+    </button>
   </div>
 
   <!-- History Table -->
   <div class="card">
+    <div class="card__header">
+      <h3>Daftar Hasil SO</h3>
+      <span id="historyCount" class="badge badge--info">0 hasil</span>
+    </div>
     <table class="data-table" id="historyTable">
       <thead>
         <tr>
@@ -46,7 +52,7 @@
           <th>SVP</th>
           <th>Lokasi</th>
           <th>Item</th>
-          <th>Total Selisih</th>
+          <th>Selisih</th>
           <th>Status</th>
           <th>Aksi</th>
         </tr>
@@ -60,61 +66,289 @@
   </div>
 </section>
 
+<!-- Detail SO Modal -->
+<div id="detailSoModal" class="modal-overlay" style="display:none;">
+  <div class="modal modal--lg">
+    <div class="modal__header">
+      <h3 class="modal__title" id="detailSoTitle">Detail Hasil SO</h3>
+      <button class="modal__close" onclick="closeDetailSo()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal__body" id="detailSoBody">
+      <!-- Detail content will be loaded here -->
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" onclick="closeDetailSo()">Tutup</button>
+      <button class="btn btn--primary" onclick="downloadDetailCsv()">
+        <i data-lucide="download"></i>
+        <span>Download CSV</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
+  let historyData = [];
+  let currentDetailData = null;
+
+  function getStatusClass(status) {
+    const statusMap = {
+      'menunggu': 'badge--pending',
+      'proses': 'badge--process',
+      'selesai': 'badge--done',
+      'ditolak': 'badge--danger'
+    };
+    return statusMap[status] || 'badge--pending';
+  }
+
+  function getStatusLabel(status) {
+    const labelMap = {
+      'menunggu': 'Menunggu',
+      'proses': 'Proses',
+      'selesai': 'Selesai',
+      'ditolak': 'Ditolak'
+    };
+    return labelMap[status] || status;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatNumber(num) {
+    return num ? num.toLocaleString('id-ID') : '0';
+  }
+
   async function loadHistory() {
+    const bulan = document.getElementById('filterBulan').value;
+    const tahun = document.getElementById('filterTahun').value;
+    
     try {
-      const response = await fetch('/api/v1/opname/history');
+      document.getElementById('historyTableBody').innerHTML = 
+        '<tr><td colspan="8" class="text-center text-muted"><i data-lucide="loader-2" class="spin"></i> Memuat...</td></tr>';
+      if (window.lucide) lucide.createIcons();
+      
+      const response = await fetch(`/api/opname-history?bulan=${bulan}&tahun=${tahun}`);
       if (!response.ok) throw new Error('Failed to load');
-      const data = await response.json();
-      renderHistoryTable(data.items || []);
+      
+      historyData = await response.json();
+      if (!Array.isArray(historyData)) historyData = [];
+      
+      document.getElementById('historyCount').textContent = `${historyData.length} hasil`;
+      renderHistoryTable(historyData);
     } catch (error) {
       console.error('Error loading history:', error);
+      document.getElementById('historyTableBody').innerHTML = 
+        '<tr><td colspan="8" class="text-center text-danger">Gagal memuat data</td></tr>';
     }
   }
 
   function renderHistoryTable(items) {
     const tbody = document.getElementById('historyTableBody');
     if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Tidak ada riwayat</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Tidak ada riwayat SO periode ini</td></tr>';
       return;
     }
     
-    tbody.innerHTML = items.map(item => `
-      <tr>
-        <td><code>${item.kode}</code></td>
-        <td>${item.tanggal}</td>
-        <td>${item.svp}</td>
-        <td>${item.lokasi}</td>
-        <td>${item.total_item}</td>
-        <td class="${item.selisih > 0 ? 'text-success' : item.selisih < 0 ? 'text-danger' : ''}">
-          ${item.selisih > 0 ? '+' : ''}${item.selisih}
-        </td>
-        <td><span class="badge badge--${item.status}">${item.status}</span></td>
-        <td>
-          <button class="action-btn" onclick="viewDetail('${item.id}')">
-            <i data-lucide="eye"></i>
-          </button>
-          <button class="action-btn" onclick="downloadCsv('${item.id}')">
-            <i data-lucide="download"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = items.map(item => {
+      const selisih = item.total_selisih_net || (item.total_selisih || 0);
+      const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
+      const selisihPrefix = selisih > 0 ? '+' : '';
+      
+      return `
+        <tr>
+          <td><code>${item.kode_so || '-'}</code></td>
+          <td>${formatDate(item.tanggal_pelaksanaan || item.tanggal_perintah || item.created_at)}</td>
+          <td>${item.svp_nama || item.svp || '-'}</td>
+          <td>${item.lokasi || '-'}</td>
+          <td>${formatNumber(item.total_item)}</td>
+          <td class="${selisihClass}">${selisihPrefix}${formatNumber(selisih)}</td>
+          <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
+          <td>
+            <button class="action-btn" onclick="viewDetail(${item.opname_id || item.id})" title="Lihat Detail">
+              <i data-lucide="eye"></i>
+            </button>
+            <button class="action-btn" onclick="downloadCsv(${item.opname_id || item.id})" title="Download CSV">
+              <i data-lucide="download"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
     
     if (window.lucide) lucide.createIcons({ nodes: [tbody] });
   }
 
-  function viewDetail(id) {
-    console.log('View detail:', id);
+  async function viewDetail(opnameId) {
+    if (!opnameId) {
+      showToast('ID opname tidak ditemukan', false);
+      return;
+    }
+    
+    try {
+      showLoader();
+      const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
+      if (!response.ok) throw new Error('Failed to load detail');
+      
+      currentDetailData = await response.json();
+      renderDetailModal(currentDetailData);
+      document.getElementById('detailSoModal').style.display = 'flex';
+    } catch (error) {
+      console.error('Error loading detail:', error);
+      showToast('Gagal memuat detail SO', false);
+    } finally {
+      hideLoader();
+    }
   }
 
-  function downloadCsv(id) {
-    window.open(`/api/v1/opname/export/${id}`, '_blank');
+  function renderDetailModal(data) {
+    const { header, details = [] } = data;
+    document.getElementById('detailSoTitle').textContent = `Detail SO - ${header.kode_so || 'N/A'}`;
+    
+    const selisih = header.total_selisih_net || 0;
+    const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
+    
+    const html = `
+      <div class="detail-header">
+        <div class="detail-info-grid">
+          <div class="detail-info-item">
+            <span class="detail-info-label">Kode SO</span>
+            <span class="detail-info-value">${header.kode_so || '-'}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-info-label">Tanggal Perintah</span>
+            <span class="detail-info-value">${formatDate(header.tanggal_perintah)}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-info-label">Tanggal Pelaksanaan</span>
+            <span class="detail-info-value">${formatDate(header.tanggal_pelaksanaan)}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-info-label">Supervisor</span>
+            <span class="detail-info-value">${header.svp_nama || '-'}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-info-label">PIC / Checker</span>
+            <span class="detail-info-value">${header.pic_pelaksana || header.checker || '-'}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-info-label">Lokasi</span>
+            <span class="detail-info-value">${header.lokasi || '-'}</span>
+          </div>
+        </div>
+        <div class="detail-summary">
+          <div class="detail-summary-item">
+            <span class="detail-summary-value">${details.length}</span>
+            <span class="detail-summary-label">Total Item</span>
+          </div>
+          <div class="detail-summary-item">
+            <span class="detail-summary-value text-danger">${header.total_item_selisih || 0}</span>
+            <span class="detail-summary-label">Item Bermasalah</span>
+          </div>
+          <div class="detail-summary-item">
+            <span class="detail-summary-value ${selisihClass}">${selisih > 0 ? '+' : ''}${selisih}</span>
+            <span class="detail-summary-label">Selisih Net</span>
+          </div>
+          <div class="detail-summary-item">
+            <span class="badge ${header.stok_disesuaikan ? 'badge--done' : 'badge--pending'}">
+              ${header.stok_disesuaikan ? 'Sudah Disesuaikan' : 'Belum Disesuaikan'}
+            </span>
+            <span class="detail-summary-label">Status Stok</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Produk</th>
+              <th>Stok Sistem</th>
+              <th>Stok Fisik</th>
+              <th>Selisih</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${details.length === 0 ? 
+              '<tr><td colspan="5" class="text-center text-muted">Tidak ada detail</td></tr>' :
+              details.map(d => {
+                const dSelisih = Number(d.selisih || 0);
+                const dClass = dSelisih > 0 ? 'text-success' : dSelisih < 0 ? 'text-danger' : '';
+                const dPrefix = dSelisih > 0 ? '+' : '';
+                return `
+                  <tr>
+                    <td><code>${d.sku}</code></td>
+                    <td>${d.nama_produk || '-'}</td>
+                    <td>${formatNumber(d.stok_sistem)}</td>
+                    <td>${formatNumber(d.stok_fisik)}</td>
+                    <td class="${dClass}">${dPrefix}${formatNumber(dSelisih)}</td>
+                  </tr>
+                `;
+              }).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+    
+    document.getElementById('detailSoBody').innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeDetailSo() {
+    document.getElementById('detailSoModal').style.display = 'none';
+    currentDetailData = null;
+  }
+
+  function downloadDetailCsv() {
+    if (!currentDetailData || !currentDetailData.details) {
+      showToast('Tidak ada data untuk diunduh', false);
+      return;
+    }
+    
+    const { header, details } = currentDetailData;
+    const csvContent = [
+      ['Kode SO', 'SKU', 'Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'],
+      ...details.map(d => [
+        header.kode_so || '',
+        d.sku || '',
+        d.nama_produk || '',
+        d.stok_sistem || 0,
+        d.stok_fisik || 0,
+        d.selisih || 0
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    downloadBlob(csvContent, `${header.kode_so || 'SO'}_detail.csv`, 'text/csv');
+    showToast('CSV berhasil diunduh');
+  }
+
+  function downloadCsv(opnameId) {
+    if (!opnameId) return;
+    window.open(`/api/opname-export?opname_id=${opnameId}`, '_blank');
+  }
+
+  function downloadBlob(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   // Filters
   document.getElementById('filterBulan')?.addEventListener('change', loadHistory);
   document.getElementById('filterTahun')?.addEventListener('change', loadHistory);
+
+  // Set current month
+  const now = new Date();
+  document.getElementById('filterBulan').value = now.getMonth() + 1;
+  document.getElementById('filterTahun').value = now.getFullYear();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadHistory);
@@ -122,3 +356,98 @@
     loadHistory();
   }
 </script>
+
+<style>
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .filter-group label {
+    font-size: 12px;
+    color: #94A3B8;
+  }
+  .filter-group select {
+    min-width: 140px;
+  }
+  .badge--info {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3B82F6;
+  }
+  .badge--danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+  }
+  .modal--lg {
+    max-width: 900px;
+  }
+  .detail-header {
+    margin-bottom: 24px;
+  }
+  .detail-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .detail-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .detail-info-label {
+    font-size: 11px;
+    color: #94A3B8;
+    text-transform: uppercase;
+  }
+  .detail-info-value {
+    font-size: 14px;
+    color: #FFF;
+    font-weight: 500;
+  }
+  .detail-summary {
+    display: flex;
+    gap: 24px;
+    padding: 16px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+  }
+  .detail-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+  .detail-summary-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #FFF;
+  }
+  .detail-summary-label {
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  .detail-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>

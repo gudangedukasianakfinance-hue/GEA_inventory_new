@@ -13,6 +13,49 @@ function normalizeKodeSo(value) {
   return String(value || "").trim().toUpperCase();
 }
 
+async function calculateProgressFields(perintahRow) {
+  const opnameId = perintahRow.opname_id;
+  
+  if (!opnameId) {
+    return {
+      target_sku: 0,
+      checked_sku: 0,
+      progress_percent: 0
+    };
+  }
+  
+  try {
+    // Get total produk count from produk table
+    const produkCount = await pool.query(`
+      SELECT COUNT(*)::int as total FROM produk
+    `);
+    
+    // Get checked SKU count from opname detail
+    const checkedCount = await pool.query(`
+      SELECT COUNT(*)::int as checked 
+      FROM stok_opname_detail 
+      WHERE opname_id = $1 AND stok_fisik IS NOT NULL
+    `, [opnameId]);
+    
+    const total = Number(produkCount.rows[0]?.total || 0);
+    const checked = Number(checkedCount.rows[0]?.checked || 0);
+    const progress = total > 0 ? (checked / total) * 100 : 0;
+    
+    return {
+      target_sku: total,
+      checked_sku: checked,
+      progress_percent: Math.round(progress * 100) / 100
+    };
+  } catch (error) {
+    console.error('Error calculating progress:', error);
+    return {
+      target_sku: 0,
+      checked_sku: 0,
+      progress_percent: 0
+    };
+  }
+}
+
 async function enrichPerintahRows(rows, bulan, tahun) {
   if (!rows.length) {
     return { rows: [], period_kategori: buildPeriodKategoriIndicator([]) };
@@ -23,7 +66,7 @@ async function enrichPerintahRows(rows, bulan, tahun) {
     rows.map((row) => row.opname_id).filter(Boolean)
   );
 
-  const enriched = rows.map((row) => {
+  const enriched = await Promise.all(rows.map(async (row) => {
     const kategori_targets = normalizeKategoriTargets(row.kategori_targets);
     const kategori_progress = buildKategoriProgress(
       kategori_targets,
@@ -31,14 +74,18 @@ async function enrichPerintahRows(rows, bulan, tahun) {
       countedMap[row.opname_id] || {},
       row.status
     );
+    
+    // Calculate progress fields
+    const progress = await calculateProgressFields(row);
 
     return {
       ...row,
+      ...progress,
       kategori_targets,
       kategori_progress,
       kategori_label: kategori_progress.map((item) => item.label).join(", ")
     };
-  });
+  }));
 
   return {
     rows: enriched,

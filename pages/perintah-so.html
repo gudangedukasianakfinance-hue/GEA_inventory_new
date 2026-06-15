@@ -2,15 +2,7 @@
 <section class="page-section">
   <div class="page-header">
     <h2 class="page-title">Perintah Stok Opname</h2>
-    <p class="page-subtitle">Buat dan kelola perintah stok opname</p>
-  </div>
-
-  <!-- Actions -->
-  <div class="page-actions">
-    <button class="btn btn--primary" onclick="showBuatPerintah()">
-      <i data-lucide="plus"></i>
-      <span>Buat Perintah SO</span>
-    </button>
+    <p class="page-subtitle">Buat dan kelola perintah stok opname gudang</p>
   </div>
 
   <!-- Quick Actions -->
@@ -29,21 +21,28 @@
   <div class="card">
     <div class="card__header">
       <h3>Daftar Perintah SO</h3>
+      <button class="btn btn--primary btn--sm" onclick="showBuatPerintah()">
+        <i data-lucide="plus"></i>
+        <span>Buat Perintah SO</span>
+      </button>
     </div>
     <table class="data-table" id="perintahTable">
       <thead>
         <tr>
           <th>Kode SO</th>
           <th>Tanggal</th>
+          <th>Bulan</th>
           <th>SVP</th>
-          <th>Lokasi</th>
+          <th>Target SKU</th>
+          <th>Dicek</th>
+          <th>Progress</th>
           <th>Status</th>
           <th>Aksi</th>
         </tr>
       </thead>
       <tbody id="perintahTableBody">
         <tr>
-          <td colspan="6" class="text-center text-muted">Memuat data...</td>
+          <td colspan="9" class="text-center text-muted">Memuat data...</td>
         </tr>
       </tbody>
     </table>
@@ -68,28 +67,46 @@
         <label>Tanggal</label>
         <input type="date" id="perintahTanggal" class="form-input" required>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bulan</label>
+          <select id="perintahBulan" class="form-input" required>
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tahun</label>
+          <select id="perintahTahun" class="form-input" required>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group">
         <label>SVP / Supervisor</label>
-        <input type="text" id="perintahSvp" class="form-input" required>
+        <input type="text" id="perintahSvp" class="form-input" placeholder="Nama Supervisor" required>
       </div>
       <div class="form-group">
         <label>Lokasi / Gudang</label>
         <select id="perintahLokasi" class="form-input" required>
-          <option value="gudang-utama">Gudang Utama</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Kategori</label>
-        <select id="perintahKategori" class="form-input" required>
-          <option value="seragam">Seragam</option>
-          <option value="poster">Poster</option>
-          <option value="lain">Lain-lain</option>
-          <option value="all">Semua</option>
+          <option value="Gudang Utama">Gudang Utama</option>
         </select>
       </div>
       <div class="form-group">
         <label>Keterangan</label>
-        <textarea id="perintahKeterangan" class="form-input" rows="3"></textarea>
+        <textarea id="perintahKeterangan" class="form-input" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
       </div>
       <div class="form-actions">
         <button type="button" class="btn btn--secondary" onclick="closeBuatPerintah()">Batal</button>
@@ -102,48 +119,109 @@
 <script>
   let perintahList = [];
 
+  function formatBulan(bulan) {
+    const namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return namaBulan[bulan] || bulan;
+  }
+
+  function getStatusClass(status) {
+    const statusMap = {
+      'menunggu': 'badge--pending',
+      'proses': 'badge--process',
+      'selesai': 'badge--done'
+    };
+    return statusMap[status] || 'badge--pending';
+  }
+
+  function getStatusLabel(status) {
+    const labelMap = {
+      'menunggu': 'Menunggu',
+      'proses': 'Proses',
+      'selesai': 'Selesai'
+    };
+    return labelMap[status] || status;
+  }
+
   async function loadPerintah() {
     try {
-      const response = await fetch('/api/v1/opname/perintah');
+      // Get current month and year
+      const now = new Date();
+      const bulan = now.getMonth() + 1;
+      const tahun = now.getFullYear();
+      
+      const response = await fetch(`/api/opname-perintah?bulan=${bulan}&tahun=${tahun}`);
       if (!response.ok) throw new Error('Failed to load');
-      perintahList = await response.json();
+      
+      const data = await response.json();
+      perintahList = data.items || [];
       renderPerintahTable();
     } catch (error) {
       console.error('Error loading perintah:', error);
+      document.getElementById('perintahTableBody').innerHTML = 
+        '<tr><td colspan="9" class="text-center text-danger">Gagal memuat data</td></tr>';
     }
   }
 
   function renderPerintahTable() {
     const tbody = document.getElementById('perintahTableBody');
     if (perintahList.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada perintah</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Tidak ada perintah SO periode ini</td></tr>';
       return;
     }
     
-    tbody.innerHTML = perintahList.map(item => `
-      <tr>
-        <td><code>${item.kode}</code></td>
-        <td>${item.tanggal}</td>
-        <td>${item.svp}</td>
-        <td>${item.lokasi}</td>
-        <td><span class="badge badge--${item.status}">${item.status}</span></td>
-        <td>
-          <button class="action-btn" onclick="executePerintah('${item.id}')">
-            <i data-lucide="play"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = perintahList.map(item => {
+      const progress = item.progress_percent || 0;
+      const targetSku = item.target_sku || 0;
+      const checkedSku = item.checked_sku || 0;
+      
+      return `
+        <tr>
+          <td><code>${item.kode_so || item.kode || ''}</code></td>
+          <td>${item.tanggal_perintah ? item.tanggal_perintah.slice(0, 10) : '-'}</td>
+          <td>${formatBulan(item.bulan)} ${item.tahun}</td>
+          <td>${item.svp_nama || item.svp || '-'}</td>
+          <td>${targetSku}</td>
+          <td>${checkedSku}</td>
+          <td>
+            <div class="progress-bar-mini">
+              <div class="progress-bar-mini__fill" style="width: ${progress}%"></div>
+            </div>
+            <span class="progress-label">${progress.toFixed(1)}%</span>
+          </td>
+          <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
+          <td>
+            <button class="action-btn" onclick="executePerintah(${item.id}, '${item.kode_so || item.kode || ''}')" title="Mulai SO">
+              <i data-lucide="play"></i>
+            </button>
+            <button class="action-btn" onclick="viewPerintah(${item.id})" title="Detail">
+              <i data-lucide="eye"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
     
     if (window.lucide) lucide.createIcons({ nodes: [tbody] });
   }
 
   function showBuatPerintah() {
-    // Generate kode
-    const kode = 'SO' + new Date().getTime().toString().slice(-6);
+    // Generate kode SO
+    const now = new Date();
+    const kode = 'SO' + now.getFullYear().toString().slice(-2) + 
+                 String(now.getMonth() + 1).padStart(2, '0') + 
+                 now.getDate().toString().slice(-2) + 
+                 String(Math.floor(Math.random() * 100)).padStart(2, '0');
+    
     document.getElementById('perintahKode').value = kode;
-    document.getElementById('perintahTanggal').value = new Date().toISOString().split('T')[0];
+    document.getElementById('perintahTanggal').value = now.toISOString().split('T')[0];
+    document.getElementById('perintahBulan').value = now.getMonth() + 1;
+    document.getElementById('perintahTahun').value = now.getFullYear();
+    document.getElementById('perintahSvp').value = '';
+    document.getElementById('perintahKeterangan').value = '';
     document.getElementById('buatPerintahModal').style.display = 'flex';
+    
+    if (window.lucide) lucide.createIcons();
   }
 
   function closeBuatPerintah() {
@@ -154,39 +232,101 @@
     event.preventDefault();
     
     const data = {
-      kode: document.getElementById('perintahKode').value,
-      tanggal: document.getElementById('perintahTanggal').value,
-      svp: document.getElementById('perintahSvp').value,
+      kode_so: document.getElementById('perintahKode').value,
+      tanggal_perintah: document.getElementById('perintahTanggal').value,
+      bulan: parseInt(document.getElementById('perintahBulan').value),
+      tahun: parseInt(document.getElementById('perintahTahun').value),
+      svp_nama: document.getElementById('perintahSvp').value,
       lokasi: document.getElementById('perintahLokasi').value,
-      kategori: document.getElementById('perintahKategori').value,
-      keterangan: document.getElementById('perintahKeterangan').value
+      keterangan: document.getElementById('perintahKeterangan').value,
+      kategori_targets: ['modul', 'seragam', 'poster', 'lain_lain']
     };
 
     try {
-      const response = await fetch('/api/v1/opname/perintah', {
+      const response = await fetch('/api/opname-perintah', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to save');
+      }
       
       showToast('Perintah SO berhasil dibuat');
       closeBuatPerintah();
       loadPerintah();
     } catch (error) {
       console.error('Error saving:', error);
-      showToast('Gagal menyimpan', false);
+      showToast(error.message || 'Gagal menyimpan', false);
     }
   }
 
-  function executePerintah(id) {
+  function executePerintah(id, kodeSo) {
+    // Simpan ID dan kode SO ke localStorage untuk diakses di halaman pelaksanaan
+    localStorage.setItem('activePerintahId', id);
+    localStorage.setItem('activePerintahKode', kodeSo);
     AppRouter.navigateTo('pelaksanaan-so');
   }
 
+  function viewPerintah(id) {
+    console.log('View perintah:', id);
+    // TODO: Implementasi modal detail
+    showToast('Fitur detail sedang dikembangkan');
+  }
+
+  // Load data saat page ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadPerintah);
   } else {
     loadPerintah();
   }
 </script>
+
+<style>
+  .form-row {
+    display: flex;
+    gap: 16px;
+  }
+  .form-row .form-group {
+    flex: 1;
+  }
+  .progress-bar-mini {
+    width: 80px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .progress-bar-mini__fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF4D3A, #FF6B5B);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  .badge--pending {
+    background: rgba(148, 163, 184, 0.2);
+    color: #94A3B8;
+  }
+  .badge--process {
+    background: rgba(255, 77, 58, 0.2);
+    color: #FF4D3A;
+  }
+  .badge--done {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22C55E;
+  }
+  .card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
