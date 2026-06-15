@@ -1,0 +1,1034 @@
+<!-- Persediaan Page - Sprint 4.1 -->
+<section class="page-section">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header__left">
+      <h2 class="page-title">Persediaan</h2>
+      <p class="page-subtitle">Monitor stok gudang dan mutasi barang</p>
+    </div>
+    <div class="page-header__actions">
+      <button class="btn btn--secondary" onclick="exportExcel()">
+        <i data-lucide="download"></i>
+        <span>Export Excel</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-nav__item active" data-tab="periode" onclick="switchTab('periode')">
+      <i data-lucide="package"></i>
+      <span>Stok Periode</span>
+    </button>
+    <button class="tab-nav__item" data-tab="kartu" onclick="switchTab('kartu')">
+      <i data-lucide="credit-card"></i>
+      <span>Kartu Stok</span>
+    </button>
+    <button class="tab-nav__item" data-tab="mutasi" onclick="switchTab('mutasi')">
+      <i data-lucide="git-branch"></i>
+      <span>Mutasi Stok</span>
+    </button>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TAB 1: STOK PERIODE -->
+  <!-- ============================================ -->
+  <div id="tab-periode" class="tab-content active">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Tahun</label>
+        <select id="filterTahunPeriode" onchange="loadStokPeriode()">
+          <!-- Options will be populated by JS -->
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Bulan</label>
+        <select id="filterBulanPeriode" onchange="loadStokPeriode()">
+          <option value="1">Januari</option>
+          <option value="2">Februari</option>
+          <option value="3">Maret</option>
+          <option value="4">April</option>
+          <option value="5">Mei</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">Agustus</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+      </div>
+      <div class="filter-group" style="flex: 1;">
+        <label>Search</label>
+        <input type="text" id="filterSearchPeriode" placeholder="Cari SKU atau nama produk..." oninput="debounceSearchPeriode()">
+      </div>
+    </div>
+
+    <!-- Kategori Chips -->
+    <div class="kategori-chips">
+      <button class="kategori-chip active" data-kategori="semua" onclick="filterKategori(this, 'semua')">Semua</button>
+      <button class="kategori-chip" data-kategori="modul" onclick="filterKategori(this, 'modul')">Modul</button>
+      <button class="kategori-chip" data-kategori="poster" onclick="filterKategori(this, 'poster')">Poster</button>
+      <button class="kategori-chip" data-kategori="panduan" onclick="filterKategori(this, 'panduan')">Panduan</button>
+      <button class="kategori-chip" data-kategori="tas" onclick="filterKategori(this, 'tas')">Tas</button>
+      <button class="kategori-chip" data-kategori="seragam" onclick="filterKategori(this, 'seragam')">Seragam</button>
+      <button class="kategori-chip" data-kategori="lain_lain" onclick="filterKategori(this, 'lain_lain')">Lain-lain</button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--primary">
+          <i data-lucide="hash"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryTotalSku">0</div>
+          <div class="stats-card__label">Total SKU</div>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--success">
+          <i data-lucide="package"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryTotalStok">0</div>
+          <div class="stats-card__label">Total Stok Akhir</div>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--danger">
+          <i data-lucide="trending-down"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryProdukMinus">0</div>
+          <div class="stats-card__label">Produk Minus</div>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card__icon stats-card__icon--warning">
+          <i data-lucide="package-x"></i>
+        </div>
+        <div class="stats-card__content">
+          <div class="stats-card__value" id="summaryProdukKosong">0</div>
+          <div class="stats-card__label">Produk Kosong</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table" id="periodeTable">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Nama Produk</th>
+              <th class="text-right">Stok Awal</th>
+              <th class="text-right">Pembelian</th>
+              <th class="text-right">Penjualan</th>
+              <th class="text-right">Penyesuaian</th>
+              <th class="text-right">Stok Akhir</th>
+            </tr>
+          </thead>
+          <tbody id="periodeTableBody">
+            <tr>
+              <td colspan="7" class="text-center text-muted">
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <span>Memuat data...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination" id="paginationPeriode">
+        <div class="pagination__info" id="paginationInfoPeriode">Menampilkan 0 - 0 dari 0 data</div>
+        <div class="pagination__buttons" id="paginationButtonsPeriode"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TAB 2: KARTU STOK -->
+  <!-- ============================================ -->
+  <div id="tab-kartu" class="tab-content">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Tahun</label>
+        <select id="filterTahunKartu" onchange="loadKartuStok()">
+          <!-- Options will be populated by JS -->
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Bulan</label>
+        <select id="filterBulanKartu" onchange="loadKartuStok()">
+          <option value="1">Januari</option>
+          <option value="2">Februari</option>
+          <option value="3">Maret</option>
+          <option value="4">April</option>
+          <option value="5">Mei</option>
+          <option value="6">Juni</option>
+          <option value="7">Juli</option>
+          <option value="8">Agustus</option>
+          <option value="9">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Produk</label>
+        <select id="filterProdukKartu" onchange="loadKartuStok()">
+          <option value="">Pilih Produk</option>
+        </select>
+      </div>
+      <div class="filter-group" style="flex: 1;">
+        <label>Search</label>
+        <input type="text" id="filterSearchKartu" placeholder="Cari produk..." oninput="debounceSearchKartu()">
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+      <div class="table-wrapper">
+        <table class="data-table" id="kartuTable">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Aktivitas</th>
+              <th>Partner</th>
+              <th class="text-right">Masuk</th>
+              <th class="text-right">Keluar</th>
+              <th class="text-right">Saldo</th>
+            </tr>
+          </thead>
+          <tbody id="kartuTableBody">
+            <tr>
+              <td colspan="6" class="text-center text-muted">
+                <div class="loading-state">
+                  <div class="spinner"></div>
+                  <span>Memuat data...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot id="kartuTableFoot" style="display: none;">
+            <tr class="summary-row">
+              <td colspan="3" class="text-right" style="font-weight: 600;">TOTAL</td>
+              <td class="text-right text-success" id="footerMasuk" style="font-weight: 600;">+0</td>
+              <td class="text-right text-danger" id="footerKeluar" style="font-weight: 600;">-0</td>
+              <td class="text-right" id="footerSaldo" style="font-weight: 600;">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination" id="paginationKartu">
+        <div class="pagination__info" id="paginationInfoKartu">Menampilkan 0 - 0 dari 0 data</div>
+        <div class="pagination__buttons" id="paginationButtonsKartu"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TAB 3: MUTASI STOK (Coming Soon) -->
+  <!-- ============================================ -->
+  <div id="tab-mutasi" class="tab-content">
+    <div class="card">
+      <div class="empty-state">
+        <div class="empty-state__icon">
+          <i data-lucide="construction"></i>
+        </div>
+        <h3 class="empty-state__title">Coming Soon</h3>
+        <p class="empty-state__text">
+          Modul Mutasi Stok akan tersedia setelah<br>
+          Sprint 4.2 (Master Gudang) dan Sprint 4.3 (Mutasi Stok) selesai.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Kategori Chips - Horizontal Scroll */
+.kategori-chips {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.kategori-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.kategori-chip {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.kategori-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.kategori-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge--info { background: #e3f2fd; color: #1565c0; }
+.badge--success { background: #e8f5e9; color: #2e7d32; }
+.badge--primary { background: #f3e5f5; color: #7b1fa2; }
+.badge--warning { background: #fff3e0; color: #ef6c00; }
+.badge--danger { background: #ffebee; color: #c62828; }
+.badge--secondary { background: #f5f5f5; color: #616161; }
+.badge--default { background: #eceff1; color: #546e7a; }
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-state__icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.empty-state__icon i {
+  width: 36px;
+  height: 36px;
+  color: var(--text-muted);
+}
+
+.empty-state__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.empty-state__text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .filter-bar .filter-group {
+    flex: 1 1 calc(50% - 6px);
+    min-width: calc(50% - 6px);
+  }
+  
+  .filter-bar .filter-group:last-child {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .page-header__actions {
+    flex-wrap: wrap;
+  }
+  
+  .page-header__actions .btn span {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .filter-bar .filter-group {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+  
+  .kategori-chips {
+    padding: 8px 0;
+  }
+  
+  .kategori-chip {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  /* Table Footer */
+  .data-table tfoot {
+    background-color: #f8f9fa;
+    border-top: 2px solid #dee2e6;
+  }
+  
+  .data-table tfoot td {
+    padding: 12px 16px;
+  }
+  
+  .summary-row td {
+    background-color: #f8f9fa;
+  }
+}
+</style>
+
+<script>
+// State - Namespace pattern to prevent redeclaration
+window.PersediaanPage = window.PersediaanPage || {
+  stokPeriodeData: [],
+  kartuStokData: [],
+  currentPagePeriode: 1,
+  currentPageKartu: 1,
+  debounceTimerPeriode: null,
+  debounceTimerKartu: null,
+  selectedKategori: 'semua'
+};
+
+
+// Global produk cache for all pages
+window.masterProdukCache = window.masterProdukCache || null;
+
+// ============================================
+// TAB SWITCHING
+// ============================================
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-nav__item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.toggle('active', content.id === `tab-${tabName}`);
+  });
+  
+  // Load data when switching tabs
+  if (tabName === 'periode') {
+    loadStokPeriode();
+  } else if (tabName === 'kartu') {
+    loadKartuStok();
+  }
+  // Mutasi tab is "Coming Soon" - no data to load
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================
+// FORMATTERS
+// ============================================
+function formatNumber(num) {
+  if (num === null || num === undefined) return '0';
+  return Number(num).toLocaleString('id-ID');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+// ============================================
+// INITIALIZE DROPDOWNS
+// ============================================
+function initializeDropdowns() {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+    years.push(y);
+  }
+  
+  const tahunOptionsPeriode = years.map(y => 
+    `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`
+  ).join('');
+  document.getElementById('filterTahunPeriode').innerHTML = tahunOptionsPeriode;
+  
+  const tahunOptionsKartu = years.map(y => 
+    `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`
+  ).join('');
+  document.getElementById('filterTahunKartu').innerHTML = tahunOptionsKartu;
+  
+  const currentMonth = new Date().getMonth() + 1;
+  document.getElementById('filterBulanPeriode').value = currentMonth;
+  document.getElementById('filterBulanKartu').value = currentMonth;
+}
+
+// ============================================
+// LOAD PRODUK DROPDOWN (with caching)
+// ============================================
+async function loadProdukDropdown() {
+  // Use cached data if available
+  if (window.masterProdukCache) {
+    renderProdukDropdown(window.masterProdukCache);
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/produk-list');
+    if (!response.ok) throw new Error('Failed to load products');
+    
+    const result = await response.json();
+    // API returns 'produk' not 'data'
+    const produkList = result.produk || result.data || [];
+    
+    // Cache the data globally
+    window.masterProdukCache = produkList;
+    
+    renderProdukDropdown(produkList);
+  } catch (error) {
+    console.error('Error loading produk:', error);
+  }
+}
+
+function renderProdukDropdown(produkList) {
+  const options = produkList.map(p => 
+    `<option value="${p.sku}">${p.sku} - ${p.nama_produk}</option>`
+  ).join('');
+  
+  document.getElementById('filterProdukKartu').innerHTML = 
+    '<option value="">Pilih Produk</option>' + options;
+}
+
+// ============================================
+// TAB 1: STOK PERIODE
+// ============================================
+function debounceSearchPeriode() {
+  clearTimeout(window.PersediaanPage.debounceTimerPeriode);
+  window.PersediaanPage.debounceTimerPeriode = setTimeout(() => {
+    window.PersediaanPage.currentPagePeriode = 1;
+    loadStokPeriode();
+  }, 300);
+}
+
+function filterKategori(element, kategori) {
+  document.querySelectorAll('.kategori-chip').forEach(chip => {
+    chip.classList.remove('active');
+  });
+  element.classList.add('active');
+  
+  window.PersediaanPage.selectedKategori = kategori;
+  window.PersediaanPage.currentPagePeriode = 1;
+  loadStokPeriode();
+}
+
+async function loadStokPeriode(page = 1) {
+  window.PersediaanPage.currentPagePeriode = page;
+  
+  const tahun = document.getElementById('filterTahunPeriode').value;
+  const bulan = document.getElementById('filterBulanPeriode').value;
+  const search = document.getElementById('filterSearchPeriode').value;
+  
+  try {
+    document.getElementById('periodeTableBody').innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Memuat data...</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    
+    const params = new URLSearchParams({
+      tahun,
+      bulan,
+      page,
+      limit: 50,
+      kategori: window.PersediaanPage.selectedKategori
+    });
+    
+    if (search) {
+      params.append('search', search);
+    }
+    
+    const response = await fetch(`/api/v1/stok/realtime?${params}`);
+    if (!response.ok) throw new Error('Failed to load data');
+    
+    const result = await response.json();
+    console.log('[DEBUG] loadStokPeriode response:', result);
+    console.log('[DEBUG] result.data.length:', result.data?.length);
+    console.log('[DEBUG] result.data fields:', result.data?.length > 0 ? Object.keys(result.data[0]) : 'N/A');
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Gagal memuat data');
+    }
+    
+    document.getElementById('summaryTotalSku').textContent = formatNumber(result.summary?.total_sku);
+    document.getElementById('summaryTotalStok').textContent = formatNumber(result.summary?.total_stok_akhir);
+    document.getElementById('summaryProdukMinus').textContent = formatNumber(result.summary?.produk_minus);
+    document.getElementById('summaryProdukKosong').textContent = formatNumber(result.summary?.produk_kosong);
+    
+    window.PersediaanPage.stokPeriodeData = result.data || [];
+    renderPeriodeTable(window.PersediaanPage.stokPeriodeData);
+    renderPaginationPeriode(result.pagination);
+    
+  } catch (error) {
+    console.error('Error loading stok periode:', error);
+    document.getElementById('periodeTableBody').innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted">
+          <div class="error-state">
+            <i data-lucide="alert-circle"></i>
+            <span>Gagal memuat data: ${error.message}</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function renderPeriodeTable(data) {
+  if (!data || data.length === 0) {
+    document.getElementById('periodeTableBody').innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted" style="padding: 40px;">
+          <i data-lucide="package" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+          <p style="margin: 12px 0 0;">Tidak ada data untuk periode ini</p>
+        </td>
+      </tr>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  
+  const rows = data.map(item => {
+    const stokAkhirClass = item.stok_akhir < 0 ? 'text-danger' : (item.stok_akhir === 0 ? 'text-warning' : '');
+    return `
+      <tr>
+        <td><code>${item.sku || '-'}</code></td>
+        <td>${item.nama_produk || '-'}</td>
+        <td class="text-right">${formatNumber(item.stok_awal)}</td>
+        <td class="text-right text-success">+${formatNumber(item.pembelian)}</td>
+        <td class="text-right text-danger">-${formatNumber(item.penjualan)}</td>
+        <td class="text-right ${item.penyesuaian >= 0 ? 'text-success' : 'text-danger'}">${item.penyesuaian >= 0 ? '+' : ''}${formatNumber(item.penyesuaian)}</td>
+        <td class="text-right ${stokAkhirClass}" style="font-weight: 600;">${formatNumber(item.stok_akhir)}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  document.getElementById('periodeTableBody').innerHTML = rows;
+}
+
+function renderPaginationPeriode(pagination) {
+  if (!pagination) return;
+  
+  const { page, limit, total, total_pages } = pagination;
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
+  
+  document.getElementById('paginationInfoPeriode').textContent = 
+    `Menampilkan ${start} - ${end} dari ${total} data`;
+  
+  const buttonsContainer = document.getElementById('paginationButtonsPeriode');
+  
+  if (total_pages <= 1) {
+    buttonsContainer.innerHTML = '';
+    return;
+  }
+  
+  let buttons = '';
+  
+  buttons += `
+    <button class="pagination__btn" ${page === 1 ? 'disabled' : ''} onclick="loadStokPeriode(${page - 1})">
+      <i data-lucide="chevron-left"></i>
+    </button>
+  `;
+  
+  const maxVisible = 5;
+  let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+  let endPage = Math.min(total_pages, startPage + maxVisible - 1);
+  
+  if (endPage - startPage < maxVisible - 1) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+  
+  if (startPage > 1) {
+    buttons += `<button class="pagination__btn" onclick="loadStokPeriode(1)">1</button>`;
+    if (startPage > 2) {
+      buttons += `<span class="pagination__ellipsis">...</span>`;
+    }
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    buttons += `
+      <button class="pagination__btn ${i === page ? 'active' : ''}" onclick="loadStokPeriode(${i})">
+        ${i}
+      </button>
+    `;
+  }
+  
+  if (endPage < total_pages) {
+    if (endPage < total_pages - 1) {
+      buttons += `<span class="pagination__ellipsis">...</span>`;
+    }
+    buttons += `<button class="pagination__btn" onclick="loadStokPeriode(${total_pages})">${total_pages}</button>`;
+  }
+  
+  buttons += `
+    <button class="pagination__btn" ${page === total_pages ? 'disabled' : ''} onclick="loadStokPeriode(${page + 1})">
+      <i data-lucide="chevron-right"></i>
+    </button>
+  `;
+  
+  buttonsContainer.innerHTML = buttons;
+  if (window.lucide) lucide.createIcons({ nodes: [buttonsContainer] });
+}
+
+// ============================================
+// TAB 2: KARTU STOK
+// ============================================
+function debounceSearchKartu() {
+  clearTimeout(window.PersediaanPage.debounceTimerKartu);
+  window.PersediaanPage.debounceTimerKartu = setTimeout(() => {
+    window.PersediaanPage.currentPageKartu = 1;
+    loadKartuStok();
+  }, 300);
+}
+
+async function loadKartuStok(page = 1) {
+  window.PersediaanPage.currentPageKartu = page;
+  
+  const tahun = document.getElementById('filterTahunKartu').value;
+  const bulan = document.getElementById('filterBulanKartu').value;
+  const produk = document.getElementById('filterProdukKartu').value;
+  const search = document.getElementById('filterSearchKartu').value;
+  
+  try {
+    document.getElementById('kartuTableBody').innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Memuat data...</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    
+    const params = new URLSearchParams({
+      tahun,
+      bulan,
+      page,
+      limit: 500
+    });
+    
+    if (produk) {
+      params.append('produk', produk);
+    }
+    
+    if (search) {
+      params.append('search', search);
+    }
+    
+    const response = await fetch(`/api/v1/stok/kartu?${params}`);
+    if (!response.ok) throw new Error('Failed to load data');
+    
+    const result = await response.json();
+    console.log('[DEBUG] loadKartuStok response:', result);
+    console.log('[DEBUG] result.data.length:', result.data?.length);
+    console.log('[DEBUG] result.data fields:', result.data?.length > 0 ? Object.keys(result.data[0]) : 'N/A');
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Gagal memuat data');
+    }
+    
+    window.PersediaanPage.kartuStokData = result.data || [];
+    renderKartuTable(window.PersediaanPage.kartuStokData);
+    renderPaginationKartu(result.pagination);
+    
+  } catch (error) {
+    console.error('Error loading kartu stok:', error);
+    document.getElementById('kartuTableBody').innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted">
+          <div class="error-state">
+            <i data-lucide="alert-circle"></i>
+            <span>Gagal memuat data: ${error.message}</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function renderKartuTable(data) {
+  if (!data || data.length === 0) {
+    document.getElementById('kartuTableBody').innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted" style="padding: 40px;">
+          <i data-lucide="credit-card" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+          <p style="margin: 12px 0 0;">Tidak ada transaksi untuk periode ini</p>
+        </td>
+      </tr>
+    `;
+    document.getElementById('kartuTableFoot').style.display = 'none';
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  
+  const rows = data.map(item => {
+    const saldoClass = item.saldo < 0 ? 'text-danger' : (item.saldo === 0 ? 'text-warning' : '');
+    const aktivitasClass = getAktivitasClass(item.aktivitas);
+    
+    return `
+      <tr>
+        <td>${formatDate(item.tanggal)}</td>
+        <td><span class="badge badge--${aktivitasClass}">${item.aktivitas || '-'}</span></td>
+        <td>${item.partner || '-'}</td>
+        <td class="text-right text-success">${item.masuk > 0 ? '+' + formatNumber(item.masuk) : '-'}</td>
+        <td class="text-right text-danger">${item.keluar > 0 ? '-' + formatNumber(item.keluar) : '-'}</td>
+        <td class="text-right ${saldoClass}" style="font-weight: 600;">${formatNumber(item.saldo)}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  document.getElementById('kartuTableBody').innerHTML = rows;
+  
+  // Calculate and show footer totals
+  const totalMasuk = data.reduce((sum, item) => sum + (parseInt(item.masuk) || 0), 0);
+  const totalKeluar = data.reduce((sum, item) => sum + (parseInt(item.keluar) || 0), 0);
+  const lastSaldo = data.length > 0 ? data[data.length - 1].saldo : 0;
+  
+  document.getElementById('footerMasuk').textContent = '+' + formatNumber(totalMasuk);
+  document.getElementById('footerKeluar').textContent = '-' + formatNumber(totalKeluar);
+  document.getElementById('footerSaldo').textContent = formatNumber(lastSaldo);
+  document.getElementById('kartuTableFoot').style.display = '';
+}
+
+function getAktivitasClass(aktivitas) {
+  const classes = {
+    'Stok Awal': 'info',
+    'Pembelian': 'success',
+    'Penjualan': 'primary',
+    'Penyesuaian': 'warning',
+    'Transfer': 'secondary',
+    'Retur': 'warning',
+    'Rijek': 'danger'
+  };
+  return classes[aktivitas] || 'default';
+}
+
+function renderPaginationKartu(pagination) {
+  if (!pagination) return;
+  
+  const { page, limit, total, total_pages } = pagination;
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
+  
+  // Show transaction count info
+  const infoText = total_pages > 1 
+    ? `Menampilkan ${start} - ${end} dari ${total} transaksi (Halaman ${page} dari ${total_pages})`
+    : `Menampilkan ${total} transaksi`;
+  document.getElementById('paginationInfoKartu').textContent = infoText;
+  
+  const buttonsContainer = document.getElementById('paginationButtonsKartu');
+  
+  if (total_pages <= 1) {
+    buttonsContainer.innerHTML = '';
+    return;
+  }
+  
+  let buttons = '';
+  
+  buttons += `
+    <button class="pagination__btn" ${page === 1 ? 'disabled' : ''} onclick="loadKartuStok(${page - 1})">
+      <i data-lucide="chevron-left"></i>
+    </button>
+  `;
+  
+  const maxVisible = 5;
+  let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+  let endPage = Math.min(total_pages, startPage + maxVisible - 1);
+  
+  if (endPage - startPage < maxVisible - 1) {
+    startPage = Math.max(1, endPage - maxVisible + 1);
+  }
+  
+  if (startPage > 1) {
+    buttons += `<button class="pagination__btn" onclick="loadKartuStok(1)">1</button>`;
+    if (startPage > 2) {
+      buttons += `<span class="pagination__ellipsis">...</span>`;
+    }
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    buttons += `
+      <button class="pagination__btn ${i === page ? 'active' : ''}" onclick="loadKartuStok(${i})">
+        ${i}
+      </button>
+    `;
+  }
+  
+  if (endPage < total_pages) {
+    if (endPage < total_pages - 1) {
+      buttons += `<span class="pagination__ellipsis">...</span>`;
+    }
+    buttons += `<button class="pagination__btn" onclick="loadKartuStok(${total_pages})">${total_pages}</button>`;
+  }
+  
+  buttons += `
+    <button class="pagination__btn" ${page === total_pages ? 'disabled' : ''} onclick="loadKartuStok(${page + 1})">
+      <i data-lucide="chevron-right"></i>
+    </button>
+  `;
+  
+  buttonsContainer.innerHTML = buttons;
+  if (window.lucide) lucide.createIcons({ nodes: [buttonsContainer] });
+}
+
+// ============================================
+// EXPORT
+// ============================================
+function exportExcel() {
+  const activeTab = document.querySelector('.tab-nav__item.active')?.dataset.tab;
+  
+  let data, headers, filename;
+  
+  if (activeTab === 'periode') {
+    data = window.PersediaanPage.stokPeriodeData;
+    headers = ['SKU', 'Nama Produk', 'Stok Awal', 'Pembelian', 'Penjualan', 'Penyesuaian', 'Stok Akhir'];
+    filename = 'stok_periode';
+  } else if (activeTab === 'kartu') {
+    data = window.PersediaanPage.kartuStokData;
+    headers = ['Tanggal', 'Aktivitas', 'Partner', 'Masuk', 'Keluar', 'Saldo'];
+    filename = 'kartu_stok';
+  } else {
+    showToast('Tab Mutasi belum tersedia', false);
+    return;
+  }
+  
+  if (!data || data.length === 0) {
+    showToast('Tidak ada data untuk di-export', false);
+    return;
+  }
+  
+  const csvContent = [
+    headers.join(','),
+    ...data.map(item => {
+      if (activeTab === 'periode') {
+        return [
+          `"${(item.sku || '').replace(/"/g, '""')}"`,
+          `"${(item.nama_produk || '').replace(/"/g, '""')}"`,
+          item.stok_awal || 0,
+          item.pembelian || 0,
+          item.penjualan || 0,
+          item.penyesuaian || 0,
+          item.stok_akhir || 0
+        ].join(',');
+      } else {
+        return [
+          formatDate(item.tanggal),
+          `"${(item.aktivitas || '').replace(/"/g, '""')}"`,
+          `"${(item.partner || '').replace(/"/g, '""')}"`,
+          item.masuk || 0,
+          item.keluar || 0,
+          item.saldo || 0
+        ].join(',');
+      }
+    })
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  
+  showToast('Export berhasil');
+}
+
+// ============================================
+// TOAST
+// ============================================
+function showToast(message, isSuccess = true) {
+  if (typeof window.showToastMessage === 'function') {
+    window.showToastMessage(message, isSuccess ? 'success' : 'error');
+    return;
+  }
+  
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${isSuccess ? 'success' : 'error'}`;
+  toast.innerHTML = `
+    <i data-lucide="${isSuccess ? 'check-circle' : 'alert-circle'}"></i>
+    <span>${message}</span>
+  `;
+  
+  container.appendChild(toast);
+  if (window.lucide) lucide.createIcons({ nodes: [toast] });
+  
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ============================================
+// INITIALIZE
+// ============================================
+async function initPersediaanPage() {
+  initializeDropdowns();
+  await loadProdukDropdown();
+  await loadStokPeriode();
+}
+
+// Page load handler - called by AppRouter only
+// Do NOT call initPersediaanPage() here to avoid double initialization
+</script>

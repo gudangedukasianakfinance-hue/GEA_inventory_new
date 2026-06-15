@@ -99,6 +99,19 @@ async function listPenjualan(req, res) {
     );
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
 
+    // Get summary totals (qty and nominal) for all filtered data
+    const summaryResult = await pool.query(
+      `SELECT 
+        COUNT(*) as total_transaksi,
+        COALESCE(SUM(p.qty), 0) as total_qty,
+        COALESCE(SUM(p.qty * pr.harga_jual), 0) as total_nominal
+       FROM penjualan p
+       LEFT JOIN produk pr ON pr.sku = p.sku
+       ${whereClause}`,
+      params
+    );
+    const summary = summaryResult.rows[0] || {};
+
     // Get penjualan with product info and calculated nominal
     const dataResult = await pool.query(
       `SELECT 
@@ -122,6 +135,11 @@ async function listPenjualan(req, res) {
     return send(res, 200, {
       success: true,
       data: dataResult.rows,
+      summary: {
+        total_transaksi: parseInt(summary.total_transaksi || 0, 10),
+        total_qty: parseInt(summary.total_qty || 0, 10),
+        total_nominal: parseFloat(summary.total_nominal || 0)
+      },
       pagination: {
         page,
         limit,

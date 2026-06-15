@@ -101,9 +101,11 @@ const AppRouter = {
     }
     
     if (this.loadedPages[page]) {
-      container.innerHTML = this.loadedPages[page];
-      this.executeScripts(container);
+      // Clone the cached content to avoid mutating the cache
+      container.innerHTML = '';
+      container.appendChild(this.loadedPages[page].cloneNode(true));
       this.initPage(page);
+      console.log('Page loaded from cache:', page);
       return;
     }
     
@@ -114,9 +116,12 @@ const AppRouter = {
       if (!response.ok) throw new Error('Failed to load page: ' + response.status);
       
       const html = await response.text();
-      this.loadedPages[page] = html;
       container.innerHTML = html;
       this.executeScripts(container);
+      
+      // Clone the executed DOM for cache (preserves data-executed attributes)
+      this.loadedPages[page] = container.cloneNode(true);
+      
       this.initPage(page);
       console.log('Page loaded:', page);
     } catch (error) {
@@ -140,8 +145,17 @@ const AppRouter = {
   
   initPage(page) {
     if (window.lucide) lucide.createIcons();
+    
+    // Dispatch page-specific event for clean re-initialization
+    window.dispatchEvent(new CustomEvent('pageInit', { detail: { page } }));
+    
+    // Call page-specific init functions - each handles its own cleanup
     if (page === 'dashboard' && typeof initDashboard === 'function') initDashboard();
     if (page === 'user' && typeof initUserManagement === 'function') initUserManagement();
+    if (page === 'persediaan' && typeof initPersediaanPage === 'function') initPersediaanPage();
+    if (page === 'penjualan' && typeof initPenjualanPage === 'function') initPenjualanPage();
+    if (page === 'pembelian' && typeof initPembelianPage === 'function') initPembelianPage();
+    
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },
   

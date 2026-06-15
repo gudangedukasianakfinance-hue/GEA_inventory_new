@@ -572,56 +572,72 @@
 </style>
 
 <script>
-  // State
-  let pembelianList = [];
-  let transactionItems = [];
-  let editingId = null;
-  let deleteId = null;
-  let debounceTimer = null;
-  let currentPage = 1;
+  // State - Namespace pattern to prevent redeclaration
+  window.PembelianPage = window.PembelianPage || {
+    pembelianList: [],
+    transactionItems: [],
+    editingId: null,
+    deleteId: null,
+    debounceTimer: null,
+    currentPage: 1
+  };
+  
 
   // Get filter parameters
   function getFilterParams() {
     return {
-      tanggal_awal: document.getElementById('filterTanggalAwal').value,
-      tanggal_akhir: document.getElementById('filterTanggalAkhir').value,
-      supplier: document.getElementById('filterSupplier').value,
-      sku: document.getElementById('filterProduk').value,
-      search: document.getElementById('filterSearch').value,
-      page: currentPage,
+      tanggal_awal: document.getElementById('filterTanggalAwal')?.value || '',
+      tanggal_akhir: document.getElementById('filterTanggalAkhir')?.value || '',
+      supplier: document.getElementById('filterSupplier')?.value || '',
+      sku: document.getElementById('filterProduk')?.value || '',
+      search: document.getElementById('filterSearch')?.value || '',
+      page: window.PembelianPage?.currentPage || 1,
       limit: 20
     };
   }
 
-  // Load produk for dropdowns
+  // Load produk for dropdowns (with caching)
   async function loadProduk() {
+    // Use cached data if available
+    if (window.masterProdukCache) {
+      populateProdukDropdowns(window.masterProdukCache);
+      return;
+    }
+    
     try {
       const response = await fetch('/api/produk-list');
       if (!response.ok) throw new Error('Failed to load produk');
 
       const data = await response.json();
       const produk = data.produk || data.data || [];
+      
+      // Cache the data globally
+      window.masterProdukCache = produk;
 
-      // Populate filter dropdown
-      const filterProduk = document.getElementById('filterProduk');
-      const inputProduk = document.getElementById('inputProduk');
-
-      const filterOptions = produk.map(p =>
-        `<option value="${p.sku}">${p.nama_produk} (${p.sku})</option>`
-      ).join('');
-
-      // Input options with harga_beli as data attribute
-      const inputOptions = produk.map(p =>
-        `<option value="${p.sku}" data-harga_beli="${p.harga_beli || 0}">${p.nama_produk} (${p.sku})</option>`
-      ).join('');
-
-      filterProduk.innerHTML = '<option value="">Semua Produk</option>' + filterOptions;
-      inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + inputOptions;
-
-      if (window.lucide) lucide.createIcons();
+      populateProdukDropdowns(produk);
     } catch (error) {
       console.error('Error loading produk:', error);
     }
+  }
+  
+  function populateProdukDropdowns(produk) {
+    // Populate filter dropdown
+    const filterProduk = document.getElementById('filterProduk');
+    const inputProduk = document.getElementById('inputProduk');
+
+    const filterOptions = produk.map(p =>
+      `<option value="${p.sku}">${p.nama_produk} (${p.sku})</option>`
+    ).join('');
+
+    // Input options with harga_beli as data attribute
+    const inputOptions = produk.map(p =>
+      `<option value="${p.sku}" data-harga_beli="${p.harga_beli || 0}">${p.nama_produk} (${p.sku})</option>`
+    ).join('');
+
+    filterProduk.innerHTML = '<option value="">Semua Produk</option>' + filterOptions;
+    inputProduk.innerHTML = '<option value="">Pilih Produk</option>' + inputOptions;
+
+    if (window.lucide) lucide.createIcons();
   }
 
   // Load supplier for dropdowns
@@ -668,20 +684,22 @@
         throw new Error(result.message || 'Failed to load data');
       }
       
-      // Update summary cards
-      if (result.summary) {
-        document.getElementById('summaryTransaksi').textContent = (result.summary.total_transaksi || 0).toLocaleString('id-ID');
-        document.getElementById('summaryQty').textContent = (result.summary.total_qty || 0).toLocaleString('id-ID');
-        document.getElementById('summaryNominal').textContent = formatRupiah(result.summary.total_nominal || 0);
-      }
+      // Update summary cards from backend summary (all filtered data)
+      const summary = result.summary || {};
+      const totalTransaksi = summary.total_transaksi || 0;
+      const totalQty = summary.total_qty || 0;
+      const totalNominal = summary.total_nominal || 0;
+      document.getElementById('summaryTransaksi').textContent = totalTransaksi.toLocaleString('id-ID');
+      document.getElementById('summaryQty').textContent = totalQty.toLocaleString('id-ID');
+      document.getElementById('summaryNominal').textContent = formatRupiah(totalNominal);
       
       // Update table
-      pembelianList = result.data || [];
-      renderPembelianTable(pembelianList);
+      window.PembelianPage.pembelianList = result.data || [];
+      renderPembelianTable(window.PembelianPage.pembelianList);
       
       // Update pagination
       if (result.pagination) {
-        currentPage = result.pagination.page;
+        window.PembelianPage.currentPage = result.pagination.page;
         renderPagination(result.pagination);
       }
     } catch (error) {
@@ -757,11 +775,11 @@
     
     // Page numbers
     const totalPages = pagination.total_pages;
-    const currentPage = pagination.page;
+    window.PembelianPage.currentPage = pagination.page;
     
     // Show max 5 page buttons
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
+    let startPage = Math.max(1, window.PembelianPage.currentPage - 2);
+    let endPage = Math.min(totalPages, window.PembelianPage.currentPage + 2);
     
     if (endPage - startPage < 4) {
       if (startPage === 1) {
@@ -779,7 +797,7 @@
     }
     
     for (let i = startPage; i <= endPage; i++) {
-      buttonsHtml += `<button class="pagination__btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      buttonsHtml += `<button class="pagination__btn ${i === window.PembelianPage.currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
     }
     
     if (endPage < totalPages) {
@@ -801,15 +819,15 @@
 
   // Go to page
   function goToPage(page) {
-    currentPage = page;
+    window.PembelianPage.currentPage = page;
     loadPembelian();
   }
 
   // Debounce search
   function debounceSearch() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      currentPage = 1;
+    clearTimeout(window.PembelianPage.debounceTimer);
+    window.PembelianPage.debounceTimer = setTimeout(() => {
+      window.PembelianPage.currentPage = 1;
       loadPembelian();
     }, 300);
   }
@@ -837,7 +855,7 @@
 
   // Show add modal
   function showAddModal() {
-    editingId = null;
+    window.PembelianPage.editingId = null;
     document.getElementById('modalTitle').textContent = 'Tambah Pembelian';
     document.getElementById('inputTanggal').value = new Date().toISOString().split('T')[0];
     document.getElementById('inputSupplier').value = '';
@@ -847,7 +865,7 @@
     document.getElementById('inputNominal').value = '';
     document.getElementById('inputProduk').dataset.harga_beli = '0';
 
-    transactionItems = [];
+    window.PembelianPage.transactionItems = [];
     renderPreviewTable();
     updateSummary();
 
@@ -986,7 +1004,7 @@
     const selectedText = produkSelect.options[produkSelect.selectedIndex].text;
     const [namaProduk, sku] = selectedText.split(' (').map(s => s.replace(')', ''));
     
-    transactionItems.push({
+    window.PembelianPage.transactionItems.push({
       sku: produkSelect.value,
       nama_produk: namaProduk,
       qty: qty,
@@ -1008,8 +1026,8 @@
 
   // Remove item from list
   function removeFromList(index) {
-    const item = transactionItems[index];
-    transactionItems.splice(index, 1);
+    const item = window.PembelianPage.transactionItems[index];
+    window.PembelianPage.transactionItems.splice(index, 1);
     renderPreviewTable();
     updateSummary();
     showToast(`"${item.nama_produk}" dihapus dari daftar`);
@@ -1020,14 +1038,14 @@
     const tbody = document.getElementById('previewTableBody');
     const itemCount = document.getElementById('itemCount');
 
-    itemCount.textContent = transactionItems.length;
+    itemCount.textContent = window.PembelianPage.transactionItems.length;
 
-    if (transactionItems.length === 0) {
+    if (window.PembelianPage.transactionItems.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada item. Tambahkan produk di atas.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = transactionItems.map((item, index) => `
+    tbody.innerHTML = window.PembelianPage.transactionItems.map((item, index) => `
       <tr class="preview-row">
         <td>${item.nama_produk}</td>
         <td><code>${item.sku}</code></td>
@@ -1050,7 +1068,7 @@
     const summary = document.getElementById('transactionSummary');
     const btnSave = document.getElementById('btnSaveAll');
 
-    if (transactionItems.length === 0) {
+    if (window.PembelianPage.transactionItems.length === 0) {
       summary.style.display = 'none';
       btnSave.disabled = true;
       return;
@@ -1059,9 +1077,9 @@
     summary.style.display = 'flex';
     btnSave.disabled = false;
 
-    const totalItem = transactionItems.length;
-    const totalQty = transactionItems.reduce((sum, item) => sum + item.qty, 0);
-    const totalNominal = transactionItems.reduce((sum, item) => sum + item.nominal, 0);
+    const totalItem = window.PembelianPage.transactionItems.length;
+    const totalQty = window.PembelianPage.transactionItems.reduce((sum, item) => sum + item.qty, 0);
+    const totalNominal = window.PembelianPage.transactionItems.reduce((sum, item) => sum + item.nominal, 0);
 
     document.getElementById('totalItem').textContent = totalItem;
     document.getElementById('totalQty').textContent = totalQty.toLocaleString('id-ID');
@@ -1083,7 +1101,7 @@
       return;
     }
 
-    if (transactionItems.length === 0) {
+    if (window.PembelianPage.transactionItems.length === 0) {
       showToast('Tambahkan minimal 1 item', false);
       return;
     }
@@ -1100,8 +1118,8 @@
 
     let successCount = 0;
     let errorCount = 0;
-    const total = transactionItems.length;
-    const isEditMode = editingId !== null;
+    const total = window.PembelianPage.transactionItems.length;
+    const isEditMode = window.PembelianPage.editingId !== null;
 
     try {
       if (isEditMode && total === 1) {
@@ -1109,11 +1127,11 @@
         const progress = 50;
         progressBar.querySelector('.progress-bar__fill').style.width = progress + '%';
 
-        const response = await fetch('/api/v1/pembelian/' + editingId, {
+        const response = await fetch('/api/v1/pembelian/' + window.PembelianPage.editingId, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            qty: transactionItems[0].qty
+            qty: window.PembelianPage.transactionItems[0].qty
           })
         });
 
@@ -1128,8 +1146,8 @@
         progressBar.querySelector('.progress-bar__fill').style.width = '100%';
       } else if (!isEditMode) {
         // Create mode: POST each item
-        for (let i = 0; i < transactionItems.length; i++) {
-          const item = transactionItems[i];
+        for (let i = 0; i < window.PembelianPage.transactionItems.length; i++) {
+          const item = window.PembelianPage.transactionItems[i];
 
           // Update progress
           const progress = ((i + 1) / total) * 100;
@@ -1182,8 +1200,8 @@
   // Close modal
   function closeModal() {
     document.getElementById('pembelianModal').classList.remove('active');
-    editingId = null;
-    transactionItems = [];
+    window.PembelianPage.editingId = null;
+    window.PembelianPage.transactionItems = [];
 
     // Reset disabled fields
     document.getElementById('inputTanggal').disabled = false;
@@ -1257,13 +1275,13 @@
       const item = result.data;
       
       // Open the multi-item modal in edit mode
-      editingId = id;
+      window.PembelianPage.editingId = id;
       document.getElementById('modalTitle').textContent = 'Edit Pembelian';
       document.getElementById('inputTanggal').value = item.tanggal ? item.tanggal.split('T')[0] : '';
       document.getElementById('inputSupplier').value = item.supplier_id || '';
 
       // Add item to transaction items for editing
-      transactionItems = [{
+      window.PembelianPage.transactionItems = [{
         sku: item.sku,
         nama_produk: item.nama_produk,
         qty: item.qty,
@@ -1298,8 +1316,8 @@
 
   // Delete pembelian
   function deletePembelian(id) {
-    deleteId = id;
-    const item = pembelianList.find(p => p.id === id);
+    window.PembelianPage.deleteId = id;
+    const item = window.PembelianPage.pembelianList.find(p => p.id === id);
     document.getElementById('deleteItemInfo').textContent = item 
       ? `${item.nama_produk || item.sku} - ${item.qty} unit` 
       : `ID: ${id}`;
@@ -1309,19 +1327,19 @@
   // Close delete modal
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
-    deleteId = null;
+    window.PembelianPage.deleteId = null;
   }
 
   // Confirm delete
   async function confirmDelete() {
-    if (!deleteId) return;
+    if (!window.PembelianPage.deleteId) return;
     
     const btn = document.getElementById('btnConfirmDelete');
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div><span>Menghapus...</span>';
     
     try {
-      const response = await fetch('/api/v1/pembelian/' + deleteId, {
+      const response = await fetch('/api/v1/pembelian/' + window.PembelianPage.deleteId, {
         method: 'DELETE'
       });
       
@@ -1348,7 +1366,7 @@
   function exportExcel() {
     const csvContent = [
       ['Tanggal', 'Supplier', 'SKU', 'Nama Produk', 'Qty', 'Harga Beli', 'Nominal'].join(','),
-      ...pembelianList.map(item => [
+      ...window.PembelianPage.pembelianList.map(item => [
         formatDate(item.tanggal),
         `"${(item.nama_supplier || '').replace(/"/g, '""')}"`,
         item.sku || '',
@@ -1419,10 +1437,6 @@
     await loadPembelian();
   }
 
-  // Page load handler
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPembelianPage);
-  } else {
-    initPembelianPage();
-  }
+  // Page load handler - called by AppRouter only
+  // Do NOT call initPembelianPage() here to avoid double initialization
 </script>
