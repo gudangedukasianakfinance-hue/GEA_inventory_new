@@ -5,13 +5,3 @@
 ⚠️ DATABASE_URL belum di-set. API database akan gagal sampai env tersedia.
    Untuk Vercel: Tambahkan DATABASE_URL di Settings → Environment Variables
 Server running on http://localhost:3000
-auth login error Error: connect ECONNREFUSED 127.0.0.1:5432
-    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
-    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at async login (file:///workspace/project/inventory-app-new/backend/auth.js:55:20) {
-  errno: -111,
-  code: 'ECONNREFUSED',
-  syscall: 'connect',
-  address: '127.0.0.1',
-  port: 5432
-}

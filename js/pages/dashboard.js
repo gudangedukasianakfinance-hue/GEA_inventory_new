@@ -3,7 +3,11 @@
    Final Dashboard V1 - Fixed
    ============================================ */
 
-const Dashboard = {
+// Prevent redeclaration - check if already exists
+if (typeof window.Dashboard !== 'undefined') {
+  console.log('Dashboard already initialized');
+} else {
+  window.Dashboard = {
   data: {},
   charts: {},
   updateInterval: null,
@@ -583,7 +587,10 @@ const Dashboard = {
 };
 
 function initDashboard() {
-  Dashboard.init();
+  if (window.Dashboard && typeof window.Dashboard.init === 'function') {
+    if (window.Dashboard.stopAutoRefresh) window.Dashboard.stopAutoRefresh();
+    window.Dashboard.init();
+  }
 }
 
 if (document.readyState === 'loading') {
