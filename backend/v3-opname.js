@@ -85,7 +85,7 @@ export async function handleGet(req, res) {
     // Parse kategori_targets
     const commands = result.rows.map(row => ({
       ...row,
-      kategori_targets: row.kategori_targets ? JSON.parse(row.kategori_targets) : ['modul', 'seragam', 'poster', 'lain_lain']
+      kategori_targets: row.kategori_targets ? JSON.parse(row.kategori_targets) : ['modul', 'seragam', 'poster', 'lain-lain']
     }));
     
     res.status(200).json({ commands, total: result.rows.length });
@@ -116,7 +116,7 @@ export async function handlePost(req, res) {
     }
     
     // Parse kategori_targets
-    const targets = Array.isArray(kategori_targets) ? kategori_targets : ['modul', 'seragam', 'poster', 'lain_lain'];
+    const targets = Array.isArray(kategori_targets) ? kategori_targets : ['modul', 'seragam', 'poster', 'lain-lain'];
     
     const result = await pool.query(`
       INSERT INTO stok_opname_perintah (

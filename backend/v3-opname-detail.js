@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       }
       
       const p = perintah.rows[0];
-      const kategoriTargets = p.kategori_targets ? JSON.parse(p.kategori_targets) : ['modul', 'seragam', 'poster', 'lain_lain'];
+      const kategoriTargets = p.kategori_targets ? JSON.parse(p.kategori_targets) : ['modul', 'seragam', 'poster', 'lain-lain'];
       
       // Get produk berdasarkan kategori_targets
       // STOK SISTEM dihitung dari rolling stock
