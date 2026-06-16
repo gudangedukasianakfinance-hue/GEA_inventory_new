@@ -242,30 +242,43 @@ function getStatusLabel(status) {
 async function loadSoKpiData() {
   try {
     const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard.currentFilterBulan}&tahun=${window.SODashboard.currentFilterTahun}`);
-    if (!response.ok) throw new Error('Failed to load');
+    if (!response.ok) throw new Error('Failed to load: ' + response.status);
     
     const data = await response.json();
-    const items = data.items || [];
+    
+    // Handle both array and object response
+    const items = Array.isArray(data) ? data : (data.items || []);
     
     // Hitung statistik
     const total = items.length;
-    const menunggu = items.filter(item => item.status === 'menunggu').length;
-    const proses = items.filter(item => item.status === 'proses').length;
-    const selesai = items.filter(item => item.status === 'selesai').length;
+    const menunggu = items.filter(item => item && item.status === 'menunggu').length;
+    const proses = items.filter(item => item && item.status === 'proses').length;
+    const selesai = items.filter(item => item && item.status === 'selesai').length;
     
-    // Update KPI cards
-    document.getElementById('kpi-total-perintah').textContent = formatNumber(total);
-    document.getElementById('kpi-menunggu').textContent = formatNumber(menunggu);
-    document.getElementById('kpi-proses').textContent = formatNumber(proses);
-    document.getElementById('kpi-selesai').textContent = formatNumber(selesai);
+    // Update KPI cards with null checks
+    const kpiTotal = document.getElementById('kpi-total-perintah');
+    const kpiMenunggu = document.getElementById('kpi-menunggu');
+    const kpiProses = document.getElementById('kpi-proses');
+    const kpiSelesai = document.getElementById('kpi-selesai');
     
-    // Update progress bar
+    if (kpiTotal) kpiTotal.textContent = formatNumber(total);
+    if (kpiMenunggu) kpiMenunggu.textContent = formatNumber(menunggu);
+    if (kpiProses) kpiProses.textContent = formatNumber(proses);
+    if (kpiSelesai) kpiSelesai.textContent = formatNumber(selesai);
+    
+    // Update progress bar with null checks
     const progressPercent = total > 0 ? Math.round((selesai / total) * 100) : 0;
-    document.getElementById('progressPercent').textContent = progressPercent + '%';
-    document.getElementById('progressBarFill').style.width = progressPercent + '%';
-    document.getElementById('progressDone').textContent = selesai;
-    document.getElementById('progressTotal').textContent = total;
-    document.getElementById('progressPeriod').textContent = window.SODashboard.NAMA_BULAN[window.SODashboard.currentFilterBulan] + ' ' + window.SODashboard.currentFilterTahun;
+    const progressPercentEl = document.getElementById('progressPercent');
+    const progressBarFillEl = document.getElementById('progressBarFill');
+    const progressDoneEl = document.getElementById('progressDone');
+    const progressTotalEl = document.getElementById('progressTotal');
+    const progressPeriodEl = document.getElementById('progressPeriod');
+    
+    if (progressPercentEl) progressPercentEl.textContent = progressPercent + '%';
+    if (progressBarFillEl) progressBarFillEl.style.width = progressPercent + '%';
+    if (progressDoneEl) progressDoneEl.textContent = selesai;
+    if (progressTotalEl) progressTotalEl.textContent = total;
+    if (progressPeriodEl) progressPeriodEl.textContent = window.SODashboard.NAMA_BULAN[window.SODashboard.currentFilterBulan] + ' ' + window.SODashboard.currentFilterTahun;
     
     // Render recent commands
     renderRecentPerintah(items.slice(0, 5));
@@ -275,11 +288,16 @@ async function loadSoKpiData() {
     
   } catch (error) {
     console.error('Error loading SO KPI:', error);
-    // Tampilkan error state
-    document.getElementById('kpi-total-perintah').textContent = '-';
-    document.getElementById('kpi-menunggu').textContent = '-';
-    document.getElementById('kpi-proses').textContent = '-';
-    document.getElementById('kpi-selesai').textContent = '-';
+    // Tampilkan error state with null checks
+    const kpiTotal = document.getElementById('kpi-total-perintah');
+    const kpiMenunggu = document.getElementById('kpi-menunggu');
+    const kpiProses = document.getElementById('kpi-proses');
+    const kpiSelesai = document.getElementById('kpi-selesai');
+    
+    if (kpiTotal) kpiTotal.textContent = '-';
+    if (kpiMenunggu) kpiMenunggu.textContent = '-';
+    if (kpiProses) kpiProses.textContent = '-';
+    if (kpiSelesai) kpiSelesai.textContent = '-';
   }
 }
 
@@ -287,7 +305,12 @@ async function loadSoKpiData() {
 function renderRecentPerintah(items) {
   const tbody = document.getElementById('recentPerintahTable');
   
-  if (!items.length) {
+  if (!tbody) {
+    console.warn('recentPerintahTable not found');
+    return;
+  }
+  
+  if (!items || !items.length) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" class="text-center text-muted">
@@ -319,6 +342,11 @@ function renderRecentPerintah(items) {
 // Render kategori progress
 function renderKategoriProgress(kategoriData) {
   const container = document.getElementById('kategoriProgressList');
+  
+  if (!container) {
+    console.warn('kategoriProgressList not found');
+    return;
+  }
   
   if (!kategoriData || !kategoriData.length) {
     container.innerHTML = `

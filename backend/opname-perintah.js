@@ -136,14 +136,15 @@ export default async function handler(req, res) {
           p.bulan,
           p.tahun,
           p.svp_nama,
-          p.pic_checker,
-          p.kategori_id,
-          p.kategori_nama,
+          COALESCE(p.pic_checker, p.checker, '') as pic_checker,
+          COALESCE(p.kategori_id, p.kategori, 'modul') as kategori_id,
+          COALESCE(p.kategori_nama, p.kategori, 'Modul') as kategori_nama,
           p.lokasi,
           p.keterangan,
           p.status,
           p.checker,
           p.opname_id,
+          p.target_sku,
           p.created_at,
           p.started_at,
           p.completed_at,
@@ -256,14 +257,17 @@ export default async function handler(req, res) {
             bulan = $3,
             tahun = $4,
             svp_nama = $5,
-            lokasi = $6,
-            keterangan = $7,
-            kategori_targets = $8,
+            pic_checker = COALESCE($6, pic_checker),
+            lokasi = $7,
+            keterangan = $8,
+            kategori_id = COALESCE($9, kategori_id),
+            kategori_nama = COALESCE($10, kategori_nama),
             updated_at = NOW()
-          WHERE id = $9 AND status IN ('menunggu', 'proses', 'selesai')
+          WHERE id = $11 AND status IN ('menunggu', 'proses', 'selesai')
           RETURNING *
           `,
-          [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, kategoriTargets, perintahId]
+          [kodeSo, tanggal, bulan, tahun, svpNama, body.pic_checker || body.pic, lokasi, keterangan, 
+           body.kategori_id || body.kategori, body.kategori_nama || body.kategori, perintahId]
         );
 
         if (!updateResult.rows.length) {
@@ -278,12 +282,13 @@ export default async function handler(req, res) {
 
       const kodeSo = normalizeKodeSo(body.kode_so);
       const svpNama = String(body.svp_nama || "").trim();
-      const picChecker = String(body.pic_checker || "").trim() || null;
+      const picChecker = String(body.pic_checker || body.pic || "").trim() || null;
       const lokasi = String(body.lokasi || "").trim() || null;
       const keterangan = String(body.keterangan || "").trim() || null;
       const tanggal = body.tanggal_perintah || body.tanggal;
-      const kategoriId = String(body.kategori_id || "modul").trim();
-      const kategoriNama = String(body.kategori_nama || "Modul").trim();
+      // Support both kategori and kategori_id for backward compatibility
+      const kategoriId = String(body.kategori_id || body.kategori || "modul").trim();
+      const kategoriNama = String(body.kategori_nama || body.kategori || "Modul").trim();
 
       if (!kodeSo || !svpNama || !tanggal) {
         return res.status(400).json({ error: "kode_so, svp_nama, dan tanggal wajib diisi" });
@@ -313,6 +318,17 @@ export default async function handler(req, res) {
           status, target_sku
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'menunggu', $12)
+        ON CONFLICT (kode_so) DO UPDATE SET
+          tanggal_perintah = EXCLUDED.tanggal_perintah,
+          bulan = EXCLUDED.bulan,
+          tahun = EXCLUDED.tahun,
+          svp_nama = EXCLUDED.svp_nama,
+          pic_checker = EXCLUDED.pic_checker,
+          lokasi = EXCLUDED.lokasi,
+          keterangan = EXCLUDED.keterangan,
+          kategori_id = EXCLUDED.kategori_id,
+          kategori_nama = EXCLUDED.kategori_nama,
+          updated_at = NOW()
         RETURNING *
         `,
         [kodeSo, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, 
