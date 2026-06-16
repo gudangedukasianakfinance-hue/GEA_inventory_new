@@ -5,8 +5,7 @@ import {
   ensurePerintahKategoriColumn,
   getKategoriCountedByOpname,
   getKategoriTotalsForPeriod,
-  normalizeKategoriTargets,
-  serializeKategoriTargets
+  normalizeKategoriTargets
 } from "./opname-kategori-utils.js";
 
 function normalizeKodeSo(value) {
@@ -26,14 +25,12 @@ async function calculateProgressFields(perintahRow) {
   }
   
   try {
-    // Get checked SKU count from opname detail
     const checkedCount = await pool.query(`
       SELECT COUNT(*)::int as checked 
       FROM stok_opname_detail 
       WHERE opname_id = $1 AND stok_fisik IS NOT NULL
     `, [opnameId]);
     
-    // Use stored target_sku as snapshot (not live count)
     const total = storedTargetSku;
     const checked = Number(checkedCount.rows[0]?.checked || 0);
     const progress = total > 0 ? (checked / total) * 100 : 0;
@@ -72,7 +69,6 @@ async function enrichPerintahRows(rows, bulan, tahun) {
       row.status
     );
     
-    // Calculate progress fields
     const progress = await calculateProgressFields(row);
 
     return {
@@ -127,6 +123,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "bulan & tahun wajib" });
       }
 
+      // GET list - using only columns that exist in production schema
+      // REMOVED: pic_checker, kategori_id, kategori_nama (do not exist in production)
+      // Use: checker as pic_checker, kategori_targets as kategori_id/kategori_nama
       const listResult = await pool.query(
         `
         SELECT
@@ -136,9 +135,9 @@ export default async function handler(req, res) {
           p.bulan,
           p.tahun,
           p.svp_nama,
-          COALESCE(p.pic_checker, p.checker, '') as pic_checker,
-          COALESCE(p.kategori_id, p.kategori, 'modul') as kategori_id,
-          COALESCE(p.kategori_nama, p.kategori, 'Modul') as kategori_nama,
+          p.checker AS pic_checker,
+          p.kategori_targets AS kategori_id,
+          p.kategori_targets AS kategori_nama,
           p.lokasi,
           p.keterangan,
           p.status,
@@ -210,16 +209,13 @@ export default async function handler(req, res) {
         const lokasi = String(body.lokasi || "").trim() || null;
         const keterangan = String(body.keterangan || "").trim() || null;
         const tanggal = body.tanggal_perintah || body.tanggal;
-        const kategoriTargets = serializeKategoriTargets(body.kategori_targets);
+        const kategoriTargets = body.kategori_targets || ['modul', 'seragam', 'poster', 'lain_lain'];
 
         if (!perintahId) {
           return res.status(400).json({ error: "perintah_id wajib" });
         }
         if (!kodeSo || !svpNama || !tanggal) {
           return res.status(400).json({ error: "kode_so, svp_nama, dan tanggal wajib diisi" });
-        }
-        if (!normalizeKategoriTargets(kategoriTargets).length) {
-          return res.status(400).json({ error: "Pilih minimal satu kategori SO" });
         }
 
         const dateObj = new Date(tanggal);
@@ -248,6 +244,8 @@ export default async function handler(req, res) {
           return res.status(409).json({ error: "Kode SO sudah digunakan perintah lain" });
         }
 
+        // UPDATE - only using columns that exist in production schema
+        // REMOVED: pic_checker, kategori_id, kategori_nama (do not exist)
         const updateResult = await pool.query(
           `
           UPDATE stok_opname_perintah
@@ -257,17 +255,18 @@ export default async function handler(req, res) {
             bulan = $3,
             tahun = $4,
             svp_nama = $5,
-            pic_checker = COALESCE($6, pic_checker),
-            lokasi = $7,
-            keterangan = $8,
-            kategori_id = COALESCE($9, kategori_id),
-            kategori_nama = COALESCE($10, kategori_nama),
+            lokasi = $6,
+            keterangan = $7,
+            kategori_targets = $8,
+            checker = COALESCE(NULLIF($9, ''), checker),
             updated_at = NOW()
-          WHERE id = $11 AND status IN ('menunggu', 'proses', 'selesai')
+          WHERE id = $10 AND status IN ('menunggu', 'proses', 'selesai')
           RETURNING *
           `,
-          [kodeSo, tanggal, bulan, tahun, svpNama, body.pic_checker || body.pic, lokasi, keterangan, 
-           body.kategori_id || body.kategori, body.kategori_nama || body.kategori, perintahId]
+          [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, 
+           JSON.stringify(Array.isArray(kategoriTargets) ? kategoriTargets : ['modul', 'seragam', 'poster', 'lain_lain']),
+           body.checker || body.pic_checker || null,
+           perintahId]
         );
 
         if (!updateResult.rows.length) {
@@ -280,15 +279,14 @@ export default async function handler(req, res) {
         });
       }
 
+      // CREATE new perintah - only using columns that exist in production schema
+      // REMOVED: pic_checker, kategori_id, kategori_nama (do not exist)
       const kodeSo = normalizeKodeSo(body.kode_so);
       const svpNama = String(body.svp_nama || "").trim();
-      const picChecker = String(body.pic_checker || body.pic || "").trim() || null;
       const lokasi = String(body.lokasi || "").trim() || null;
       const keterangan = String(body.keterangan || "").trim() || null;
       const tanggal = body.tanggal_perintah || body.tanggal;
-      // Support both kategori and kategori_id for backward compatibility
-      const kategoriId = String(body.kategori_id || body.kategori || "modul").trim();
-      const kategoriNama = String(body.kategori_nama || body.kategori || "Modul").trim();
+      const kategoriTargets = body.kategori_targets || ['modul', 'seragam', 'poster', 'lain_lain'];
 
       if (!kodeSo || !svpNama || !tanggal) {
         return res.status(400).json({ error: "kode_so, svp_nama, dan tanggal wajib diisi" });
@@ -302,37 +300,34 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-      // Get product count filtered by kategori as snapshot for target_sku
-      const produkCountResult = await pool.query(
-        `SELECT COUNT(*)::int as total FROM produk WHERE kategori = $1`,
-        [kategoriId]
-      );
+      // Get total product count for target_sku
+      const produkCountResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk`);
       const targetSku = Number(produkCountResult.rows[0]?.total || 0);
 
+      // INSERT - only using columns that exist in production schema
+      // REMOVED: pic_checker, kategori_id, kategori_nama (do not exist)
       const insertResult = await pool.query(
         `
         INSERT INTO stok_opname_perintah (
           kode_so, tanggal_perintah, bulan, tahun,
-          svp_nama, pic_checker, lokasi, keterangan, 
-          kategori_id, kategori_nama, kategori_targets, 
-          status, target_sku
+          svp_nama, checker, lokasi, keterangan, 
+          kategori_targets, status, target_sku
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'menunggu', $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'menunggu', $10)
         ON CONFLICT (kode_so) DO UPDATE SET
           tanggal_perintah = EXCLUDED.tanggal_perintah,
           bulan = EXCLUDED.bulan,
           tahun = EXCLUDED.tahun,
           svp_nama = EXCLUDED.svp_nama,
-          pic_checker = EXCLUDED.pic_checker,
+          checker = COALESCE(EXCLUDED.checker, stok_opname_perintah.checker),
           lokasi = EXCLUDED.lokasi,
           keterangan = EXCLUDED.keterangan,
-          kategori_id = EXCLUDED.kategori_id,
-          kategori_nama = EXCLUDED.kategori_nama,
           updated_at = NOW()
         RETURNING *
         `,
-        [kodeSo, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, 
-         kategoriId, kategoriNama, kategoriId, targetSku]
+        [kodeSo, tanggal, bulan, tahun, svpNama, body.checker || body.pic_checker || null, lokasi, keterangan, 
+         JSON.stringify(Array.isArray(kategoriTargets) ? kategoriTargets : ['modul', 'seragam', 'poster', 'lain_lain']), 
+         targetSku]
       );
 
       return res.status(201).json({
@@ -343,7 +338,6 @@ export default async function handler(req, res) {
     
     // DELETE - Delete perintah (Admin only)
     if (req.method === "DELETE") {
-      // Check authorization
       const auth = await import('../services/auth.js');
       const authResult = auth.authenticate(req);
       if (!authResult.authorized) {
@@ -355,7 +349,6 @@ export default async function handler(req, res) {
       
       const url = new URL(req.url, `http://${req.headers.host}`);
       const pathParts = url.pathname.split('/').filter(Boolean);
-      // URL: /api/opname-perintah/:id -> pathParts = ['api', 'opname-perintah', ':id']
       const idIndex = pathParts.findIndex(p => p === 'opname-perintah');
       const id = pathParts[idIndex + 1];
       
@@ -363,7 +356,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "ID tidak valid" });
       }
       
-      // Check if perintah exists and is in 'menunggu' status
       const checkResult = await pool.query(
         `SELECT id, kode_so, status FROM stok_opname_perintah WHERE id = $1`,
         [id]
@@ -381,7 +373,6 @@ export default async function handler(req, res) {
         });
       }
       
-      // Delete the perintah (cascade will handle related records if FK is set)
       await pool.query(`DELETE FROM stok_opname_perintah WHERE id = $1`, [id]);
       
       return res.status(200).json({
