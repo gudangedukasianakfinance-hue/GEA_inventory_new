@@ -104,7 +104,8 @@ export default async function handler(req, res) {
         };
       }));
 
-      return res.status(200).json({ items });
+      console.log("[SO LIST]", { bulan, tahun, count: items.length });
+      return res.status(200).json({ success: true, items });
     }
 
     if (req.method === "POST") {

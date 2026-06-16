@@ -13,8 +13,14 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { opname_id, kategori_id } = req.query;
       
+      console.log("[SO DETAIL]", { opnameId: opname_id, kategoriId: kategori_id });
+      
       if (!opname_id) {
-        return res.status(400).json({ error: "opname_id wajib" });
+        return res.status(400).json({ success: false, error: "opname_id wajib" });
+      }
+      
+      if (!kategori_id) {
+        return res.status(400).json({ success: false, error: "kategori_id required" });
       }
       
       const produkList = await pool.query(`
@@ -31,10 +37,11 @@ export default async function handler(req, res) {
         LEFT JOIN stok_opname_detail sod ON sod.sku = p.sku AND sod.opname_id = $1
         WHERE p.kategori = $2
         ORDER BY p.nama_produk
-      `, [Number(opname_id), kategori_id || 'modul']);
+      `, [Number(opname_id), kategori_id]);
       
       res.status(200).json({
-        produk: produkList.rows.map(r => ({
+        success: true,
+        items: produkList.rows.map(r => ({
           sku: r.sku,
           nama_produk: r.nama_produk,
           kategori: r.kategori,
@@ -51,7 +58,7 @@ export default async function handler(req, res) {
       const { opname_id, sku, stok_fisik } = req.body;
       
       if (!opname_id || !sku || stok_fisik === undefined) {
-        return res.status(400).json({ error: "opname_id, sku, dan stok_fisik wajib diisi" });
+        return res.status(400).json({ success: false, error: "opname_id, sku, dan stok_fisik wajib diisi" });
       }
       
       const stokSistem = await pool.query(`SELECT COALESCE(stok_akhir, 0)::int AS stok FROM stok WHERE sku = $1`, [sku]);
@@ -94,10 +101,10 @@ export default async function handler(req, res) {
     }
     
     else {
-      res.status(405).json({ error: "Method not allowed" });
+      res.status(405).json({ success: false, error: "Method not allowed" });
     }
   } catch (err) {
     console.error("V3 OPNAME DETAIL ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 }

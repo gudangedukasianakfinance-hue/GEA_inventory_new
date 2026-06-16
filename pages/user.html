@@ -132,7 +132,8 @@
     try {
       const response = await fetch('/api/v1/users');
       if (!response.ok) throw new Error('Failed to load');
-      userList = await response.json();
+      const payload = await response.json();
+      userList = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : Array.isArray(payload.data) ? payload.data : [];
       renderUsersTable();
     } catch (error) {
       console.error('Error loading users:', error);
