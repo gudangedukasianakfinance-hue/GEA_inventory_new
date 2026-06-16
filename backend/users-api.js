@@ -156,7 +156,7 @@ async function createUser(req, res) {
     return send(res, 403, { success: false, message: "Hanya admin yang dapat membuat user" });
   }
 
-  const { username, email, name, nama, password, role, status } = req.body || {};
+  const { username, email, name, password, role, status } = req.body || {}; const nama = req.body.nama || name;
 
   if (!username || !password) {
     return send(res, 400, { success: false, message: "Username dan password wajib diisi" });
@@ -193,9 +193,9 @@ async function createUser(req, res) {
 
     const result = await pool.query(
       `INSERT INTO users (username, email, password_hash, nama_lengkap, role, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING id, username, email, nama_lengkap as name, role, is_active, created_at`,
-      [username.trim(), finalEmail, passwordHash, finalName, finalRole]
+      [username.trim(), finalEmail, passwordHash, finalName, finalRole, status === 'inactive' ? 'FALSE' : 'TRUE']
     );
 
     console.log("[CREATE USER] Success, returning 201"); return send(res, 201, { items: [result.rows[0]],
@@ -216,7 +216,8 @@ async function updateUser(req, res, userId) {
     return send(res, 403, { success: false, message: "Hanya admin yang dapat mengupdate user" });
   }
 
-  const { name, email, role } = req.body || {};
+  const { name, email, role, status } = req.body || {};
+    const nama = req.body.nama || name;
 
   try {
     // Check if user exists
@@ -250,6 +251,19 @@ async function updateUser(req, res, userId) {
       paramIndex++;
     }
 
+    if (nama !== undefined && nama !== '') {
+      updates.push(`nama_lengkap = $${paramIndex}`);
+      params.push(nama);
+      paramIndex++;
+    }
+    
+    if (status !== undefined) {
+      const isActive = status === 'inactive' ? 'FALSE' : 'TRUE';
+      updates.push(`is_active = $${paramIndex}`);
+      params.push(isActive);
+      paramIndex++;
+    }
+    
     if (role !== undefined) {
       const validRoles = VALID_ROLES;
       if (!validRoles.includes(role)) {
