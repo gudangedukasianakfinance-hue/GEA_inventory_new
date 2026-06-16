@@ -117,6 +117,7 @@ const routes = {
   "GET /opname-history": opnameHistoryHandler,
   "GET /opname-perintah": opnamePerintahHandler,
   "POST /opname-perintah": opnamePerintahHandler,
+  "DELETE /opname-perintah/:id": opnamePerintahHandler,
   "GET /opname-export": opnameExportHandler,
   "GET /persediaan": persediaanHandler,
   "GET /audit": auditHandler,

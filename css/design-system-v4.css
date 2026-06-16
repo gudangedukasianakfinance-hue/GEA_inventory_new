@@ -1253,3 +1253,28 @@ textarea.form-input {
     padding: var(--space-md);
   }
 }
+/* ===== Dark Theme ===== */
+[data-theme="dark"] {
+  --bg: #060b16;
+  --bg-secondary: #0a1628;
+  --surface: #101828;
+  --surface-2: #0f172a;
+  --surface-3: #1a2332;
+  --text: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --border: rgba(255, 255, 255, 0.08);
+  --primary: #ff4d3a;
+}
+
+/* ===== Light Theme ===== */
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --bg-secondary: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --primary: #ff4d3a;
+}

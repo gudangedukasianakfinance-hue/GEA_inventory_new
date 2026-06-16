@@ -1,0 +1,623 @@
+<!-- Dashboard SO Page -->
+<section class="dashboard">
+  
+  <!-- Welcome Section -->
+  <div class="welcome">
+    <div class="welcome__content">
+      <h1 class="welcome__title">Dashboard Stock Opname</h1>
+      <p class="welcome__subtitle">Monitoring dan statistik stok opname gudang</p>
+    </div>
+    <div class="welcome__filter">
+      <select id="filterBulan" class="filter-select">
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+      <select id="filterTahun" class="filter-select">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <div class="welcome__datetime">
+      <div class="welcome__date" id="currentDate">-</div>
+      <div class="welcome__time" id="currentTime">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('perintah-so')">
+      <i data-lucide="plus-circle"></i>
+      <span>Buat Perintah SO</span>
+    </button>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('pelaksanaan-so')">
+      <i data-lucide="clipboard-check"></i>
+      <span>Pelaksanaan SO</span>
+    </button>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('riwayat-so')">
+      <i data-lucide="history"></i>
+      <span>Riwayat SO</span>
+    </button>
+  </div>
+
+  <!-- KPI Section - SO Stats -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--primary">
+        <i data-lucide="clipboard-list"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Total Perintah SO</div>
+        <div class="kpi-card__value" id="kpi-total-perintah">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--warning">
+        <i data-lucide="clock"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Menunggu</div>
+        <div class="kpi-card__value" id="kpi-menunggu">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--info">
+        <i data-lucide="loader"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Proses</div>
+        <div class="kpi-card__value" id="kpi-proses">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--success">
+        <i data-lucide="check-circle"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Selesai</div>
+        <div class="kpi-card__value" id="kpi-selesai">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Overview -->
+  <div class="progress-overview-card">
+    <div class="progress-overview-header">
+      <h3><i data-lucide="trending-up"></i> Progress SO Periode</h3>
+      <span class="progress-overview-period" id="progressPeriod">-</span>
+    </div>
+    <div class="progress-overview-body">
+      <div class="progress-bar-container">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+        </div>
+        <div class="progress-bar-label">
+          <span id="progressPercent">0%</span>
+          <span>Selesai</span>
+        </div>
+      </div>
+      <div class="progress-stats">
+        <div class="progress-stat">
+          <span class="progress-stat__value" id="progressDone">0</span>
+          <span class="progress-stat__label">Selesai</span>
+        </div>
+        <div class="progress-stat-divider">/</div>
+        <div class="progress-stat">
+          <span class="progress-stat__value" id="progressTotal">0</span>
+          <span class="progress-stat__label">Total</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables Grid -->
+  <div class="tables-grid">
+    <!-- Perintah SO Terbaru -->
+    <div class="table-card" style="grid-column: span 2;">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
+          <i data-lucide="file-text"></i>
+          Perintah SO Terbaru
+        </h3>
+        <a href="#" class="table-card__link" onclick="AppRouter.navigateTo('perintah-so'); return false;">Lihat Semua</a>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Kode SO</th>
+            <th>Tanggal</th>
+            <th>SVP</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="recentPerintahTable">
+          <tr>
+            <td colspan="5" class="text-center text-muted">
+              <i data-lucide="loader-2" class="spin"></i> Memuat data...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Kategori Progress -->
+    <div class="table-card">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
+          <i data-lucide="package"></i>
+          Progress per Kategori
+        </h3>
+      </div>
+      <div class="table-card__body" id="kategoriProgressList">
+        <div class="table-card__empty">
+          <i data-lucide="package"></i>
+          <p class="table-card__empty-text">Tidak ada data kategori</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<script>
+/**
+ * Dashboard SO - Inisialisasi dan fungsi load data
+ */
+
+// Namespace untuk state (hindari redeclare saat SPA cache reload)
+window.SODashboard = window.SODashboard || {};
+
+// State filter - hanya init sekali, jangan reset
+if (!window.SODashboard.currentFilterBulan) {
+  window.SODashboard.currentFilterBulan = new Date().getMonth() + 1;
+}
+if (!window.SODashboard.currentFilterTahun) {
+  window.SODashboard.currentFilterTahun = new Date().getFullYear();
+}
+
+// Format nama bulan (constant - aman untuk const)
+window.SODashboard.NAMA_BULAN = window.SODashboard.NAMA_BULAN || ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+// Update jam dan tanggal
+function updateDateTime() {
+  const dateEl = document.getElementById('currentDate');
+  const timeEl = document.getElementById('currentTime');
+  if (!dateEl || !timeEl) return;
+  
+  const now = new Date();
+  dateEl.textContent = now.toLocaleDateString('id-ID', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  timeEl.textContent = now.toLocaleTimeString('id-ID');
+}
+
+// Format tanggal Indonesia
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Format angka
+function formatNumber(num) {
+  return num ? num.toLocaleString('id-ID') : '0';
+}
+
+// Get status class
+function getStatusClass(status) {
+  const map = {
+    'menunggu': 'badge--pending',
+    'proses': 'badge--process',
+    'selesai': 'badge--done'
+  };
+  return map[status] || 'badge--pending';
+}
+
+// Get status label
+function getStatusLabel(status) {
+  const map = {
+    'menunggu': 'Menunggu',
+    'proses': 'Proses',
+    'selesai': 'Selesai'
+  };
+  return map[status] || status;
+}
+
+// Load KPI data dari API
+async function loadSoKpiData() {
+  try {
+    const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard.currentFilterBulan}&tahun=${window.SODashboard.currentFilterTahun}`);
+    if (!response.ok) throw new Error('Failed to load');
+    
+    const data = await response.json();
+    const items = data.items || [];
+    
+    // Hitung statistik
+    const total = items.length;
+    const menunggu = items.filter(item => item.status === 'menunggu').length;
+    const proses = items.filter(item => item.status === 'proses').length;
+    const selesai = items.filter(item => item.status === 'selesai').length;
+    
+    // Update KPI cards
+    document.getElementById('kpi-total-perintah').textContent = formatNumber(total);
+    document.getElementById('kpi-menunggu').textContent = formatNumber(menunggu);
+    document.getElementById('kpi-proses').textContent = formatNumber(proses);
+    document.getElementById('kpi-selesai').textContent = formatNumber(selesai);
+    
+    // Update progress bar
+    const progressPercent = total > 0 ? Math.round((selesai / total) * 100) : 0;
+    document.getElementById('progressPercent').textContent = progressPercent + '%';
+    document.getElementById('progressBarFill').style.width = progressPercent + '%';
+    document.getElementById('progressDone').textContent = selesai;
+    document.getElementById('progressTotal').textContent = total;
+    document.getElementById('progressPeriod').textContent = window.SODashboard.NAMA_BULAN[window.SODashboard.currentFilterBulan] + ' ' + window.SODashboard.currentFilterTahun;
+    
+    // Render recent commands
+    renderRecentPerintah(items.slice(0, 5));
+    
+    // Render kategori progress
+    renderKategoriProgress(data.period_kategori || []);
+    
+  } catch (error) {
+    console.error('Error loading SO KPI:', error);
+    // Tampilkan error state
+    document.getElementById('kpi-total-perintah').textContent = '-';
+    document.getElementById('kpi-menunggu').textContent = '-';
+    document.getElementById('kpi-proses').textContent = '-';
+    document.getElementById('kpi-selesai').textContent = '-';
+  }
+}
+
+// Render recent perintah table
+function renderRecentPerintah(items) {
+  const tbody = document.getElementById('recentPerintahTable');
+  
+  if (!items.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          Tidak ada perintah SO periode ini
+        </td>
+      </tr>
+    `;
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+    return;
+  }
+  
+  tbody.innerHTML = items.map(item => `
+    <tr>
+      <td><code>${item.kode_so || '-'}</code></td>
+      <td>${formatDate(item.tanggal_perintah)}</td>
+      <td>${item.svp_nama || '-'}</td>
+      <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
+      <td>
+        <button class="action-btn" onclick="executePerintahFromDashboard(${item.id}, '${item.kode_so || ''}')" title="Proses SO">
+          <i data-lucide="play"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  
+  if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+}
+
+// Render kategori progress
+function renderKategoriProgress(kategoriData) {
+  const container = document.getElementById('kategoriProgressList');
+  
+  if (!kategoriData || !kategoriData.length) {
+    container.innerHTML = `
+      <div class="table-card__empty">
+        <i data-lucide="package"></i>
+        <p class="table-card__empty-text">Tidak ada data kategori</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = kategoriData.map(k => {
+    const statusClass = k.status === 'selesai' ? 'status--success' : 
+                        k.status === 'proses' ? 'status--warning' : 'status--pending';
+    const statusLabel = k.status === 'selesai' ? 'Selesai' : 
+                        k.status === 'proses' ? 'Proses' : 'Menunggu';
+    
+    return `
+      <div class="kategori-progress-item ${statusClass}">
+        <div class="kategori-progress-header">
+          <strong>${k.label || k.kategori}</strong>
+          <span class="badge ${k.status === 'selesai' ? 'badge--done' : k.status === 'proses' ? 'badge--process' : 'badge--pending'}">${statusLabel}</span>
+        </div>
+        <div class="kategori-progress-detail">
+          ${k.perintah_count || 0} perintah · ${k.progress || 0}% selesai
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Navigate ke pelaksanaan SO
+function executePerintahFromDashboard(id, kodeSo) {
+  localStorage.setItem('activePerintahId', id);
+  localStorage.setItem('activePerintahKode', kodeSo);
+  AppRouter.navigateTo('pelaksanaan-so');
+}
+
+// Handle filter change
+function handleFilterChange() {
+  window.SODashboard.currentFilterBulan = parseInt(document.getElementById('filterBulan').value);
+  window.SODashboard.currentFilterTahun = parseInt(document.getElementById('filterTahun').value);
+  loadSoKpiData();
+}
+
+// Inisialisasi saat page load
+function initDashboardSo() {
+  // Set filter values
+  document.getElementById('filterBulan').value = window.SODashboard.currentFilterBulan;
+  document.getElementById('filterTahun').value = window.SODashboard.currentFilterTahun;
+  
+  // Update datetime
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  
+  // Load data
+  loadSoKpiData();
+  
+  // Add event listeners
+  document.getElementById('filterBulan')?.addEventListener('change', handleFilterChange);
+  document.getElementById('filterTahun')?.addEventListener('change', handleFilterChange);
+  
+  // Initialize lucide icons
+  if (window.lucide) lucide.createIcons();
+}
+
+// Auto init on page load - hanya jalankan jika page container ada
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('currentDate')) {
+      initDashboardSo();
+    }
+  });
+} else {
+  // Tunda sebentar untuk memastikan DOM sudah di-render
+  setTimeout(function() {
+    if (document.getElementById('currentDate')) {
+      initDashboardSo();
+    }
+  }, 100);
+}
+</script>
+
+<style>
+/* Progress Overview Card */
+.progress-overview-card {
+  background: linear-gradient(135deg, rgba(255, 77, 58, 0.15), rgba(255, 107, 91, 0.05));
+  border: 1px solid rgba(255, 77, 58, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.progress-overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-overview-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFF;
+  margin: 0;
+}
+
+.progress-overview-period {
+  font-size: 14px;
+  color: #94A3B8;
+}
+
+.progress-overview-body {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.progress-bar-container {
+  flex: 1;
+}
+
+.progress-bar-track {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF4D3A, #FF6B5B);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.progress-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #94A3B8;
+}
+
+.progress-bar-label span:first-child {
+  font-weight: 600;
+  color: #FF4D3A;
+}
+
+.progress-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-stat {
+  text-align: center;
+}
+
+.progress-stat__value {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #FFF;
+}
+
+.progress-stat__label {
+  font-size: 12px;
+  color: #94A3B8;
+  text-transform: uppercase;
+}
+
+.progress-stat-divider {
+  font-size: 24px;
+  color: #475569;
+}
+
+/* Quick Actions Override */
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.quick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #FFF;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+  background: rgba(255, 77, 58, 0.2);
+  border-color: rgba(255, 77, 58, 0.4);
+}
+
+.quick-action-btn i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Kategori Progress */
+.kategori-progress-item {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.kategori-progress-item:last-child {
+  margin-bottom: 0;
+}
+
+.kategori-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.kategori-progress-header strong {
+  font-size: 14px;
+  color: #FFF;
+}
+
+.kategori-progress-detail {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.kategori-progress-item.status--success {
+  border-left: 3px solid #22C55E;
+}
+
+.kategori-progress-item.status--warning {
+  border-left: 3px solid #FF4D3A;
+}
+
+.kategori-progress-item.status--pending {
+  border-left: 3px solid #94A3B8;
+}
+
+/* Badge styles */
+.badge--pending {
+  background: rgba(148, 163, 184, 0.2);
+  color: #94A3B8;
+}
+
+.badge--process {
+  background: rgba(255, 77, 58, 0.2);
+  color: #FF4D3A;
+}
+
+.badge--done {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22C55E;
+}
+
+/* Spin animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .progress-overview-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .progress-stats {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .quick-actions {
+    flex-wrap: wrap;
+  }
+  
+  .quick-action-btn {
+    flex: 1;
+    min-width: 140px;
+    justify-content: center;
+  }
+}
+</style>

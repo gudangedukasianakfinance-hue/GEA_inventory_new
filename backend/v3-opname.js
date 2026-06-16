@@ -85,7 +85,7 @@ export async function handleGet(req, res) {
     // Parse kategori_targets
     const commands = result.rows.map(row => ({
       ...row,
-      kategori_targets: row.kategori_targets ? JSON.parse(row.kategori_targets) : ['modul', 'seragam', 'poster', 'lain_lain']
+      kategori_targets: row.kategori_targets ? JSON.parse(row.kategori_targets) : ['modul', 'seragam', 'poster', 'lain-lain']
     }));
     
     res.status(200).json({ commands, total: result.rows.length });
@@ -116,7 +116,7 @@ export async function handlePost(req, res) {
     }
     
     // Parse kategori_targets
-    const targets = Array.isArray(kategori_targets) ? kategori_targets : ['modul', 'seragam', 'poster', 'lain_lain'];
+    const targets = Array.isArray(kategori_targets) ? kategori_targets : ['modul', 'seragam', 'poster', 'lain-lain'];
     
     const result = await pool.query(`
       INSERT INTO stok_opname_perintah (
@@ -190,55 +190,29 @@ export async function handlePut(req, res) {
         
       case 'submit':
         // User submit SO (setelah input qty fisik)
+        // Phase 1: Direct to 'selesai' (no approval)
         if (so.status !== 'proses') {
           return res.status(400).json({ error: "SO tidak bisa disubmit dari status ini" });
         }
         await pool.query(`
           UPDATE stok_opname_perintah 
-          SET status = 'menunggu_approval', completed_at = NOW()
-          WHERE id = $1
-        `, [id]);
-        res.status(200).json({ success: true, message: "SO submitted, menunggu approval admin" });
-        break;
-        
-      case 'approve':
-        // Admin approve SO - require admin authorization
-        const adminApprove = await requireAdmin(req, res);
-        if (!adminApprove) return;
-        
-        if (so.status !== 'menunggu_approval') {
-          return res.status(400).json({ error: "SO tidak bisa diapprove dari status ini" });
-        }
-        await pool.query(`
-          UPDATE stok_opname_perintah 
-          SET status = 'selesai'
+          SET status = 'selesai', completed_at = NOW()
           WHERE id = $1
         `, [id]);
         
-        // Update stok_opname with finalization
+        // Update opname timestamp if exists
         if (so.opname_id) {
           await pool.query(`
             UPDATE stok_opname 
-            SET disesuaikan_at = NOW()
+            SET tanggal_selesai = NOW(), updated_at = NOW()
             WHERE id = $1
           `, [so.opname_id]);
         }
         
-        res.status(200).json({ success: true, message: "SO approved dan difinalisasi" });
+        res.status(200).json({ success: true, message: "SO submitted dan selesai", status: 'selesai' });
         break;
         
-      case 'reject':
-        // Admin reject SO - require admin authorization
-        const adminReject = await requireAdmin(req, res);
-        if (!adminReject) return;
-        
-        await pool.query(`
-          UPDATE stok_opname_perintah 
-          SET status = 'ditolak'
-          WHERE id = $1
-        `, [id]);
-        res.status(200).json({ success: true, message: "SO ditolak" });
-        break;
+      // APPROVE/REJECT actions removed - workflow is direct: menunggu -> proses -> selesai
         
       default:
         res.status(400).json({ error: `Action '${action}' tidak valid` });

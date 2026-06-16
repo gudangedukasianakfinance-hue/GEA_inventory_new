@@ -1,72 +1,40 @@
 import pool from "../services/db.js";
-import {
-  buildKategoriProgress,
-  buildPeriodKategoriIndicator,
-  ensurePerintahKategoriColumn,
-  getKategoriCountedByOpname,
-  getKategoriTotalsForPeriod,
-  normalizeKategoriTargets,
-  serializeKategoriTargets
-} from "./opname-kategori-utils.js";
+import { kategoriLabel } from "./opname-kategori-utils.js";
 
 function normalizeKodeSo(value) {
   return String(value || "").trim().toUpperCase();
 }
 
-async function enrichPerintahRows(rows, bulan, tahun) {
-  if (!rows.length) {
-    return { rows: [], period_kategori: buildPeriodKategoriIndicator([]) };
+async function calculateProgress(opnameId, targetSku) {
+  if (!opnameId) {
+    return { target_sku: targetSku, checked_sku: 0, progress_percent: 0 };
   }
-
-  const totalsByKategori = await getKategoriTotalsForPeriod(bulan, tahun);
-  const countedMap = await getKategoriCountedByOpname(
-    rows.map((row) => row.opname_id).filter(Boolean)
-  );
-
-  const enriched = rows.map((row) => {
-    const kategori_targets = normalizeKategoriTargets(row.kategori_targets);
-    const kategori_progress = buildKategoriProgress(
-      kategori_targets,
-      totalsByKategori,
-      countedMap[row.opname_id] || {},
-      row.status
-    );
-
-    return {
-      ...row,
-      kategori_targets,
-      kategori_progress,
-      kategori_label: kategori_progress.map((item) => item.label).join(", ")
-    };
-  });
-
-  return {
-    rows: enriched,
-    period_kategori: buildPeriodKategoriIndicator(enriched)
-  };
+  
+  try {
+    const result = await pool.query(`
+      SELECT COUNT(DISTINCT sku)::int AS checked
+      FROM stok_opname_detail
+      WHERE opname_id = $1
+    `, [opnameId]);
+    
+    const checked = Number(result.rows[0]?.checked || 0);
+    const progress = targetSku > 0 ? Math.round((checked / targetSku) * 100) : 0;
+    
+    return { target_sku: targetSku, checked_sku: checked, progress_percent: progress };
+  } catch (error) {
+    console.error('Error calculating progress:', error);
+    return { target_sku: targetSku, checked_sku: 0, progress_percent: 0 };
+  }
 }
 
 export default async function handler(req, res) {
   try {
-    await ensurePerintahKategoriColumn();
-
     if (req.method === "GET") {
       const { id, kode_so, bulan, tahun } = req.query;
 
       if (id || kode_so) {
         const result = await pool.query(
-          `
-          SELECT
-            p.*,
-            h.total_item,
-            h.total_selisih,
-            h.total_item_selisih,
-            h.total_selisih_net
-          FROM stok_opname_perintah p
-          LEFT JOIN stok_opname h ON h.id = p.opname_id
-          WHERE ${id ? "p.id = $1" : "UPPER(p.kode_so) = $1"}
-          LIMIT 1
-          `,
+          `SELECT * FROM stok_opname_perintah WHERE ${id ? "id = $1" : "UPPER(kode_so) = $1"} LIMIT 1`,
           [id ? Number(id) : normalizeKodeSo(kode_so)]
         );
 
@@ -75,8 +43,30 @@ export default async function handler(req, res) {
         }
 
         const row = result.rows[0];
-        const { rows: enrichedRows } = await enrichPerintahRows([row], row.bulan, row.tahun);
-        return res.status(200).json(enrichedRows[0]);
+        const progress = await calculateProgress(row.opname_id, row.target_sku);
+        
+        return res.status(200).json({
+          id: row.id,
+          kode_so: row.kode_so,
+          kategori_id: row.kategori_id,
+          kategori_nama: kategoriLabel(row.kategori_id),
+          target_sku: progress.target_sku,
+          checked_sku: progress.checked_sku,
+          progress_percent: progress.progress_percent,
+          status: row.status,
+          pic_checker: row.pic_checker,
+          checker: row.checker,
+          svp_nama: row.svp_nama,
+          lokasi: row.lokasi,
+          keterangan: row.keterangan,
+          tanggal_perintah: row.tanggal_perintah,
+          bulan: row.bulan,
+          tahun: row.tahun,
+          opname_id: row.opname_id,
+          created_at: row.created_at,
+          started_at: row.started_at,
+          completed_at: row.completed_at
+        });
       }
 
       if (!bulan || !tahun) {
@@ -84,44 +74,38 @@ export default async function handler(req, res) {
       }
 
       const listResult = await pool.query(
-        `
-        SELECT
-          p.id,
-          p.kode_so,
-          p.tanggal_perintah,
-          p.bulan,
-          p.tahun,
-          p.svp_nama,
-          p.lokasi,
-          p.keterangan,
-          p.status,
-          p.checker,
-          p.opname_id,
-          p.created_at,
-          p.started_at,
-          p.completed_at,
-          h.total_item,
-          h.total_selisih,
-          h.total_item_selisih,
-          h.total_selisih_net
-        FROM stok_opname_perintah p
-        LEFT JOIN stok_opname h ON h.id = p.opname_id
-        WHERE p.bulan = $1 AND p.tahun = $2
-        ORDER BY p.created_at DESC, p.kode_so ASC
-        `,
+        `SELECT * FROM stok_opname_perintah WHERE bulan = $1 AND tahun = $2 ORDER BY created_at DESC, kode_so ASC`,
         [Number(bulan), Number(tahun)]
       );
 
-      const { rows, period_kategori } = await enrichPerintahRows(
-        listResult.rows,
-        Number(bulan),
-        Number(tahun)
-      );
+      const items = await Promise.all(listResult.rows.map(async (row) => {
+        const progress = await calculateProgress(row.opname_id, row.target_sku);
+        return {
+          id: row.id,
+          kode_so: row.kode_so,
+          kategori_id: row.kategori_id,
+          kategori_nama: kategoriLabel(row.kategori_id),
+          target_sku: progress.target_sku,
+          checked_sku: progress.checked_sku,
+          progress_percent: progress.progress_percent,
+          status: row.status,
+          pic_checker: row.pic_checker,
+          checker: row.checker,
+          svp_nama: row.svp_nama,
+          lokasi: row.lokasi,
+          keterangan: row.keterangan,
+          tanggal_perintah: row.tanggal_perintah,
+          bulan: row.bulan,
+          tahun: row.tahun,
+          opname_id: row.opname_id,
+          created_at: row.created_at,
+          started_at: row.started_at,
+          completed_at: row.completed_at
+        };
+      }));
 
-      return res.status(200).json({
-        items: rows,
-        period_kategori
-      });
+      console.log("[SO LIST]", { bulan, tahun, count: items.length });
+      return res.status(200).json({ success: true, items });
     }
 
     if (req.method === "POST") {
@@ -135,17 +119,8 @@ export default async function handler(req, res) {
         }
 
         const result = await pool.query(
-          `
-          UPDATE stok_opname_perintah
-          SET
-            status = 'proses',
-            checker = COALESCE(NULLIF($2, ''), checker),
-            started_at = COALESCE(started_at, NOW()),
-            updated_at = NOW()
-          WHERE id = $1 AND status IN ('menunggu', 'proses')
-          RETURNING *
-          `,
-          [perintahId, body.checker || null]
+          `UPDATE stok_opname_perintah SET status = 'proses', checker = COALESCE(NULLIF($2, ''), checker), started_at = COALESCE(started_at, NOW()), updated_at = NOW() WHERE id = $1 AND status IN ('menunggu', 'proses') RETURNING *`,
+          [perintahId, body.pic_checker || body.checker || null]
         );
 
         if (!result.rows.length) {
@@ -157,21 +132,20 @@ export default async function handler(req, res) {
 
       if (action === "update") {
         const perintahId = Number(body.perintah_id);
+        if (!perintahId) {
+          return res.status(400).json({ error: "perintah_id wajib" });
+        }
+
         const kodeSo = normalizeKodeSo(body.kode_so);
+        const kategoriId = body.kategori_id;
+        const picChecker = body.pic_checker;
         const svpNama = String(body.svp_nama || "").trim();
         const lokasi = String(body.lokasi || "").trim() || null;
         const keterangan = String(body.keterangan || "").trim() || null;
         const tanggal = body.tanggal_perintah || body.tanggal;
-        const kategoriTargets = serializeKategoriTargets(body.kategori_targets);
 
-        if (!perintahId) {
-          return res.status(400).json({ error: "perintah_id wajib" });
-        }
-        if (!kodeSo || !svpNama || !tanggal) {
-          return res.status(400).json({ error: "kode_so, svp_nama, dan tanggal wajib diisi" });
-        }
-        if (!normalizeKategoriTargets(kategoriTargets).length) {
-          return res.status(400).json({ error: "Pilih minimal satu kategori SO" });
+        if (!kodeSo || !svpNama || !tanggal || !kategoriId) {
+          return res.status(400).json({ error: "kode_so, kategori_id, svp_nama, dan tanggal wajib diisi" });
         }
 
         const dateObj = new Date(tanggal);
@@ -182,65 +156,32 @@ export default async function handler(req, res) {
         const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
         const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-        const existing = await pool.query(
-          `SELECT id, status, kode_so FROM stok_opname_perintah WHERE id = $1`,
-          [perintahId]
-        );
-
-        if (!existing.rows.length) {
-          return res.status(404).json({ error: "Perintah SO tidak ditemukan" });
-        }
-
-        const duplicate = await pool.query(
-          `SELECT id FROM stok_opname_perintah WHERE UPPER(kode_so) = $1 AND id <> $2`,
-          [kodeSo, perintahId]
-        );
-
-        if (duplicate.rows.length) {
-          return res.status(409).json({ error: "Kode SO sudah digunakan perintah lain" });
-        }
+        const countResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk WHERE kategori = $1`, [kategoriId]);
+        const targetSku = countResult.rows[0].total;
 
         const updateResult = await pool.query(
-          `
-          UPDATE stok_opname_perintah
-          SET
-            kode_so = $1,
-            tanggal_perintah = $2,
-            bulan = $3,
-            tahun = $4,
-            svp_nama = $5,
-            lokasi = $6,
-            keterangan = $7,
-            kategori_targets = $8,
-            updated_at = NOW()
-          WHERE id = $9 AND status IN ('menunggu', 'proses', 'selesai')
-          RETURNING *
-          `,
-          [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, kategoriTargets, perintahId]
+          `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, pic_checker = $4, tanggal_perintah = $5, bulan = $6, tahun = $7, svp_nama = $8, lokasi = $9, keterangan = $10, target_sku = $11, checker = COALESCE(NULLIF($12, ''), checker), updated_at = NOW() WHERE id = $13 RETURNING *`,
+          [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, lokasi, keterangan, targetSku, picChecker, perintahId]
         );
 
         if (!updateResult.rows.length) {
           return res.status(400).json({ error: "Perintah tidak dapat diperbarui" });
         }
 
-        return res.status(200).json({
-          message: `Perintah ${kodeSo} berhasil diperbarui`,
-          perintah: updateResult.rows[0]
-        });
+        return res.status(200).json({ message: `Perintah ${kodeSo} berhasil diperbarui`, perintah: updateResult.rows[0] });
       }
 
+      // CREATE
       const kodeSo = normalizeKodeSo(body.kode_so);
+      const kategoriId = body.kategori_id || 'modul';
+      const picChecker = body.pic_checker;
       const svpNama = String(body.svp_nama || "").trim();
       const lokasi = String(body.lokasi || "").trim() || null;
       const keterangan = String(body.keterangan || "").trim() || null;
       const tanggal = body.tanggal_perintah || body.tanggal;
-      const kategoriTargets = serializeKategoriTargets(body.kategori_targets);
 
       if (!kodeSo || !svpNama || !tanggal) {
         return res.status(400).json({ error: "kode_so, svp_nama, dan tanggal wajib diisi" });
-      }
-      if (!normalizeKategoriTargets(kategoriTargets).length) {
-        return res.status(400).json({ error: "Pilih minimal satu kategori SO" });
       }
 
       const dateObj = new Date(tanggal);
@@ -251,28 +192,57 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
+      const countResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk WHERE kategori = $1`, [kategoriId]);
+      const targetSku = countResult.rows[0].total;
+
       const insertResult = await pool.query(
-        `
-        INSERT INTO stok_opname_perintah (
-          kode_so, tanggal_perintah, bulan, tahun,
-          svp_nama, lokasi, keterangan, kategori_targets, status
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'menunggu')
-        RETURNING *
-        `,
-        [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, kategoriTargets]
+        `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, pic_checker, tanggal_perintah, bulan, tahun, svp_nama, checker, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'menunggu') RETURNING *`,
+        [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, targetSku]
       );
 
-      return res.status(201).json({
-        message: `Perintah ${kodeSo} berhasil dibuat`,
-        perintah: insertResult.rows[0]
-      });
+      return res.status(201).json({ message: `Perintah ${kodeSo} berhasil dibuat`, perintah: insertResult.rows[0] });
+    }
+    
+    if (req.method === "DELETE") {
+      const auth = await import('../services/auth.js');
+      const authResult = auth.authenticate(req);
+      if (!authResult.authorized) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      if (authResult.user.role !== 'admin') {
+        return res.status(403).json({ error: "Hanya admin yang dapat menghapus" });
+      }
+      
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      const idIndex = pathParts.findIndex(p => p === 'opname-perintah');
+      const id = pathParts[idIndex + 1];
+      
+      if (!id || isNaN(parseInt(id))) {
+        return res.status(400).json({ error: "ID tidak valid" });
+      }
+      
+      const checkResult = await pool.query(`SELECT id, kode_so, status FROM stok_opname_perintah WHERE id = $1`, [id]);
+      
+      if (!checkResult.rows.length) {
+        return res.status(404).json({ error: "Perintah tidak ditemukan" });
+      }
+      
+      const perintah = checkResult.rows[0];
+      
+      if (perintah.status !== 'menunggu') {
+        return res.status(400).json({ error: `Tidak dapat menghapus perintah dengan status "${perintah.status}"` });
+      }
+      
+      await pool.query(`DELETE FROM stok_opname_perintah WHERE id = $1`, [id]);
+      
+      return res.status(200).json({ message: `Perintah ${perintah.kode_so} berhasil dihapus` });
     }
 
     return res.status(405).json({ error: "Method tidak diizinkan" });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(409).json({ error: "Kode SO sudah digunakan. Gunakan kode lain." });
+      return res.status(409).json({ error: "Kode SO sudah digunakan" });
     }
     console.error("OPNAME PERINTAH ERROR:", err);
     return res.status(500).json({ error: err.message });

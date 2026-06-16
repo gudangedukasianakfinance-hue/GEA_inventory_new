@@ -44,6 +44,12 @@ const AppRouter = {
       console.warn('Route not found:', page);
       page = 'dashboard';
     }
+    
+    // Clear cache for current page to ensure clean state
+    if (this.loadedPages[this.currentPage]) {
+      delete this.loadedPages[this.currentPage];
+    }
+    
     this.currentPage = page;
     const url = window.location.pathname + '?page=' + page;
     if (replace) {
@@ -155,6 +161,12 @@ const AppRouter = {
     if (page === 'persediaan' && typeof initPersediaanPage === 'function') initPersediaanPage();
     if (page === 'penjualan' && typeof initPenjualanPage === 'function') initPenjualanPage();
     if (page === 'pembelian' && typeof initPembelianPage === 'function') initPembelianPage();
+    
+    // SO Pages - reload data when returning from cache
+    if (page === 'dashboard-so' && typeof loadDashboardSO === 'function') loadDashboardSO();
+    if (page === 'perintah-so' && typeof loadPerintah === 'function') loadPerintah();
+    if (page === 'pelaksanaan-so' && typeof SOPelaksanaanInit === 'function') SOPelaksanaanInit();
+    if (page === 'riwayat-so' && typeof loadHistory === 'function') loadHistory();
     
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },

@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS stok_opname_perintah (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   started_at TIMESTAMP,
-  completed_at TIMESTAMP
+  completed_at TIMESTAMP,
+  target_sku INTEGER DEFAULT 0
 );
 
 ALTER TABLE stok_opname

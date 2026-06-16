@@ -51,6 +51,11 @@
     </div>
     
     <div class="header__right">
+      <!-- Theme Toggle -->
+      <button class="header__icon-btn" id="themeToggle" type="button" aria-label="Toggle theme" onclick="toggleTheme()">
+        <i data-lucide="sun" id="themeIcon"></i>
+      </button>
+      
       <!-- Notification -->
       <button class="header__icon-btn" id="notificationBtn" type="button" aria-label="Notifications">
         <i data-lucide="bell"></i>
@@ -271,6 +276,32 @@
   <!-- Scripts -->
   <script src="/js/app-router.js"></script>
   <script>
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute("data-theme");
+    const next = current === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+    updateThemeIcon(next);
+  }
+
+  function updateThemeIcon(theme) {
+    const icon = document.getElementById("themeIcon");
+    if (icon) {
+      icon.setAttribute("data-lucide", theme === "dark" ? "sun" : "moon");
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", saved);
+    updateThemeIcon(saved);
+  }
+
+  initTheme();
+
     // ============================================
     // APP INITIALIZATION
     // ============================================
@@ -518,6 +549,37 @@
         console.log('Search:', e.target.value.trim());
       }
     });
+
+    // ============================================
+    // GLOBAL LOADER (Reusable by all modules)
+    // ============================================
+
+    window.showLoader = function(message = 'Memuat...') {
+      const loader = document.getElementById('globalLoader');
+      const msgEl = document.getElementById('globalLoaderMessage');
+      if (loader) {
+        if (msgEl) msgEl.textContent = message;
+        loader.style.display = 'flex';
+      }
+    };
+
+    window.hideLoader = function() {
+      const loader = document.getElementById('globalLoader');
+      if (loader) loader.style.display = 'none';
+    };
+
+    window.updateLoaderMessage = function(message) {
+      const msgEl = document.getElementById('globalLoaderMessage');
+      if (msgEl) msgEl.textContent = message;
+    };
   </script>
+
+  <!-- Global Loader Overlay -->
+  <div id="globalLoader" class="global-loader" style="display: none;">
+    <div class="global-loader__content">
+      <div class="global-loader__spinner"></div>
+      <p id="globalLoaderMessage" class="global-loader__message">Memuat...</p>
+    </div>
+  </div>
 </body>
 </html>

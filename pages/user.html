@@ -57,7 +57,7 @@
 </section>
 
 <!-- Add/Edit User Modal -->
-<div id="userModal" class="modal-overlay" style="display:none;">
+<div id="userModal" class="modal-overlay">
   <div class="modal">
     <div class="modal__header">
       <h3 class="modal__title" id="userModalTitle">Tambah User</h3>
@@ -132,7 +132,8 @@
     try {
       const response = await fetch('/api/v1/users');
       if (!response.ok) throw new Error('Failed to load');
-      userList = await response.json();
+      const payload = await response.json();
+      userList = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : Array.isArray(payload.data) ? payload.data : [];
       renderUsersTable();
     } catch (error) {
       console.error('Error loading users:', error);
@@ -188,7 +189,7 @@
     document.getElementById('userModalTitle').textContent = 'Tambah User';
     document.getElementById('userForm').reset();
     document.getElementById('passwordHint').style.display = 'none';
-    document.getElementById('userModal').style.display = 'flex';
+    document.getElementById('userModal').classList.add('active');
   }
 
   function editUser(id) {
@@ -204,11 +205,11 @@
     document.getElementById('userPassword').value = '';
     document.getElementById('userActive').checked = user.status === 'active';
     document.getElementById('passwordHint').style.display = 'inline';
-    document.getElementById('userModal').style.display = 'flex';
+    document.getElementById('userModal').classList.add('active');
   }
 
   function closeUserModal() {
-    document.getElementById('userModal').style.display = 'none';
+    document.getElementById('userModal').classList.remove('active');
     editingUserId = null;
   }
 
@@ -234,7 +235,12 @@
         body: JSON.stringify(data)
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      console.log('Response:', response.status);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        console.error('Save error:', errData);
+        throw new Error(errData.message || 'Failed to save');
+      }
       
       showToast(editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
       closeUserModal();

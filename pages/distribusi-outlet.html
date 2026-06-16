@@ -1,110 +1,27 @@
-<!-- Distribusi Outlet Page -->
-<section class="page-section">
-  <div class="page-header">
-    <h2 class="page-title">Distribusi Outlet</h2>
-    <p class="page-subtitle">Kelola distribusi barang ke outlet</p>
-  </div>
-
-  <!-- KPI -->
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(168, 85, 247, 0.12); color: #A855F7;">
-        <i data-lucide="send"></i>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distribusi Outlet</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .coming-soon-page { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+    .card { background: #fff; padding: 48px; border-radius: 16px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card h2 { margin: 0 0 16px 0; color: #1f2937; }
+    .card p { margin: 0 0 24px 0; color: #6b7280; }
+    .badge-warning { background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="coming-soon-page">
+      <div class="card">
+        <h2>Coming Soon</h2>
+        <p>Fitur akan tersedia pada sprint berikutnya.</p>
+        <span class="badge badge-warning">SOON</span>
       </div>
-      <div class="kpi-label">Hari Ini</div>
-      <div class="kpi-value" id="distribusiHariIni">-</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.12); color: #3B82F6;">
-        <i data-lucide="calendar"></i>
-      </div>
-      <div class="kpi-label">Bulan Ini</div>
-      <div class="kpi-value" id="distribusiBulanIni">-</div>
-    </div>
+    </section>
   </div>
-
-  <!-- Actions -->
-  <div class="page-actions">
-    <button class="btn btn--primary" onclick="showTambahDistribusi()">
-      <i data-lucide="plus"></i>
-      <span>Buat Distribusi</span>
-    </button>
-  </div>
-
-  <!-- Distribution Table -->
-  <div class="card">
-    <table class="data-table" id="distribusiTable">
-      <thead>
-        <tr>
-          <th>No. SO</th>
-          <th>Tanggal</th>
-          <th>Outlet</th>
-          <th>Total Item</th>
-          <th>Status</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="distribusiTableBody">
-        <tr>
-          <td colspan="6" class="text-center text-muted">Memuat data...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<script>
-  async function loadDistribusiOutlet() {
-    try {
-      const response = await fetch('/api/v1/distribusi');
-      if (!response.ok) throw new Error('Failed to load');
-      const data = await response.json();
-      
-      document.getElementById('distribusiHariIni').textContent = data.hari_ini || 0;
-      document.getElementById('distribusiBulanIni').textContent = data.bulan_ini || 0;
-      
-      renderDistribusiTable(data.items || []);
-    } catch (error) {
-      console.error('Error loading distribusi:', error);
-    }
-  }
-
-  function renderDistribusiTable(items) {
-    const tbody = document.getElementById('distribusiTableBody');
-    if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>';
-      return;
-    }
-    
-    tbody.innerHTML = items.map(item => `
-      <tr>
-        <td><code>${item.no_so}</code></td>
-        <td>${item.tanggal}</td>
-        <td>${item.outlet}</td>
-        <td>${item.total_item}</td>
-        <td><span class="badge badge--${item.status}">${item.status}</span></td>
-        <td>
-          <button class="action-btn" onclick="viewDistribusi('${item.id}')">
-            <i data-lucide="eye"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
-    
-    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
-  }
-
-  function showTambahDistribusi() {
-    console.log('Tambah distribusi');
-  }
-
-  function viewDistribusi(id) {
-    console.log('View:', id);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadDistribusiOutlet);
-  } else {
-    loadDistribusiOutlet();
-  }
-</script>
+</body>
+</html>
