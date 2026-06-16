@@ -44,6 +44,12 @@ const AppRouter = {
       console.warn('Route not found:', page);
       page = 'dashboard';
     }
+    
+    // Clear cache for current page to ensure clean state
+    if (this.loadedPages[this.currentPage]) {
+      delete this.loadedPages[this.currentPage];
+    }
+    
     this.currentPage = page;
     const url = window.location.pathname + '?page=' + page;
     if (replace) {

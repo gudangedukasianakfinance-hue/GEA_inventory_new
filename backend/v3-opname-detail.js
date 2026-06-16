@@ -30,9 +30,15 @@ export default async function handler(req, res) {
       }
       
       const p = perintah.rows[0];
-      const kategoriTargets = p.kategori_targets ? JSON.parse(p.kategori_targets) : ['modul', 'seragam', 'poster', 'lain-lain'];
+      // Use single kategori if provided, otherwise use all from kategori_targets
+      let kategoriFilter;
+      if (kategori && kategori !== 'all') {
+        kategoriFilter = [kategori];
+      } else {
+        kategoriFilter = p.kategori_targets ? JSON.parse(p.kategori_targets) : ['modul', 'seragam', 'poster', 'lain_lain'];
+      }
       
-      // Get produk berdasarkan kategori_targets
+      // Get produk berdasarkan kategori_filter
       // STOK SISTEM dihitung dari rolling stock
       const produkList = await pool.query(`
         WITH params AS (
@@ -85,7 +91,7 @@ export default async function handler(req, res) {
         LEFT JOIN stok_opname_detail sod ON sod.sku = rs.sku AND sod.opname_id = $3
         WHERE rs.kategori = ANY($4::text[])
         ORDER BY rs.nama_produk
-      `, [p.bulan, p.tahun, p.opname_id || 0, kategoriTargets]);
+      `, [p.bulan, p.tahun, p.opname_id || 0, kategoriFilter]);
       
       res.status(200).json({
         perintah: {

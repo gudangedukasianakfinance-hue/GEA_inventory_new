@@ -190,15 +190,26 @@ export async function handlePut(req, res) {
         
       case 'submit':
         // User submit SO (setelah input qty fisik)
+        // Phase 1: Direct to 'selesai' (no approval)
         if (so.status !== 'proses') {
           return res.status(400).json({ error: "SO tidak bisa disubmit dari status ini" });
         }
         await pool.query(`
           UPDATE stok_opname_perintah 
-          SET status = 'menunggu_approval', completed_at = NOW()
+          SET status = 'selesai', completed_at = NOW()
           WHERE id = $1
         `, [id]);
-        res.status(200).json({ success: true, message: "SO submitted, menunggu approval admin" });
+        
+        // Update opname timestamp if exists
+        if (so.opname_id) {
+          await pool.query(`
+            UPDATE stok_opname 
+            SET tanggal_selesai = NOW(), updated_at = NOW()
+            WHERE id = $1
+          `, [so.opname_id]);
+        }
+        
+        res.status(200).json({ success: true, message: "SO submitted dan selesai", status: 'selesai' });
         break;
         
       case 'approve':

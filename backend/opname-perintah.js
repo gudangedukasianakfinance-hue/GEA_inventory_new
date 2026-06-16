@@ -136,6 +136,9 @@ export default async function handler(req, res) {
           p.bulan,
           p.tahun,
           p.svp_nama,
+          p.pic_checker,
+          p.kategori_id,
+          p.kategori_nama,
           p.lokasi,
           p.keterangan,
           p.status,
@@ -275,16 +278,15 @@ export default async function handler(req, res) {
 
       const kodeSo = normalizeKodeSo(body.kode_so);
       const svpNama = String(body.svp_nama || "").trim();
+      const picChecker = String(body.pic_checker || "").trim() || null;
       const lokasi = String(body.lokasi || "").trim() || null;
       const keterangan = String(body.keterangan || "").trim() || null;
       const tanggal = body.tanggal_perintah || body.tanggal;
-      const kategoriTargets = serializeKategoriTargets(body.kategori_targets);
+      const kategoriId = String(body.kategori_id || "modul").trim();
+      const kategoriNama = String(body.kategori_nama || "Modul").trim();
 
       if (!kodeSo || !svpNama || !tanggal) {
         return res.status(400).json({ error: "kode_so, svp_nama, dan tanggal wajib diisi" });
-      }
-      if (!normalizeKategoriTargets(kategoriTargets).length) {
-        return res.status(400).json({ error: "Pilih minimal satu kategori SO" });
       }
 
       const dateObj = new Date(tanggal);
@@ -295,20 +297,26 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-      // Get current product count as snapshot for target_sku
-      const produkCountResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk`);
+      // Get product count filtered by kategori as snapshot for target_sku
+      const produkCountResult = await pool.query(
+        `SELECT COUNT(*)::int as total FROM produk WHERE kategori = $1`,
+        [kategoriId]
+      );
       const targetSku = Number(produkCountResult.rows[0]?.total || 0);
 
       const insertResult = await pool.query(
         `
         INSERT INTO stok_opname_perintah (
           kode_so, tanggal_perintah, bulan, tahun,
-          svp_nama, lokasi, keterangan, kategori_targets, status, target_sku
+          svp_nama, pic_checker, lokasi, keterangan, 
+          kategori_id, kategori_nama, kategori_targets, 
+          status, target_sku
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'menunggu', $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'menunggu', $12)
         RETURNING *
         `,
-        [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, kategoriTargets, targetSku]
+        [kodeSo, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, 
+         kategoriId, kategoriNama, kategoriId, targetSku]
       );
 
       return res.status(201).json({

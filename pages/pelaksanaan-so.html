@@ -181,7 +181,7 @@
 <div id="manualInputModal" class="modal-overlay">
   <div class="modal">
     <div class="modal__header">
-      <h3 class="modal__title">Input Qty Fisik</h3>
+      <h3 class="modal__title">Input Hasil SO</h3>
       <button class="modal__close" onclick="closeManualInput()">
         <i data-lucide="x"></i>
       </button>
@@ -194,8 +194,12 @@
           <span class="so-input-info__value" id="manualDisplaySku">-</span>
         </div>
         <div class="so-input-info__row">
-          <span class="so-input-info__label">Produk</span>
+          <span class="so-input-info__label">Nama Produk</span>
           <span class="so-input-info__value" id="manualDisplayNama">-</span>
+        </div>
+        <div class="so-input-info__row">
+          <span class="so-input-info__label">Kategori</span>
+          <span class="so-input-info__value" id="manualDisplayKategori">-</span>
         </div>
         <div class="so-input-info__row">
           <span class="so-input-info__label">Stok Sistem</span>
@@ -208,8 +212,16 @@
       
       <div class="form-group">
         <label>Qty Fisik</label>
-        <input type="number" id="manualQty" class="form-input" required min="0" placeholder="Masukkan jumlah fisik">
+        <input type="number" id="manualQty" class="form-input" required min="0" placeholder="Masukkan jumlah fisik" oninput="updateSelisihPreview()">
       </div>
+      
+      <div class="so-input-info so-input-info--compact">
+        <div class="so-input-info__row">
+          <span class="so-input-info__label">Selisih</span>
+          <span class="so-input-info__value" id="manualDisplaySelisih">-</span>
+        </div>
+      </div>
+      
       <div class="form-actions">
         <button type="button" class="btn btn--secondary" onclick="closeManualInput()">Batal</button>
         <button type="submit" class="btn btn--primary">Simpan</button>
@@ -360,20 +372,42 @@
     margin-bottom: 12px;
   }
   .recent-scans-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
+    padding: 12px;
     background: rgba(255,255,255,0.04);
     border-radius: 8px;
     margin-bottom: 8px;
   }
+  .recent-scans-item__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
   .recent-scans-item__sku {
     font-family: monospace;
-    color: #FFF;
+    font-weight: 600;
+    color: #22C55E;
   }
   .recent-scans-item__time {
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  .recent-scans-item__nama {
+    font-size: 13px;
+    color: #FFF;
+    margin-bottom: 8px;
+  }
+  .recent-scans-item__stats {
+    display: flex;
+    gap: 12px;
     font-size: 12px;
     color: #94A3B8;
+  }
+  .recent-scans-item__stats .text-success {
+    color: #22C55E;
+  }
+  .recent-scans-item__stats .text-danger {
+    color: #FF4D3A;
   }
   .so-action-bar {
     display: flex;
@@ -407,6 +441,15 @@
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 20px;
+  }
+  .so-input-info--compact {
+    background: rgba(255, 77, 58, 0.08);
+    border-color: rgba(255, 77, 58, 0.2);
+  }
+  .so-input-info--compact .so-input-info__value {
+    color: #FF4D3A;
+    font-size: 16px;
+    font-weight: 700;
   }
   .so-input-info__row {
     display: flex;
@@ -497,12 +540,16 @@
 
   async function loadProdukList() {
     try {
-      // Load dari v3-opname-detail endpoint
-      const response = await fetch(`/api/v3-opname-detail?perintah_id=${window.SOPelaksanaan.activePerintahId}`);
+      // Get kategori from localStorage
+      const kategoriId = localStorage.getItem('activePerintahKategori') || 'modul';
+      
+      // Load dari v3-opname-detail endpoint with kategori filter
+      const response = await fetch(`/api/v3-opname-detail?perintah_id=${window.SOPelaksanaan.activePerintahId}&kategori=${kategoriId}`);
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
       window.SOPelaksanaan.produkList = data.produk || [];
+      window.SOPelaksanaan.targetSku = window.SOPelaksanaan.produkList.length;
       
       // Build map untuk quick lookup (ensure sku is string for consistent lookup)
       window.SOPelaksanaan.produkMap = {};
@@ -510,7 +557,7 @@
         window.SOPelaksanaan.produkMap[String(p.sku)] = p;
       });
       
-      console.log('ProdukMap loaded:', Object.keys(window.SOPelaksanaan.produkMap).length, 'items');
+      console.log('ProdukMap loaded:', Object.keys(window.SOPelaksanaan.produkMap).length, 'items for kategori:', kategoriId);
       
       // Update progress table
       renderProgressTable();
@@ -731,24 +778,46 @@
     
     console.log('[processScanInput] Showing modal for SKU:', sku, 'produk:', produk.nama_produk);
     
+    // Get stok sistem from produk
+    const stokSistem = produk.stok_sistem || 0;
+    
     // Populate modal with product info
     document.getElementById('manualSku').value = sku;
     document.getElementById('manualDisplaySku').textContent = sku;
     document.getElementById('manualDisplayNama').textContent = produk.nama_produk || '-';
-    document.getElementById('manualDisplayStokSistem').textContent = produk.stok_sistem || 0;
+    document.getElementById('manualDisplayKategori').textContent = produk.kategori || '-';
+    document.getElementById('manualDisplayStokSistem').textContent = stokSistem;
     document.getElementById('manualQty').value = '';
+    document.getElementById('manualDisplaySelisih').textContent = '-';
     document.getElementById('manualInputModal').classList.add('active');
     document.getElementById('manualQty').focus();
     
+    // Store stok sistem for selisih calculation
+    document.getElementById('manualQty').dataset.stokSistem = stokSistem;
+    
     input.value = '';
+  }
+
+  function updateSelisihPreview() {
+    const qtyInput = document.getElementById('manualQty');
+    const stokSistem = parseInt(qtyInput.dataset.stokSistem) || 0;
+    const qtyFisik = parseInt(qtyInput.value) || 0;
+    const selisih = qtyFisik - stokSistem;
+    
+    const selisihEl = document.getElementById('manualDisplaySelisih');
+    const selisihPrefix = selisih > 0 ? '+' : '';
+    selisihEl.textContent = selisihPrefix + selisih;
+    selisihEl.style.color = selisih === 0 ? '#22C55E' : selisih > 0 ? '#22C55E' : '#FF4D3A';
   }
 
   function showManualInput() {
     document.getElementById('manualSku').value = '';
     document.getElementById('manualDisplaySku').textContent = '-';
     document.getElementById('manualDisplayNama').textContent = '-';
+    document.getElementById('manualDisplayKategori').textContent = '-';
     document.getElementById('manualDisplayStokSistem').textContent = '-';
     document.getElementById('manualQty').value = '';
+    document.getElementById('manualDisplaySelisih').textContent = '-';
     document.getElementById('manualInputModal').classList.add('active');
     document.getElementById('manualSku').focus();
   }
@@ -809,10 +878,13 @@
       // Show result
       showLastScanResult(produk, stokFisik);
       
-      // Add to history
+      // Add to history with product details
       window.SOPelaksanaan.scanHistory.unshift({
         sku: sku,
+        nama_produk: produk?.nama_produk || '-',
+        stok_sistem: produk?.stok_sistem || 0,
         stok_fisik: stokFisik,
+        selisih: stokFisik - (produk?.stok_sistem || 0),
         waktu: new Date().toLocaleTimeString('id-ID')
       });
       console.log('[saveManualInput] scanHistory length:', window.SOPelaksanaan.scanHistory.length);
@@ -856,17 +928,38 @@
   function renderScanHistory() {
     const container = document.getElementById('recentScansList');
     
-    if (window.SOPelaksanaan.scanHistory.length === 0) {
-      container.innerHTML = '<div class="empty-state">Belum ada scan</div>';
+    if (!container) {
+      console.warn('recentScansList not found');
       return;
     }
     
-    container.innerHTML = window.SOPelaksanaan.scanHistory.slice(0, 10).map(scan => `
-      <div class="recent-scans-item">
-        <span class="recent-scans-item__sku">${scan.sku}</span>
-        <span class="recent-scans-item__time">${scan.waktu} - Qty: ${scan.stok_fisik}</span>
-      </div>
-    `).join('');
+    if (window.SOPelaksanaan.scanHistory.length === 0) {
+      container.innerHTML = '<div class="empty-state"><p>Belum ada scan</p></div>';
+      return;
+    }
+    
+    container.innerHTML = window.SOPelaksanaan.scanHistory.slice(0, 10).map(scan => {
+      const selisih = scan.selisih || 0;
+      const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
+      const selisihPrefix = selisih > 0 ? '+' : '';
+      
+      return `
+        <div class="recent-scans-item">
+          <div class="recent-scans-item__header">
+            <span class="recent-scans-item__sku">${scan.sku}</span>
+            <span class="recent-scans-item__time">${scan.waktu}</span>
+          </div>
+          <div class="recent-scans-item__details">
+            <span class="recent-scans-item__nama">${scan.nama_produk || '-'}</span>
+          </div>
+          <div class="recent-scans-item__stats">
+            <span>Sistem: ${scan.stok_sistem || 0}</span>
+            <span>Fisik: ${scan.stok_fisik}</span>
+            <span class="${selisihClass}">Selisih: ${selisihPrefix}${selisih}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   function renderProgressTable() {
@@ -938,12 +1031,17 @@
         throw new Error(err.error || 'Failed to submit');
       }
       
-      // Status after submit is 'menunggu_approval', not 'selesai'
-      window.SOPelaksanaan.activeStatus = 'menunggu_approval';
-      updateStatusBadge('menunggu_approval');
+      // Phase 1: Direct to Selesai (no approval)
+      window.SOPelaksanaan.activeStatus = 'selesai';
+      updateStatusBadge('selesai');
       updateSoStats();
       
-      showToast('Hasil SO berhasil disubmit, menunggu approval admin');
+      // Disable submit button
+      document.getElementById('btnSubmitSo').disabled = true;
+      document.getElementById('btnSubmitSo').innerHTML = '<i data-lucide="check-circle"></i><span>SO Selesai</span>';
+      if (window.lucide) lucide.createIcons();
+      
+      showToast('Hasil SO berhasil disubmit dan selesai');
       
     } catch (error) {
       console.error('Error submitting:', error);

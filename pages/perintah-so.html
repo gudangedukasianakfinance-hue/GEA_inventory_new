@@ -31,9 +31,9 @@
         <tr>
           <th>Kode SO</th>
           <th>Tanggal</th>
-          <th>Bulan</th>
-          <th>SVP</th>
-          <th>Target SKU</th>
+          <th>Kategori</th>
+          <th>PIC</th>
+          <th>Target</th>
           <th>Dicek</th>
           <th>Progress</th>
           <th>Status</th>
@@ -42,7 +42,7 @@
       </thead>
       <tbody id="perintahTableBody">
         <tr>
-          <td colspan="9" class="text-center text-muted">Memuat data...</td>
+          <td colspan="10" class="text-center text-muted">Memuat data...</td>
         </tr>
       </tbody>
     </table>
@@ -99,6 +99,19 @@
         <input type="text" id="perintahSvp" class="form-input" placeholder="Nama Supervisor" required>
       </div>
       <div class="form-group">
+        <label>PIC Checker</label>
+        <input type="text" id="perintahPicChecker" class="form-input" placeholder="Nama PIC Checker Gudang" required>
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="perintahKategori" class="form-input" required>
+          <option value="modul">Modul</option>
+          <option value="seragam">Seragam</option>
+          <option value="poster">Poster</option>
+          <option value="lain_lain">Lain-lain</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Lokasi / Gudang</label>
         <select id="perintahLokasi" class="form-input" required>
           <option value="Gudang Utama">Gudang Utama</option>
@@ -142,6 +155,14 @@
         <div class="detail-item">
           <label>SVP / Supervisor</label>
           <span id="detailSvp" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>PIC Checker</label>
+          <span id="detailPicChecker" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Kategori</label>
+          <span id="detailKategori" class="detail-value"></span>
         </div>
         <div class="detail-item">
           <label>Lokasi</label>
@@ -236,15 +257,22 @@
       renderPerintahTable();
     } catch (error) {
       console.error('Error loading perintah:', error);
-      document.getElementById('perintahTableBody').innerHTML = 
-        '<tr><td colspan="9" class="text-center text-danger">Gagal memuat data</td></tr>';
+      const tbody = document.getElementById('perintahTableBody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Gagal memuat data</td></tr>';
+      }
     }
   }
 
   function renderPerintahTable() {
     const tbody = document.getElementById('perintahTableBody');
+    if (!tbody) {
+      console.warn('perintahTableBody not found');
+      return;
+    }
+    
     if (window.SOPerintah.perintahList.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Tidak ada perintah SO periode ini</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Tidak ada perintah SO periode ini</td></tr>';
       return;
     }
     
@@ -257,8 +285,8 @@
         <tr>
           <td><code>${item.kode_so || item.kode || ''}</code></td>
           <td>${item.tanggal_perintah ? item.tanggal_perintah.slice(0, 10) : '-'}</td>
-          <td>${formatBulan(item.bulan)} ${item.tahun}</td>
-          <td>${item.svp_nama || item.svp || '-'}</td>
+          <td>${item.kategori_nama || item.kategori || '-'}</td>
+          <td>${item.pic_checker || '-'}</td>
           <td>${targetSku}</td>
           <td>${checkedSku}</td>
           <td>
@@ -340,15 +368,31 @@
   async function savePerintah(event) {
     event.preventDefault();
     
+    const kodeEl = document.getElementById('perintahKode');
+    const tanggalEl = document.getElementById('perintahTanggal');
+    const bulanEl = document.getElementById('perintahBulan');
+    const tahunEl = document.getElementById('perintahTahun');
+    const svpEl = document.getElementById('perintahSvp');
+    const lokasiEl = document.getElementById('perintahLokasi');
+    const keteranganEl = document.getElementById('perintahKeterangan');
+    const kategoriEl = document.getElementById('perintahKategori');
+    
+    if (!kodeEl || !tanggalEl || !bulanEl || !tahunEl) {
+      showToast('Form tidak lengkap', false);
+      return;
+    }
+    
     const data = {
-      kode_so: document.getElementById('perintahKode').value,
-      tanggal_perintah: document.getElementById('perintahTanggal').value,
-      bulan: parseInt(document.getElementById('perintahBulan').value),
-      tahun: parseInt(document.getElementById('perintahTahun').value),
-      svp_nama: document.getElementById('perintahSvp').value,
-      lokasi: document.getElementById('perintahLokasi').value,
-      keterangan: document.getElementById('perintahKeterangan').value,
-      kategori_targets: ['modul', 'seragam', 'poster', 'lain-lain']
+      kode_so: kodeEl.value,
+      tanggal_perintah: tanggalEl.value,
+      bulan: parseInt(bulanEl.value) || 1,
+      tahun: parseInt(tahunEl.value) || new Date().getFullYear(),
+      svp_nama: svpEl?.value || '',
+      pic_checker: document.getElementById('perintahPicChecker')?.value || '',
+      lokasi: lokasiEl?.value || 'Gudang Utama',
+      keterangan: keteranganEl?.value || '',
+      kategori_id: kategoriEl?.value || 'modul',
+      kategori_nama: kategoriEl?.options[kategoriEl.selectedIndex]?.text || 'Modul'
     };
 
     try {
@@ -373,9 +417,14 @@
   }
 
   function executePerintah(id, kodeSo) {
-    // Simpan ID dan kode SO ke localStorage untuk diakses di halaman pelaksanaan
+    // Find the perintah to get kategori
+    const item = window.SOPerintah.perintahList.find(p => p.id === id);
+    const kategoriId = item?.kategori_id || 'modul';
+    
+    // Simpan ID, kode SO, dan kategori ke localStorage untuk diakses di halaman pelaksanaan
     localStorage.setItem('activePerintahId', id);
     localStorage.setItem('activePerintahKode', kodeSo);
+    localStorage.setItem('activePerintahKategori', kategoriId);
     AppRouter.navigateTo('pelaksanaan-so');
   }
 
@@ -403,6 +452,8 @@
     document.getElementById('detailPeriode').textContent = `${bulanNames[item.bulan] || '-'} ${item.tahun || '-'}`;
     
     document.getElementById('detailSvp').textContent = item.svp_nama || item.svp || '-';
+    document.getElementById('detailPicChecker').textContent = item.pic_checker || '-';
+    document.getElementById('detailKategori').textContent = item.kategori_nama || item.kategori || '-';
     document.getElementById('detailLokasi').textContent = item.lokasi || 'Gudang Utama';
     document.getElementById('detailKeterangan').textContent = item.keterangan || '-';
     
