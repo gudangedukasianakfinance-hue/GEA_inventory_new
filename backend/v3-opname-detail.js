@@ -64,11 +64,12 @@ export default async function handler(req, res) {
             p.sku,
             p.nama_produk,
             CASE
-              WHEN UPPER(p.nama_produk) LIKE 'MODUL%' THEN 'modul'
-              WHEN UPPER(p.nama_produk) LIKE 'TAS%' THEN 'tas'
-              WHEN UPPER(p.nama_produk) LIKE 'BIRU%' 
-                OR UPPER(p.nama_produk) LIKE 'KUNING%'
-                OR UPPER(p.nama_produk) LIKE 'MERAH%' THEN 'seragam'
+              WHEN LOWER(p.nama_produk) LIKE 'modul%' THEN 'modul'
+              WHEN LOWER(p.nama_produk) LIKE 'poster%' OR LOWER(p.nama_produk) LIKE 'flash%' THEN 'poster'
+              WHEN LOWER(p.nama_produk) LIKE '%merah%'
+                OR LOWER(p.nama_produk) LIKE '%kuning%'
+                OR LOWER(p.nama_produk) LIKE '%biru%'
+                OR LOWER(p.nama_produk) LIKE '% my%' THEN 'seragam'
               ELSE 'lain_lain'
             END AS kategori,
             COALESCE(bs.stok_awal, 0) + COALESCE(pt.total_beli, 0) - COALESCE(pj.total_jual, 0) + COALESCE(pen.total_adjust, 0) AS stok_sistem

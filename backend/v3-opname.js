@@ -212,44 +212,7 @@ export async function handlePut(req, res) {
         res.status(200).json({ success: true, message: "SO submitted dan selesai", status: 'selesai' });
         break;
         
-      case 'approve':
-        // Admin approve SO - require admin authorization
-        const adminApprove = await requireAdmin(req, res);
-        if (!adminApprove) return;
-        
-        if (so.status !== 'menunggu_approval') {
-          return res.status(400).json({ error: "SO tidak bisa diapprove dari status ini" });
-        }
-        await pool.query(`
-          UPDATE stok_opname_perintah 
-          SET status = 'selesai'
-          WHERE id = $1
-        `, [id]);
-        
-        // Update stok_opname with finalization
-        if (so.opname_id) {
-          await pool.query(`
-            UPDATE stok_opname 
-            SET disesuaikan_at = NOW()
-            WHERE id = $1
-          `, [so.opname_id]);
-        }
-        
-        res.status(200).json({ success: true, message: "SO approved dan difinalisasi" });
-        break;
-        
-      case 'reject':
-        // Admin reject SO - require admin authorization
-        const adminReject = await requireAdmin(req, res);
-        if (!adminReject) return;
-        
-        await pool.query(`
-          UPDATE stok_opname_perintah 
-          SET status = 'ditolak'
-          WHERE id = $1
-        `, [id]);
-        res.status(200).json({ success: true, message: "SO ditolak" });
-        break;
+      // APPROVE/REJECT actions removed - workflow is direct: menunggu -> proses -> selesai
         
       default:
         res.status(400).json({ error: `Action '${action}' tidak valid` });

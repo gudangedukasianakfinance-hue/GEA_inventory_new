@@ -1,12 +1,13 @@
 import pool from "../services/db.js";
 
-export const OPNAME_KATEGORI_LIST = ["modul", "seragam", "poster", "lain-lain"];
+export const OPNAME_KATEGORI_LIST = ["modul", "seragam", "poster", "lain_lain", "lain-lain"];
 
 export const OPNAME_KATEGORI_LABEL = {
   modul: "Modul",
   seragam: "Seragam",
   poster: "Poster",
-  "lain-lain": "Lain-lain"
+  lain_lain: "Lain-Lain",
+  "lain-lain": "Lain-Lain"
 };
 
 export function sqlProdukKategoriExpr(alias = "p") {

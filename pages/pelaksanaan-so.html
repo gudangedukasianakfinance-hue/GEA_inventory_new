@@ -572,7 +572,6 @@
     const statusMap = {
       'menunggu': { class: 'badge--pending', text: 'Menunggu' },
       'proses': { class: 'badge--process', text: 'Proses' },
-      'menunggu_approval': { class: 'badge--pending', text: 'Menunggu Approval' },
       'ditolak': { class: 'badge--danger', text: 'Ditolak' },
       'selesai': { class: 'badge--done', text: 'Selesai' }
     };
@@ -600,17 +599,13 @@
     // Update submit button state
     const btnSubmit = document.getElementById('btnSubmitSo');
     // Disable if: already submitted/rejected/completed OR no items checked
-    const terminalStates = ['selesai', 'menunggu_approval', 'ditolak'];
+    const terminalStates = ['selesai', 'ditolak'];
     const isTerminal = terminalStates.includes(window.SOPelaksanaan.activeStatus);
     btnSubmit.disabled = isTerminal || checked === 0;
     
     console.log('[updateSoStats] Submit button:', { isTerminal, checked, disabled: btnSubmit.disabled });
     
-    if (window.SOPelaksanaan.activeStatus === 'menunggu_approval') {
-      btnSubmit.innerHTML = '<i data-lucide="clock"></i><span>Menunggu Approval</span>';
-      btnSubmit.classList.add('btn--secondary');
-      btnSubmit.classList.remove('btn--primary');
-    } else if (window.SOPelaksanaan.activeStatus === 'selesai') {
+    if (window.SOPelaksanaan.activeStatus === 'selesai') {
       btnSubmit.innerHTML = '<i data-lucide="check-circle"></i><span>SO Selesai</span>';
     }
     if (window.lucide) lucide.createIcons();

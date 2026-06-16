@@ -300,8 +300,25 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-      // Get total product count for target_sku
-      const produkCountResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk`);
+      // Get total product count for target_sku - filtered by selected kategori
+      // Use sqlProdukKategoriExpr to derive kategori from product name patterns
+      // Normalize kategori_id: handle both "lain_lain" and "lain-lain"
+      let selectedKategori = body.kategori_id || body.kategori_targets?.[0] || 'modul';
+      if (selectedKategori === 'lain_lain') selectedKategori = 'lain_lain';
+      
+      const produkCountResult = await pool.query(`
+        SELECT COUNT(*)::int as total 
+        FROM produk p
+        WHERE CASE
+          WHEN LOWER(p.nama_produk) LIKE 'modul%' THEN 'modul'
+          WHEN LOWER(p.nama_produk) LIKE 'poster%' OR LOWER(p.nama_produk) LIKE 'flash%' THEN 'poster'
+          WHEN LOWER(p.nama_produk) LIKE '%merah%'
+            OR LOWER(p.nama_produk) LIKE '%kuning%'
+            OR LOWER(p.nama_produk) LIKE '%biru%'
+            OR LOWER(p.nama_produk) LIKE '% my%' THEN 'seragam'
+          ELSE 'lain_lain'
+        END = $1
+      `, [selectedKategori]);
       const targetSku = Number(produkCountResult.rows[0]?.total || 0);
 
       // INSERT - only using columns that exist in production schema
@@ -322,6 +339,7 @@ export default async function handler(req, res) {
           checker = COALESCE(EXCLUDED.checker, stok_opname_perintah.checker),
           lokasi = EXCLUDED.lokasi,
           keterangan = EXCLUDED.keterangan,
+          target_sku = EXCLUDED.target_sku,
           updated_at = NOW()
         RETURNING *
         `,
