@@ -437,11 +437,13 @@
       const data = await response.json();
       window.SOPelaksanaan.produkList = data.produk || [];
       
-      // Build map untuk quick lookup
+      // Build map untuk quick lookup (ensure sku is string for consistent lookup)
       window.SOPelaksanaan.produkMap = {};
       window.SOPelaksanaan.produkList.forEach(p => {
-        window.SOPelaksanaan.produkMap[p.sku] = p;
+        window.SOPelaksanaan.produkMap[String(p.sku)] = p;
       });
+      
+      console.log('ProdukMap loaded:', Object.keys(window.SOPelaksanaan.produkMap).length, 'items');
       
       // Update progress table
       renderProgressTable();
@@ -512,9 +514,9 @@
 
   async function processScanInput() {
     const input = document.getElementById('scanInput');
-    const sku = input.value.trim();
+    const skuInput = input.value.trim();
     
-    if (!sku) return;
+    if (!skuInput) return;
     
     // Auto-start SO jika belum dimulai
     if (window.SOPelaksanaan.activeStatus === 'menunggu') {
@@ -526,9 +528,13 @@
       return;
     }
     
+    // Ensure sku is string for consistent lookup
+    const sku = String(skuInput);
+    
     // Cek apakah SKU ada di list
     const produk = window.SOPelaksanaan.produkMap[sku];
     if (!produk) {
+      console.log('SKU not found in map:', sku);
       showToast(`SKU ${sku} tidak ditemukan`, false);
       input.value = '';
       input.focus();
@@ -558,8 +564,9 @@
   async function saveManualInput(event) {
     event.preventDefault();
     
-    const sku = document.getElementById('manualSku').value.trim();
+    const skuInput = document.getElementById('manualSku').value.trim();
     const stokFisik = parseInt(document.getElementById('manualQty').value) || 0;
+    const sku = String(skuInput); // Ensure string key for lookup
     
     if (!sku || !window.SOPelaksanaan.activeOpnameId) {
       showToast('Data tidak valid', false);
@@ -587,7 +594,7 @@
       
       const data = await response.json();
       
-      // Update produk in memory
+      // Update produk in memory - use string key
       const produk = window.SOPelaksanaan.produkMap[sku];
       if (produk) {
         produk.stok_fisik = stokFisik;
@@ -607,10 +614,8 @@
       });
       renderScanHistory();
       
-      // Update stats
+      // Update stats and table
       updateSoStats();
-      
-      // Update progress table
       renderProgressTable();
       
       closeManualInput();
