@@ -412,6 +412,9 @@
       window.SOPelaksanaan.activeStatus = data.status || 'menunggu';
       window.SOPelaksanaan.activeOpnameId = data.opname_id;
       
+      // Store target_sku as snapshot (not recalculated)
+      window.SOPelaksanaan.targetSku = Number(data.target_sku) || 0;
+      
       // Update UI
       document.getElementById('soKode').textContent = data.kode_so || activePerintahKode;
       updateStatusBadge(data.status);
@@ -458,6 +461,8 @@
     const statusMap = {
       'menunggu': { class: 'badge--pending', text: 'Menunggu' },
       'proses': { class: 'badge--process', text: 'Proses' },
+      'menunggu_approval': { class: 'badge--pending', text: 'Menunggu Approval' },
+      'ditolak': { class: 'badge--danger', text: 'Ditolak' },
       'selesai': { class: 'badge--done', text: 'Selesai' }
     };
     const info = statusMap[status] || statusMap['menunggu'];
@@ -466,21 +471,32 @@
   }
 
   function updateSoStats() {
-    const total = window.SOPelaksanaan.produkList.length;
+    // Use stored target_sku as snapshot for consistency
+    const snapshotTarget = window.SOPelaksanaan.targetSku || window.SOPelaksanaan.produkList.length;
+    const currentProdukCount = window.SOPelaksanaan.produkList.length;
     const checked = window.SOPelaksanaan.produkList.filter(p => Number(p.stok_fisik) > 0 || p.detail_id).length;
-    const remaining = total - checked;
-    const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
+    const remaining = snapshotTarget - checked;
+    const progress = snapshotTarget > 0 ? Math.round((checked / snapshotTarget) * 100) : 0;
     
-    document.getElementById('soTargetSku').textContent = total;
+    // Display target SKU (snapshot) with current count as reference
+    document.getElementById('soTargetSku').textContent = snapshotTarget;
     document.getElementById('soCheckedSku').textContent = checked;
-    document.getElementById('soRemainingSku').textContent = remaining;
+    document.getElementById('soRemainingSku').textContent = Math.max(0, remaining);
     document.getElementById('soProgress').textContent = progress + '%';
     
     // Update submit button state
     const btnSubmit = document.getElementById('btnSubmitSo');
-    btnSubmit.disabled = window.SOPelaksanaan.activeStatus === 'selesai' || checked === 0;
-    if (window.SOPelaksanaan.activeStatus === 'selesai') {
-      btnSubmit.innerHTML = '<i data-lucide="check-circle"></i><span>SO Sudah Selesai</span>';
+    // Disable if: already submitted/rejected/completed OR no items checked
+    const terminalStates = ['selesai', 'menunggu_approval', 'ditolak'];
+    const isTerminal = terminalStates.includes(window.SOPelaksanaan.activeStatus);
+    btnSubmit.disabled = isTerminal || checked === 0;
+    
+    if (window.SOPelaksanaan.activeStatus === 'menunggu_approval') {
+      btnSubmit.innerHTML = '<i data-lucide="clock"></i><span>Menunggu Approval</span>';
+      btnSubmit.classList.add('btn--secondary');
+      btnSubmit.classList.remove('btn--primary');
+    } else if (window.SOPelaksanaan.activeStatus === 'selesai') {
+      btnSubmit.innerHTML = '<i data-lucide="check-circle"></i><span>SO Selesai</span>';
     }
     if (window.lucide) lucide.createIcons();
   }
@@ -733,11 +749,12 @@
         throw new Error(err.error || 'Failed to submit');
       }
       
-      window.SOPelaksanaan.activeStatus = 'selesai';
-      updateStatusBadge('selesai');
+      // Status after submit is 'menunggu_approval', not 'selesai'
+      window.SOPelaksanaan.activeStatus = 'menunggu_approval';
+      updateStatusBadge('menunggu_approval');
       updateSoStats();
       
-      showToast('Hasil SO berhasil disubmit');
+      showToast('Hasil SO berhasil disubmit, menunggu approval admin');
       
     } catch (error) {
       console.error('Error submitting:', error);

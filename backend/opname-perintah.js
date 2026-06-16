@@ -317,8 +317,18 @@ export default async function handler(req, res) {
       });
     }
     
-    // DELETE - Delete perintah
+    // DELETE - Delete perintah (Admin only)
     if (req.method === "DELETE") {
+      // Check authorization
+      const auth = await import('../services/auth.js');
+      const authResult = auth.authenticate(req);
+      if (!authResult.authorized) {
+        return res.status(401).json({ error: "Unauthorized - Silakan login" });
+      }
+      if (authResult.user.role !== 'admin') {
+        return res.status(403).json({ error: "Hanya admin yang dapat menghapus perintah SO" });
+      }
+      
       const url = new URL(req.url, `http://${req.headers.host}`);
       const pathParts = url.pathname.split('/').filter(Boolean);
       // URL: /api/opname-perintah/:id -> pathParts = ['api', 'opname-perintah', ':id']

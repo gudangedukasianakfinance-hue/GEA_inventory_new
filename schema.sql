@@ -68,8 +68,20 @@ CREATE TABLE IF NOT EXISTS stok_opname_detail (
   stok_sistem INTEGER NOT NULL,
   stok_fisik INTEGER NOT NULL,
   selisih INTEGER NOT NULL,
-  input_at TIMESTAMP DEFAULT NOW()
+  input_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE (opname_id, sku)
 );
+
+-- Add unique constraint for upsert operations if not exists
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'stok_opname_detail_opname_id_sku_key'
+  ) THEN
+    ALTER TABLE stok_opname_detail ADD CONSTRAINT stok_opname_detail_opname_id_sku_key 
+    UNIQUE (opname_id, sku);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS stok_opname_perintah (
   id SERIAL PRIMARY KEY,
@@ -87,10 +99,12 @@ CREATE TABLE IF NOT EXISTS stok_opname_perintah (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   started_at TIMESTAMP,
-  completed_at TIMESTAMP
+  completed_at TIMESTAMP,
+  target_sku INTEGER DEFAULT 0
 );
 
 ALTER TABLE stok_opname_perintah ADD COLUMN IF NOT EXISTS kategori_targets TEXT;
+ALTER TABLE stok_opname_perintah ADD COLUMN IF NOT EXISTS target_sku INTEGER DEFAULT 0;
 
 ALTER TABLE stok_opname ADD COLUMN IF NOT EXISTS perintah_id INTEGER REFERENCES stok_opname_perintah(id) ON DELETE SET NULL;
 
