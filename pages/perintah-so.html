@@ -208,6 +208,24 @@
   }
 
   function showBuatPerintah() {
+    console.log('=== showBuatPerintah START ===');
+
+    const modal = document.getElementById('buatPerintahModal');
+    const loader = document.getElementById('globalLoader');
+
+    console.log('modal:', modal);
+    console.log('loader:', loader);
+
+    if (loader) {
+      console.log('loader display:', getComputedStyle(loader).display);
+      console.log('loader z-index:', getComputedStyle(loader).zIndex);
+    }
+
+    if (modal) {
+      console.log('modal display before:', getComputedStyle(modal).display);
+      console.log('modal z-index:', getComputedStyle(modal).zIndex);
+    }
+
     // Generate kode SO
     const now = new Date();
     const kode = 'SO' + now.getFullYear().toString().slice(-2) + 
@@ -221,7 +239,15 @@
     document.getElementById('perintahTahun').value = now.getFullYear();
     document.getElementById('perintahSvp').value = '';
     document.getElementById('perintahKeterangan').value = '';
-    document.getElementById('buatPerintahModal').style.display = 'flex';
+    
+    modal.style.display = 'flex';
+
+    console.log('modal display after:', getComputedStyle(modal).display);
+
+    const rect = modal.getBoundingClientRect();
+    console.log('modal rect:', rect);
+
+    console.log('=== showBuatPerintah END ===');
     
     if (window.lucide) lucide.createIcons();
   }
