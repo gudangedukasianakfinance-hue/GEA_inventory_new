@@ -125,15 +125,16 @@
 </style>
 
 <script>
-  let userList = [];
-  let editingUserId = null;
+  // Gunakan window untuk hindari redeclaration saat page di-reload
+  if (typeof window.userList === 'undefined') window.userList = [];
+  if (typeof window.editingUserId === 'undefined') window.editingUserId = null;
 
   async function loadUsers() {
     try {
       const response = await fetch('/api/v1/users');
       if (!response.ok) throw new Error('Failed to load');
       const payload = await response.json();
-      userList = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : Array.isArray(payload.data) ? payload.data : [];
+      window.userList = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : Array.isArray(payload.data) ? payload.data : [];
       renderUsersTable();
     } catch (error) {
       console.error('Error loading users:', error);
@@ -144,12 +145,12 @@
 
   function renderUsersTable() {
     const tbody = document.getElementById('usersTableBody');
-    if (userList.length === 0) {
+    if (window.userList.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada user</td></tr>';
       return;
     }
     
-    tbody.innerHTML = userList.map(user => {
+    tbody.innerHTML = window.userList.map(user => {
       const roleClass = user.role === 'admin' ? 'role-admin' : user.role === 'staff_gudang' ? 'role-staff_gudang' : 'role-checker_opname';
       const statusClass = user.status === 'active' ? 'status-active' : 'status-inactive';
       
@@ -185,7 +186,7 @@
   }
 
   function showAddUserModal() {
-    editingUserId = null;
+    window.editingUserId = null;
     document.getElementById('userModalTitle').textContent = 'Tambah User';
     document.getElementById('userForm').reset();
     document.getElementById('passwordHint').style.display = 'none';
@@ -193,10 +194,10 @@
   }
 
   function editUser(id) {
-    const user = userList.find(u => u.id == id);
+    const user = window.userList.find(u => u.id == id);
     if (!user) return;
     
-    editingUserId = id;
+    window.editingUserId = id;
     document.getElementById('userModalTitle').textContent = 'Edit User';
     document.getElementById('userUsername').value = user.username;
     document.getElementById('userEmail').value = user.email;
@@ -210,7 +211,7 @@
 
   function closeUserModal() {
     document.getElementById('userModal').classList.remove('active');
-    editingUserId = null;
+    window.editingUserId = null;
   }
 
   async function saveUser(event) {
@@ -226,8 +227,8 @@
     };
 
     try {
-      const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
-      const method = editingUserId ? 'PUT' : 'POST';
+      const url = window.editingUserId ? `/api/v1/users/${window.editingUserId}` : '/api/v1/users';
+      const method = window.editingUserId ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
         method,
@@ -242,7 +243,7 @@
         throw new Error(errData.message || 'Failed to save');
       }
       
-      showToast(editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
+      showToast(window.editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
       closeUserModal();
       loadUsers();
     } catch (error) {
