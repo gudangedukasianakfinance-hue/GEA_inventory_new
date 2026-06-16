@@ -57,7 +57,7 @@
 </section>
 
 <!-- Add/Edit User Modal -->
-<div id="userModal" class="modal-overlay" style="display:none;">
+<div id="userModal" class="modal-overlay">
   <div class="modal">
     <div class="modal__header">
       <h3 class="modal__title" id="userModalTitle">Tambah User</h3>
@@ -189,7 +189,7 @@
     document.getElementById('userModalTitle').textContent = 'Tambah User';
     document.getElementById('userForm').reset();
     document.getElementById('passwordHint').style.display = 'none';
-    document.getElementById('userModal').style.display = 'flex';
+    document.getElementById('userModal').classList.add('active');
   }
 
   function editUser(id) {
@@ -205,11 +205,11 @@
     document.getElementById('userPassword').value = '';
     document.getElementById('userActive').checked = user.status === 'active';
     document.getElementById('passwordHint').style.display = 'inline';
-    document.getElementById('userModal').style.display = 'flex';
+    document.getElementById('userModal').classList.add('active');
   }
 
   function closeUserModal() {
-    document.getElementById('userModal').style.display = 'none';
+    document.getElementById('userModal').classList.remove('active');
     editingUserId = null;
   }
 
