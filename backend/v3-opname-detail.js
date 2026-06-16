@@ -30,69 +30,24 @@ export default async function handler(req, res) {
       }
       
       const p = perintah.rows[0];
-      // Use single kategori if provided, otherwise use all from kategori_targets
-      let kategoriFilter;
-      if (kategori && kategori !== 'all') {
-        kategoriFilter = [kategori];
-      } else {
-        kategoriFilter = p.kategori_targets ? JSON.parse(p.kategori_targets) : ['modul', 'seragam', 'poster', 'lain_lain'];
-      }
       
-      // Get produk berdasarkan kategori_filter
-      // STOK SISTEM dihitung dari rolling stock
+      // Get produk dengan stok dari tabel stok
       const produkList = await pool.query(`
-        WITH params AS (
-          SELECT (make_date($2::int, $1::int, 1) + interval '1 month')::date AS end_date
-        ),
-        base_stock AS (
-          SELECT sku, COALESCE(SUM(qty_awal), 0) AS stok_awal FROM stok_awal GROUP BY sku
-        ),
-        pembelian_total AS (
-          SELECT sku, COALESCE(SUM(qty), 0) AS total_beli FROM pembelian 
-          WHERE tanggal <= (SELECT end_date FROM params) GROUP BY sku
-        ),
-        penjualan_total AS (
-          SELECT sku, COALESCE(SUM(qty), 0) AS total_jual FROM penjualan 
-          WHERE tanggal <= (SELECT end_date FROM params) GROUP BY sku
-        ),
-        penyesuaian_total AS (
-          SELECT sku, COALESCE(SUM(qty), 0) AS total_adjust FROM stok_penyesuaian 
-          WHERE tanggal <= (SELECT end_date FROM params) GROUP BY sku
-        ),
-        rolling_stok AS (
-          SELECT 
-            p.sku,
-            p.nama_produk,
-            CASE
-              WHEN LOWER(p.nama_produk) LIKE 'modul%' THEN 'modul'
-              WHEN LOWER(p.nama_produk) LIKE 'poster%' OR LOWER(p.nama_produk) LIKE 'flash%' THEN 'poster'
-              WHEN LOWER(p.nama_produk) LIKE '%merah%'
-                OR LOWER(p.nama_produk) LIKE '%kuning%'
-                OR LOWER(p.nama_produk) LIKE '%biru%'
-                OR LOWER(p.nama_produk) LIKE '% my%' THEN 'seragam'
-              ELSE 'lain_lain'
-            END AS kategori,
-            COALESCE(bs.stok_awal, 0) + COALESCE(pt.total_beli, 0) - COALESCE(pj.total_jual, 0) + COALESCE(pen.total_adjust, 0) AS stok_sistem
-          FROM produk p
-          LEFT JOIN base_stock bs ON bs.sku = p.sku
-          LEFT JOIN pembelian_total pt ON pt.sku = p.sku
-          LEFT JOIN penjualan_total pj ON pj.sku = p.sku
-          LEFT JOIN penyesuaian_total pen ON pen.sku = p.sku
-        )
-        SELECT 
-          rs.sku,
-          rs.nama_produk,
-          rs.kategori,
-          rs.stok_sistem,
-          COALESCE(sod.stok_fisik, 0) AS stok_fisik,
-          COALESCE(sod.selisih, 0) AS selisih,
-          sod.id AS detail_id,
+        SELECT
+          p.sku,
+          p.nama_produk,
+          p.kategori,
+          COALESCE(s.stok_akhir, 0)::int AS stok_sistem,
+          sod.stok_fisik,
+          sod.selisih,
+          sod.id detail_id,
           sod.input_at
-        FROM rolling_stok rs
-        LEFT JOIN stok_opname_detail sod ON sod.sku = rs.sku AND sod.opname_id = $3
-        WHERE rs.kategori = ANY($4::text[])
-        ORDER BY rs.nama_produk
-      `, [p.bulan, p.tahun, p.opname_id || 0, kategoriFilter]);
+        FROM produk p
+        LEFT JOIN stok s ON s.sku = p.sku
+        LEFT JOIN stok_opname_detail sod ON sod.sku = p.sku AND sod.opname_id = $1
+        WHERE ($2 IS NULL OR p.kategori = $2)
+        ORDER BY p.nama_produk
+      `, [p.opname_id || 0, kategori || null]);
       
       res.status(200).json({
         perintah: {

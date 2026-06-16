@@ -26,19 +26,19 @@ async function calculateProgressFields(perintahRow) {
   
   try {
     const checkedCount = await pool.query(`
-      SELECT COUNT(*)::int as checked 
-      FROM stok_opname_detail 
-      WHERE opname_id = $1 AND stok_fisik IS NOT NULL
+      SELECT COUNT(DISTINCT sku)::int AS checked
+      FROM stok_opname_detail
+      WHERE opname_id = $1
     `, [opnameId]);
     
     const total = storedTargetSku;
     const checked = Number(checkedCount.rows[0]?.checked || 0);
-    const progress = total > 0 ? (checked / total) * 100 : 0;
+    const progress = (total > 0) ? Math.round((checked / total) * 100) : 0;
     
     return {
       target_sku: total,
       checked_sku: checked,
-      progress_percent: Math.round(progress * 100) / 100
+      progress_percent: progress
     };
   } catch (error) {
     console.error('Error calculating progress:', error);
@@ -301,25 +301,14 @@ export default async function handler(req, res) {
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
       // Get total product count for target_sku - filtered by selected kategori
-      // Use sqlProdukKategoriExpr to derive kategori from product name patterns
-      // Normalize kategori_id: handle both "lain_lain" and "lain-lain"
-      let selectedKategori = body.kategori_id || body.kategori_targets?.[0] || 'modul';
-      if (selectedKategori === 'lain_lain') selectedKategori = 'lain_lain';
+      const selectedKategori = body.kategori_id || body.kategori_targets?.[0] || 'modul';
       
       const produkCountResult = await pool.query(`
-        SELECT COUNT(*)::int as total 
-        FROM produk p
-        WHERE CASE
-          WHEN LOWER(p.nama_produk) LIKE 'modul%' THEN 'modul'
-          WHEN LOWER(p.nama_produk) LIKE 'poster%' OR LOWER(p.nama_produk) LIKE 'flash%' THEN 'poster'
-          WHEN LOWER(p.nama_produk) LIKE '%merah%'
-            OR LOWER(p.nama_produk) LIKE '%kuning%'
-            OR LOWER(p.nama_produk) LIKE '%biru%'
-            OR LOWER(p.nama_produk) LIKE '% my%' THEN 'seragam'
-          ELSE 'lain_lain'
-        END = $1
+        SELECT COUNT(*)::int as total
+        FROM produk
+        WHERE kategori = $1
       `, [selectedKategori]);
-      const targetSku = Number(produkCountResult.rows[0]?.total || 0);
+      const targetSku = produkCountResult.rows[0].count;
 
       // INSERT - only using columns that exist in production schema
       // REMOVED: pic_checker, kategori_id, kategori_nama (do not exist)

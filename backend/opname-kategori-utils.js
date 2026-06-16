@@ -130,17 +130,18 @@ export async function getKategoriCountedByOpname(opnameIds) {
   const ids = [...new Set(opnameIds.map((id) => Number(id)).filter(Boolean))];
   if (!ids.length) return {};
 
-  const kategoriExpr = sqlProdukKategoriExpr("p");
   const result = await pool.query(
     `
     SELECT
       d.opname_id,
-      ${kategoriExpr} AS kategori,
-      COUNT(*)::int AS counted_sku
+      p.kategori,
+      COUNT(DISTINCT d.sku)::int AS counted_sku
     FROM stok_opname_detail d
     JOIN produk p ON p.sku = d.sku
     WHERE d.opname_id = ANY($1::int[])
-    GROUP BY d.opname_id, kategori
+    GROUP BY
+      d.opname_id,
+      p.kategori
     `,
     [ids]
   );
