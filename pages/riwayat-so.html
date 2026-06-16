@@ -347,10 +347,12 @@
   document.getElementById('filterBulan')?.addEventListener('change', loadHistory);
   document.getElementById('filterTahun')?.addEventListener('change', loadHistory);
 
-  // Set current month
-  const now = new Date();
-  document.getElementById('filterBulan').value = now.getMonth() + 1;
-  document.getElementById('filterTahun').value = now.getFullYear();
+  // Set current month (wrapped in function to avoid re-declaration in SPA)
+  (function initFilters() {
+    const now = new Date();
+    document.getElementById('filterBulan').value = now.getMonth() + 1;
+    document.getElementById('filterTahun').value = now.getFullYear();
+  })();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadHistory);

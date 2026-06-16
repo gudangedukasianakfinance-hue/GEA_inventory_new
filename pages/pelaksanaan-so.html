@@ -485,7 +485,7 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            id: activePerintahId, 
+            id: window.SOPelaksanaan.activePerintahId, 
             action: 'start',
             checker: 'Checker SO'
           })
@@ -568,7 +568,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          opname_id: activeOpnameId,
+          opname_id: window.SOPelaksanaan.activeOpnameId,
           sku: sku,
           stok_fisik: stokFisik,
           checker: 'Checker SO'
@@ -713,7 +713,7 @@
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: activePerintahId,
+          id: window.SOPelaksanaan.activePerintahId,
           action: 'submit'
         })
       });
