@@ -112,7 +112,7 @@ async function listUsers(req, res) {
       [...params, limit, offset]
     );
 
-    return send(res, 200, { items: usersResult.rows,
+    return send(res, 200, { success: true,
       success: true,
       data: usersResult.rows, items: usersResult.rows,
       pagination: {
@@ -150,6 +150,7 @@ async function getUser(req, res, userId) {
 
 // Create new user
 async function createUser(req, res) {
+  console.log("[CREATE USER] Request body:", req.body);
   const currentUser = { role: 'admin' }; // TEMP BYPASS
   if (false) {
     return send(res, 403, { success: false, message: "Hanya admin yang dapat membuat user" });
@@ -197,7 +198,7 @@ async function createUser(req, res) {
       [username.trim(), finalEmail, passwordHash, finalName, finalRole]
     );
 
-    return send(res, 201, {
+    console.log("[CREATE USER] Success, returning 201"); return send(res, 201, { items: [result.rows[0]],
       success: true,
       message: "User berhasil dibuat",
       data: result.rows[0]
@@ -272,11 +273,7 @@ async function updateUser(req, res, userId) {
       params
     );
 
-    return send(res, 200, { items: usersResult.rows,
-      success: true,
-      message: "User berhasil diupdate",
-      data: result.rows[0]
-    });
+    return send(res, 200, { success: true, message: "User berhasil diupdate", data: result.rows[0] });
   } catch (error) {
     console.error("Error updating user:", error);
     return send(res, 500, { success: false, message: "Gagal mengupdate user" });
@@ -329,7 +326,7 @@ async function enableUser(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { items: usersResult.rows,
+    return send(res, 200, { success: true,
       success: true,
       message: "User berhasil diaktifkan",
       data: result.rows[0]
@@ -363,7 +360,7 @@ async function disableUser(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { items: usersResult.rows,
+    return send(res, 200, { success: true,
       success: true,
       message: "User berhasil dinonaktifkan",
       data: result.rows[0]
@@ -395,7 +392,7 @@ async function resetPassword(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { items: usersResult.rows,
+    return send(res, 200, { success: true,
       success: true,
       message: "Password berhasil direset",
       data: { temp_password: tempPassword }
@@ -415,7 +412,7 @@ async function getUserStats(req, res) {
     const staffResult = await pool.query("SELECT COUNT(*) as staff FROM users WHERE role = 'staff_gudang'");
     const checkerResult = await pool.query("SELECT COUNT(*) as checkers FROM users WHERE role = 'checker_opname'");
 
-    return send(res, 200, { items: usersResult.rows,
+    return send(res, 200, { success: true,
       success: true,
       data: {
         total: parseInt(totalResult.rows[0]?.total || 0, 10),
@@ -434,7 +431,7 @@ async function getUserStats(req, res) {
 
 // Get roles
 async function getRoles(req, res) {
-  return send(res, 200, { items: usersResult.rows,
+  return send(res, 200, { success: true,
     success: true,
     data: [
       { value: "admin", label: "Admin" },

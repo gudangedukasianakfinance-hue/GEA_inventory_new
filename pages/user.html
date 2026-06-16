@@ -235,7 +235,12 @@
         body: JSON.stringify(data)
       });
 
-      if (!response.ok) throw new Error('Failed to save');
+      console.log('Response:', response.status);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        console.error('Save error:', errData);
+        throw new Error(errData.message || 'Failed to save');
+      }
       
       showToast(editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
       closeUserModal();
