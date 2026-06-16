@@ -1,264 +1,731 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perintah SO</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.min.css">
-  <style>
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; }
-    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
-    .btn-primary { background: #4f46e5; color: #fff; }
-    .btn-secondary { background: #6b7280; color: #fff; }
-    .table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-    .table th { background: #f9fafb; font-weight: 600; }
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-    .badge-menunggu { background: #fef3c7; color: #92400e; }
-    .badge-proses { background: #dbeafe; color: #1e40af; }
-    .badge-selesai { background: #d1fae5; color: #065f46; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-    .modal.active { display: flex; }
-    .modal-content { background: #fff; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Perintah SO</h1>
-      <button class="btn btn-primary" onclick="openCreateModal()">+ Buat Perintah</button>
+<!-- Perintah SO Page -->
+<section class="page-section">
+  <div class="page-header">
+    <h2 class="page-title">Perintah Stok Opname</h2>
+    <p class="page-subtitle">Buat dan kelola perintah stok opname gudang</p>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('pelaksanaan-so')">
+      <i data-lucide="clipboard-check"></i>
+      <span>Pelaksanaan SO</span>
+    </button>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('riwayat-so')">
+      <i data-lucide="history"></i>
+      <span>Riwayat SO</span>
+    </button>
+  </div>
+
+  <!-- Perintah List -->
+  <div class="card">
+    <div class="card__header">
+      <h3>Daftar Perintah SO</h3>
+      <button class="btn btn--primary btn--sm" onclick="showBuatPerintah()">
+        <i data-lucide="plus"></i>
+        <span>Buat Perintah SO</span>
+      </button>
     </div>
-    
-    <div class="filters">
-      <select id="filterBulan">
-        <option value="6">Juni</option>
-      </select>
-      <select id="filterTahun">
-        <option value="2026">2026</option>
-      </select>
-      <button class="btn btn-secondary" onclick="loadList()">Cari</button>
-    </div>
-    
-    <table class="table" id="soTable">
+    <table class="data-table" id="perintahTable">
       <thead>
         <tr>
           <th>Kode SO</th>
+          <th>Tanggal</th>
           <th>Kategori</th>
           <th>PIC</th>
           <th>Target</th>
-          <th>Checked</th>
+          <th>Dicek</th>
           <th>Progress</th>
           <th>Status</th>
           <th>Aksi</th>
         </tr>
       </thead>
-      <tbody id="soTableBody"></tbody>
+      <tbody id="perintahTableBody">
+        <tr>
+          <td colspan="10" class="text-center text-muted">Memuat data...</td>
+        </tr>
+      </tbody>
     </table>
   </div>
-  
-  <div class="modal" id="createModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Buat Perintah SO</h2>
-        <button class="close-btn" onclick="closeCreateModal()">&times;</button>
+</section>
+
+<!-- Buat Perintah Modal -->
+<div id="buatPerintahModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Buat Perintah SO</h3>
+      <button class="modal__close" onclick="closeBuatPerintah()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form id="perintahForm" onsubmit="savePerintah(event)">
+      <div class="form-group">
+        <label>Kode SO</label>
+        <input type="text" id="perintahKode" class="form-input" readonly>
       </div>
-      <form id="createForm">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="perintahTanggal" class="form-input" required>
+      </div>
+      <div class="form-row">
         <div class="form-group">
-          <label>Kode SO</label>
-          <input type="text" id="kodeSo" required placeholder="Contoh: SO26061664">
-        </div>
-        <div class="form-group">
-          <label>Kategori</label>
-          <select id="kategoriId" required>
-            <option value="modul">Modul</option>
-            <option value="poster">Poster</option>
-            <option value="seragam">Seragam</option>
-            <option value="lain-lain">Lain-Lain</option>
+          <label>Bulan</label>
+          <select id="perintahBulan" class="form-input" required>
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
           </select>
         </div>
         <div class="form-group">
-          <label>PIC Checker</label>
-          <input type="text" id="picChecker" required placeholder="Nama PIC">
+          <label>Tahun</label>
+          <select id="perintahTahun" class="form-input" required>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
         </div>
-        <div class="form-group">
-          <label>Tanggal</label>
-          <input type="date" id="tanggal" required>
-        </div>
-        <div class="form-group">
-          <label>Lokasi</label>
-          <input type="text" id="lokasi" placeholder="Lokasi SO">
-        </div>
-        <div class="form-group">
-          <label>Keterangan</label>
-          <input type="text" id="keterangan" placeholder="Keterangan">
-        </div>
-        <button type="submit" class="btn btn-primary">Simpan</button>
-      </form>
-    </div>
-  </div>
-  
-  <div class="modal" id="detailModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Detail SO</h2>
-        <button class="close-btn" onclick="closeDetailModal()">&times;</button>
       </div>
-      <div id="detailContent"></div>
+      <div class="form-group">
+        <label>SVP / Supervisor</label>
+        <input type="text" id="perintahSvp" class="form-input" placeholder="Nama Supervisor" required>
+      </div>
+      <div class="form-group">
+        <label>PIC Checker</label>
+        <input type="text" id="perintahPicChecker" class="form-input" placeholder="Nama PIC Checker Gudang" required>
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="perintahKategori" class="form-input" required>
+          <option value="modul">Modul</option>
+          <option value="seragam">Seragam</option>
+          <option value="poster">Poster</option>
+          <option value="lain_lain">Lain-lain</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Lokasi / Gudang</label>
+        <select id="perintahLokasi" class="form-input" required>
+          <option value="Gudang Utama">Gudang Utama</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Keterangan</label>
+        <textarea id="perintahKeterangan" class="form-input" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn--secondary" onclick="closeBuatPerintah()">Batal</button>
+        <button type="submit" class="btn btn--primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Detail Perintah Modal -->
+<div id="detailPerintahModal" class="modal-overlay">
+  <div class="modal modal--lg">
+    <div class="modal__header">
+      <h3 class="modal__title">Detail Perintah SO</h3>
+      <button class="modal__close" onclick="closeDetailPerintah()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Kode SO</label>
+          <span id="detailKode" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Tanggal</label>
+          <span id="detailTanggal" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Periode</label>
+          <span id="detailPeriode" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>SVP / Supervisor</label>
+          <span id="detailSvp" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>PIC Checker</label>
+          <span id="detailPicChecker" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Kategori</label>
+          <span id="detailKategori" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Lokasi</label>
+          <span id="detailLokasi" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <span id="detailStatus" class="detail-badge"></span>
+        </div>
+      </div>
+      
+      <div class="detail-progress">
+        <div class="progress-header">
+          <span>Progress Stok Opname</span>
+          <span id="detailProgressText">0 / 0 SKU</span>
+        </div>
+        <div class="progress-bar">
+          <div id="detailProgressBar" class="progress-bar__fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-stats">
+          <div class="stat">
+            <span class="stat-label">Target SKU</span>
+            <span id="detailTargetSku" class="stat-value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Sudah Dicek</span>
+            <span id="detailCheckedSku" class="stat-value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Persentase</span>
+            <span id="detailPercent" class="stat-value">0%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-item full-width">
+        <label>Keterangan</label>
+        <span id="detailKeterangan" class="detail-value detail-value--muted">-</span>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" onclick="closeDetailPerintah()">Tutup</button>
+      <button type="button" id="detailActionBtn" class="btn btn--primary" onclick="">
+        <i data-lucide="play"></i>
+        <span>Mulai SO</span>
+      </button>
     </div>
   </div>
+</div>
 
-  <script>
-    const API = '/api/opname-perintah';
-    
-    async function loadList() {
-      const bulan = document.getElementById('filterBulan').value;
-      const tahun = document.getElementById('filterTahun').value;
+<script>
+  // Namespace untuk state (hindari redeclare saat SPA cache reload)
+  window.SOPerintah = window.SOPerintah || {};
+  window.SOPerintah.perintahList = window.SOPerintah.perintahList || [];
+
+  function formatBulan(bulan) {
+    const namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return namaBulan[bulan] || bulan;
+  }
+
+  function getStatusClass(status) {
+    const statusMap = {
+      'menunggu': 'badge--pending',
+      'proses': 'badge--process',
+      'selesai': 'badge--done'
+    };
+    return statusMap[status] || 'badge--pending';
+  }
+
+  function getStatusLabel(status) {
+    const labelMap = {
+      'menunggu': 'Menunggu',
+      'proses': 'Proses',
+      'selesai': 'Selesai'
+    };
+    return labelMap[status] || status;
+  }
+
+  async function loadPerintah() {
+    try {
+      // Get current month and year
+      const now = new Date();
+      const bulan = now.getMonth() + 1;
+      const tahun = now.getFullYear();
       
-      try {
-        const res = await fetch(`${API}?bulan=${bulan}&tahun=${tahun}`);
-        const data = await res.json();
-        
-        const tbody = document.getElementById('soTableBody');
-        tbody.innerHTML = '';
-        
-        if (!data.items || !data.items.length) {
-          tbody.innerHTML = '<tr><td colspan="8">Tidak ada data</td></tr>';
-          return;
-        }
-        
-        data.items.forEach(item => {
-          const progress = item.progress_percent || 0;
-          const badgeClass = item.status === 'menunggu' ? 'badge-menunggu' : item.status === 'proses' ? 'badge-proses' : 'badge-selesai';
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>${item.kode_so}</strong></td>
-              <td>${item.kategori_nama || '-'}</td>
-              <td>${item.pic_checker || item.checker || '-'}</td>
-              <td>${item.target_sku || 0}</td>
-              <td>${item.checked_sku || 0}</td>
-              <td>${progress}%</td>
-              <td><span class="badge ${badgeClass}">${item.status}</span></td>
-              <td>
-                <button class="btn btn-secondary" onclick="viewDetail(${item.id})">Detail</button>
-                ${item.status === 'menunggu' ? `<button class="btn btn-primary" onclick="startSo(${item.id})">Mulai</button>` : ''}
-              </td>
-            </tr>
-          `;
-        });
-      } catch (err) {
-        console.error('Load list error:', err);
-        alert('Gagal memuat data');
+      const response = await fetch(`/api/opname-perintah?bulan=${bulan}&tahun=${tahun}`);
+      if (!response.ok) throw new Error('Failed to load');
+      
+      const data = await response.json();
+      window.SOPerintah.perintahList = data.items || [];
+      renderPerintahTable();
+    } catch (error) {
+      console.error('Error loading perintah:', error);
+      const tbody = document.getElementById('perintahTableBody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Gagal memuat data</td></tr>';
       }
     }
-    
-    function openCreateModal() {
-      document.getElementById('createForm').reset();
-      document.getElementById('createModal').classList.add('active');
-      document.getElementById('kodeSo').value = 'SO' + new Date().toISOString().slice(2,10).replace(/-/g,'');
-      document.getElementById('tanggal').value = new Date().toISOString().slice(0,10);
+  }
+
+  function renderPerintahTable() {
+    const tbody = document.getElementById('perintahTableBody');
+    if (!tbody) {
+      console.warn('perintahTableBody not found');
+      return;
     }
     
-    function closeCreateModal() {
-      document.getElementById('createModal').classList.remove('active');
+    if (window.SOPerintah.perintahList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Tidak ada perintah SO periode ini</td></tr>';
+      return;
     }
     
-    function closeDetailModal() {
-      document.getElementById('detailModal').classList.remove('active');
-    }
-    
-    document.getElementById('createForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    tbody.innerHTML = window.SOPerintah.perintahList.map(item => {
+      const progress = item.progress_percent || 0;
+      const targetSku = item.target_sku || 0;
+      const checkedSku = item.checked_sku || 0;
       
-      const payload = {
-        kode_so: document.getElementById('kodeSo').value,
-        kategori_id: document.getElementById('kategoriId').value,
-        pic_checker: document.getElementById('picChecker').value,
-        tanggal_perintah: document.getElementById('tanggal').value,
-        lokasi: document.getElementById('lokasi').value,
-        keterangan: document.getElementById('keterangan').value
+      return `
+        <tr>
+          <td><code>${item.kode_so || item.kode || ''}</code></td>
+          <td>${item.tanggal_perintah ? item.tanggal_perintah.slice(0, 10) : '-'}</td>
+          <td>${item.kategori_nama || item.kategori || '-'}</td>
+          <td>${item.pic_checker || '-'}</td>
+          <td>${targetSku}</td>
+          <td>${checkedSku}</td>
+          <td>
+            <div class="progress-bar-mini">
+              <div class="progress-bar-mini__fill" style="width: ${progress}%"></div>
+            </div>
+            <span class="progress-label">${progress.toFixed(1)}%</span>
+          </td>
+          <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
+          <td>
+            <button class="action-btn" onclick="executePerintah(${item.id}, '${item.kode_so || item.kode || ''}')" title="Mulai SO" ${item.status !== 'menunggu' ? 'disabled' : ''}>
+              <i data-lucide="play"></i>
+            </button>
+            <button class="action-btn" onclick="viewPerintah(${item.id})" title="Detail">
+              <i data-lucide="eye"></i>
+            </button>
+            ${item.status === 'menunggu' ? `
+            <button class="action-btn action-btn--danger" onclick="deletePerintah(${item.id}, '${item.kode_so || item.kode || ''}')" title="Hapus">
+              <i data-lucide="trash-2"></i>
+            </button>
+            ` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+  }
+
+  function showBuatPerintah() {
+    console.log('=== showBuatPerintah START ===');
+
+    const modal = document.getElementById('buatPerintahModal');
+    const loader = document.getElementById('globalLoader');
+
+    console.log('modal:', modal);
+    console.log('loader:', loader);
+
+    if (loader) {
+      console.log('loader display:', getComputedStyle(loader).display);
+      console.log('loader z-index:', getComputedStyle(loader).zIndex);
+    }
+
+    if (modal) {
+      console.log('modal display before:', getComputedStyle(modal).display);
+      console.log('modal z-index:', getComputedStyle(modal).zIndex);
+    }
+
+    // Generate kode SO
+    const now = new Date();
+    const kode = 'SO' + now.getFullYear().toString().slice(-2) + 
+                 String(now.getMonth() + 1).padStart(2, '0') + 
+                 now.getDate().toString().slice(-2) + 
+                 String(Math.floor(Math.random() * 100)).padStart(2, '0');
+    
+    document.getElementById('perintahKode').value = kode;
+    document.getElementById('perintahTanggal').value = now.toISOString().split('T')[0];
+    document.getElementById('perintahBulan').value = now.getMonth() + 1;
+    document.getElementById('perintahTahun').value = now.getFullYear();
+    document.getElementById('perintahSvp').value = '';
+    document.getElementById('perintahKeterangan').value = '';
+    
+    modal.classList.add('active');
+
+    console.log('modal display after:', getComputedStyle(modal).display);
+
+    const rect = modal.getBoundingClientRect();
+    console.log('modal rect:', rect);
+
+    console.log('=== showBuatPerintah END ===');
+    
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeBuatPerintah() {
+    document.getElementById('buatPerintahModal').classList.remove('active');
+  }
+
+  async function savePerintah(event) {
+    event.preventDefault();
+    
+    const kodeEl = document.getElementById('perintahKode');
+    const tanggalEl = document.getElementById('perintahTanggal');
+    const bulanEl = document.getElementById('perintahBulan');
+    const tahunEl = document.getElementById('perintahTahun');
+    const svpEl = document.getElementById('perintahSvp');
+    const lokasiEl = document.getElementById('perintahLokasi');
+    const keteranganEl = document.getElementById('perintahKeterangan');
+    const kategoriEl = document.getElementById('perintahKategori');
+    
+    if (!kodeEl || !tanggalEl || !bulanEl || !tahunEl) {
+      showToast('Form tidak lengkap', false);
+      return;
+    }
+    
+    const data = {
+      kode_so: kodeEl.value,
+      tanggal_perintah: tanggalEl.value,
+      bulan: parseInt(bulanEl.value) || 1,
+      tahun: parseInt(tahunEl.value) || new Date().getFullYear(),
+      svp_nama: svpEl?.value || '',
+      pic_checker: document.getElementById('perintahPicChecker')?.value || '',
+      lokasi: lokasiEl?.value || 'Gudang Utama',
+      keterangan: keteranganEl?.value || '',
+      kategori_id: kategoriEl?.value || 'modul',
+      kategori_nama: kategoriEl?.options[kategoriEl.selectedIndex]?.text || 'Modul'
+    };
+
+    try {
+      const response = await fetch('/api/opname-perintah', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to save');
+      }
+      
+      showToast('Perintah SO berhasil dibuat');
+      closeBuatPerintah();
+      loadPerintah();
+    } catch (error) {
+      console.error('Error saving:', error);
+      showToast(error.message || 'Gagal menyimpan', false);
+    }
+  }
+
+  function executePerintah(id, kodeSo) {
+    // Find the perintah to get kategori
+    const item = window.SOPerintah.perintahList.find(p => p.id === id);
+    const kategoriId = item?.kategori_id || 'modul';
+    
+    // Simpan ID, kode SO, dan kategori ke localStorage untuk diakses di halaman pelaksanaan
+    localStorage.setItem('activePerintahId', id);
+    localStorage.setItem('activePerintahKode', kodeSo);
+    localStorage.setItem('activePerintahKategori', kategoriId);
+    AppRouter.navigateTo('pelaksanaan-so');
+  }
+
+  function viewPerintah(id) {
+    console.log('View perintah:', id);
+    
+    // Find the perintah item
+    const item = window.SOPerintah.perintahList.find(p => p.id === id);
+    if (!item) {
+      showToast('Data tidak ditemukan', false);
+      return;
+    }
+    
+    // Store current detail ID for action button
+    window.SOPerintah.currentDetailId = id;
+    window.SOPerintah.currentDetailKode = item.kode_so || item.kode || '';
+    
+    // Populate detail modal
+    document.getElementById('detailKode').textContent = item.kode_so || item.kode || '-';
+    document.getElementById('detailTanggal').textContent = item.tanggal_perintah ? 
+      new Date(item.tanggal_perintah).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-';
+    
+    const bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    document.getElementById('detailPeriode').textContent = `${bulanNames[item.bulan] || '-'} ${item.tahun || '-'}`;
+    
+    document.getElementById('detailSvp').textContent = item.svp_nama || item.svp || '-';
+    document.getElementById('detailPicChecker').textContent = item.pic_checker || '-';
+    document.getElementById('detailKategori').textContent = item.kategori_nama || item.kategori || '-';
+    document.getElementById('detailLokasi').textContent = item.lokasi || 'Gudang Utama';
+    document.getElementById('detailKeterangan').textContent = item.keterangan || '-';
+    
+    // Status badge
+    const statusBadge = document.getElementById('detailStatus');
+    statusBadge.textContent = getStatusLabel(item.status);
+    statusBadge.className = 'detail-badge badge ' + getStatusClass(item.status);
+    
+    // Progress
+    const targetSku = item.target_sku || 0;
+    const checkedSku = item.checked_sku || 0;
+    const progress = item.progress_percent || 0;
+    
+    document.getElementById('detailTargetSku').textContent = targetSku;
+    document.getElementById('detailCheckedSku').textContent = checkedSku;
+    document.getElementById('detailPercent').textContent = progress.toFixed(1) + '%';
+    document.getElementById('detailProgressText').textContent = `${checkedSku} / ${targetSku} SKU`;
+    document.getElementById('detailProgressBar').style.width = `${Math.min(progress, 100)}%`;
+    
+    // Action button based on status
+    const actionBtn = document.getElementById('detailActionBtn');
+    if (item.status === 'menunggu') {
+      actionBtn.innerHTML = '<i data-lucide="play"></i><span>Mulai SO</span>';
+      actionBtn.onclick = () => executePerintah(id, item.kode_so || item.kode || '');
+      actionBtn.style.display = 'inline-flex';
+    } else if (item.status === 'proses') {
+      actionBtn.innerHTML = '<i data-lucide="external-link"></i><span>Lihat Pelaksanaan</span>';
+      actionBtn.onclick = () => {
+        closeDetailPerintah();
+        executePerintah(id, item.kode_so || item.kode || '');
       };
-      
-      try {
-        const res = await fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        const data = await res.json();
-        
-        if (res.ok) {
-          alert('Berhasil dibuat');
-          closeCreateModal();
-          loadList();
-        } else {
-          alert('Error: ' + (data.error || 'Unknown error'));
-        }
-      } catch (err) {
-        console.error('Create error:', err);
-        alert('Gagal membuat perintah');
-      }
-    });
-    
-    async function viewDetail(id) {
-      try {
-        const res = await fetch(`${API}?id=${id}`);
-        const data = await res.json();
-        
-        if (!res.ok) {
-          alert('Data tidak ditemukan');
-          return;
-        }
-        
-        const badgeClass = data.status === 'menunggu' ? 'badge-menunggu' : data.status === 'proses' ? 'badge-proses' : 'badge-selesai';
-        
-        document.getElementById('detailContent').innerHTML = `
-          <div class="detail-item"><strong>Kode SO:</strong> ${data.kode_so}</div>
-          <div class="detail-item"><strong>Kategori:</strong> ${data.kategori_nama || '-'}</div>
-          <div class="detail-item"><strong>PIC Checker:</strong> ${data.pic_checker || data.checker || '-'}</div>
-          <div class="detail-item"><strong>Target SKU:</strong> ${data.target_sku || 0}</div>
-          <div class="detail-item"><strong>Checked SKU:</strong> ${data.checked_sku || 0}</div>
-          <div class="detail-item"><strong>Progress:</strong> ${data.progress_percent || 0}%</div>
-          <div class="detail-item"><strong>Status:</strong> <span class="badge ${badgeClass}">${data.status}</span></div>
-          <div class="detail-item"><strong>Keterangan:</strong> ${data.keterangan || '-'}</div>
-        `;
-        
-        document.getElementById('detailModal').classList.add('active');
-      } catch (err) {
-        console.error('Detail error:', err);
-        alert('Gagal memuat detail');
-      }
+      actionBtn.style.display = 'inline-flex';
+    } else {
+      actionBtn.style.display = 'none';
     }
     
-    async function startSo(id) {
-      if (!confirm('Mulai SO ini?')) return;
-      
-      try {
-        const res = await fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'start', perintah_id: id })
-        });
-        
-        if (res.ok) {
-          alert('SO dimulai');
-          loadList();
-        } else {
-          const data = await res.json();
-          alert('Error: ' + (data.error || 'Unknown error'));
-        }
-      } catch (err) {
-        console.error('Start error:', err);
-        alert('Gagal memulai SO');
-      }
+    // Show modal
+    document.getElementById('detailPerintahModal').classList.add('active');
+    
+    if (window.lucide) lucide.createIcons();
+  }
+  
+  function closeDetailPerintah() {
+    document.getElementById('detailPerintahModal').classList.remove('active');
+  }
+  
+  async function deletePerintah(id, kodeSo) {
+    if (!confirm(`Yakin ingin menghapus Perintah SO "${kodeSo}"?\n\nPerintah yang dihapus tidak dapat dikembalikan.`)) {
+      return;
     }
     
-    loadList();
-  </script>
-</body>
-</html>
+    try {
+      const response = await fetch(`/api/opname-perintah/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete');
+      }
+      
+      showToast(`Perintah SO "${kodeSo}" berhasil dihapus`);
+      loadPerintah();
+    } catch (error) {
+      console.error('Error deleting:', error);
+      showToast(error.message || 'Gagal menghapus perintah', false);
+    }
+  }
+
+  // Load data saat page ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadPerintah);
+  } else {
+    loadPerintah();
+  }
+</script>
+
+<style>
+  .form-row {
+    display: flex;
+    gap: 16px;
+  }
+  .form-row .form-group {
+    flex: 1;
+  }
+  .progress-bar-mini {
+    width: 80px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .progress-bar-mini__fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF4D3A, #FF6B5B);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: #94A3B8;
+  }
+  .badge--pending {
+    background: rgba(148, 163, 184, 0.2);
+    color: #94A3B8;
+  }
+  .badge--process {
+    background: rgba(255, 77, 58, 0.2);
+    color: #FF4D3A;
+  }
+  .badge--done {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22C55E;
+  }
+  .card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Detail Modal Styles */
+  .modal--lg {
+    max-width: 560px;
+  }
+  
+  .modal__body {
+    padding: var(--space-xl);
+  }
+  
+  .modal__footer {
+    padding: var(--space-lg) var(--space-xl);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+  }
+  
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+  
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  
+  .detail-item.full-width {
+    grid-column: 1 / -1;
+  }
+  
+  .detail-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .detail-value {
+    font-size: 15px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  
+  .detail-value--muted {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  
+  .detail-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    width: fit-content;
+  }
+  
+  .detail-progress {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+  }
+  
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  .detail-progress .progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: var(--space-md);
+  }
+  
+  .detail-progress .progress-bar__fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  
+  .progress-stats {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .stat {
+    text-align: center;
+  }
+  
+  .stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: var(--space-xs);
+  }
+  
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  
+  /* Action Button Styles */
+  .action-btn {
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .action-btn:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+  }
+  
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .action-btn--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+  }
+  
+  .action-btn--danger {
+    color: var(--text-muted);
+  }
+</style>
