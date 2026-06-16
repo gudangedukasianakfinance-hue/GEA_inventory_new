@@ -398,6 +398,11 @@
     loadActiveSoDetails();
   }
 
+  // Wrapper for AppRouter - called when page loads from cache
+  function SOPelaksanaanInit() {
+    initPelaksanaanSo();
+  }
+
   async function loadActiveSoDetails() {
     try {
       const response = await fetch(`/api/opname-perintah?id=${window.SOPelaksanaan.activePerintahId}`);

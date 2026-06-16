@@ -15,21 +15,17 @@ function normalizeKodeSo(value) {
 
 async function calculateProgressFields(perintahRow) {
   const opnameId = perintahRow.opname_id;
+  const storedTargetSku = Number(perintahRow.target_sku || 0);
   
   if (!opnameId) {
     return {
-      target_sku: 0,
+      target_sku: storedTargetSku,
       checked_sku: 0,
       progress_percent: 0
     };
   }
   
   try {
-    // Get total produk count from produk table
-    const produkCount = await pool.query(`
-      SELECT COUNT(*)::int as total FROM produk
-    `);
-    
     // Get checked SKU count from opname detail
     const checkedCount = await pool.query(`
       SELECT COUNT(*)::int as checked 
@@ -37,7 +33,8 @@ async function calculateProgressFields(perintahRow) {
       WHERE opname_id = $1 AND stok_fisik IS NOT NULL
     `, [opnameId]);
     
-    const total = Number(produkCount.rows[0]?.total || 0);
+    // Use stored target_sku as snapshot (not live count)
+    const total = storedTargetSku;
     const checked = Number(checkedCount.rows[0]?.checked || 0);
     const progress = total > 0 ? (checked / total) * 100 : 0;
     
@@ -49,7 +46,7 @@ async function calculateProgressFields(perintahRow) {
   } catch (error) {
     console.error('Error calculating progress:', error);
     return {
-      target_sku: 0,
+      target_sku: storedTargetSku,
       checked_sku: 0,
       progress_percent: 0
     };
@@ -298,16 +295,20 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
+      // Get current product count as snapshot for target_sku
+      const produkCountResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk`);
+      const targetSku = Number(produkCountResult.rows[0]?.total || 0);
+
       const insertResult = await pool.query(
         `
         INSERT INTO stok_opname_perintah (
           kode_so, tanggal_perintah, bulan, tahun,
-          svp_nama, lokasi, keterangan, kategori_targets, status
+          svp_nama, lokasi, keterangan, kategori_targets, status, target_sku
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'menunggu')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'menunggu', $9)
         RETURNING *
         `,
-        [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, kategoriTargets]
+        [kodeSo, tanggal, bulan, tahun, svpNama, lokasi, keterangan, kategoriTargets, targetSku]
       );
 
       return res.status(201).json({

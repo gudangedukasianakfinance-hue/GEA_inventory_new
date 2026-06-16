@@ -156,6 +156,12 @@ const AppRouter = {
     if (page === 'penjualan' && typeof initPenjualanPage === 'function') initPenjualanPage();
     if (page === 'pembelian' && typeof initPembelianPage === 'function') initPembelianPage();
     
+    // SO Pages - reload data when returning from cache
+    if (page === 'dashboard-so' && typeof loadDashboardSO === 'function') loadDashboardSO();
+    if (page === 'perintah-so' && typeof loadPerintah === 'function') loadPerintah();
+    if (page === 'pelaksanaan-so' && typeof SOPelaksanaanInit === 'function') SOPelaksanaanInit();
+    if (page === 'riwayat-so' && typeof loadHistory === 'function') loadHistory();
+    
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },
   
