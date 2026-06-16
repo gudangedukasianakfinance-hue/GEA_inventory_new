@@ -316,6 +316,44 @@ export default async function handler(req, res) {
         perintah: insertResult.rows[0]
       });
     }
+    
+    // DELETE - Delete perintah
+    if (req.method === "DELETE") {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      // URL: /api/opname-perintah/:id -> pathParts = ['api', 'opname-perintah', ':id']
+      const idIndex = pathParts.findIndex(p => p === 'opname-perintah');
+      const id = pathParts[idIndex + 1];
+      
+      if (!id || isNaN(parseInt(id))) {
+        return res.status(400).json({ error: "ID tidak valid" });
+      }
+      
+      // Check if perintah exists and is in 'menunggu' status
+      const checkResult = await pool.query(
+        `SELECT id, kode_so, status FROM stok_opname_perintah WHERE id = $1`,
+        [id]
+      );
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ error: "Perintah tidak ditemukan" });
+      }
+      
+      const perintah = checkResult.rows[0];
+      
+      if (perintah.status !== 'menunggu') {
+        return res.status(400).json({ 
+          error: `Tidak dapat menghapus perintah dengan status "${perintah.status}". Hanya perintah dengan status "menunggu" yang dapat dihapus.` 
+        });
+      }
+      
+      // Delete the perintah (cascade will handle related records if FK is set)
+      await pool.query(`DELETE FROM stok_opname_perintah WHERE id = $1`, [id]);
+      
+      return res.status(200).json({
+        message: `Perintah ${perintah.kode_so} berhasil dihapus`
+      });
+    }
 
     return res.status(405).json({ error: "Method tidak diizinkan" });
   } catch (err) {

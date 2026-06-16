@@ -116,6 +116,82 @@
   </div>
 </div>
 
+<!-- Detail Perintah Modal -->
+<div id="detailPerintahModal" class="modal-overlay">
+  <div class="modal modal--lg">
+    <div class="modal__header">
+      <h3 class="modal__title">Detail Perintah SO</h3>
+      <button class="modal__close" onclick="closeDetailPerintah()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal__body">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Kode SO</label>
+          <span id="detailKode" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Tanggal</label>
+          <span id="detailTanggal" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Periode</label>
+          <span id="detailPeriode" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>SVP / Supervisor</label>
+          <span id="detailSvp" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Lokasi</label>
+          <span id="detailLokasi" class="detail-value"></span>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <span id="detailStatus" class="detail-badge"></span>
+        </div>
+      </div>
+      
+      <div class="detail-progress">
+        <div class="progress-header">
+          <span>Progress Stok Opname</span>
+          <span id="detailProgressText">0 / 0 SKU</span>
+        </div>
+        <div class="progress-bar">
+          <div id="detailProgressBar" class="progress-bar__fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-stats">
+          <div class="stat">
+            <span class="stat-label">Target SKU</span>
+            <span id="detailTargetSku" class="stat-value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Sudah Dicek</span>
+            <span id="detailCheckedSku" class="stat-value">0</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Persentase</span>
+            <span id="detailPercent" class="stat-value">0%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-item full-width">
+        <label>Keterangan</label>
+        <span id="detailKeterangan" class="detail-value detail-value--muted">-</span>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" onclick="closeDetailPerintah()">Tutup</button>
+      <button type="button" id="detailActionBtn" class="btn btn--primary" onclick="">
+        <i data-lucide="play"></i>
+        <span>Mulai SO</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   // Namespace untuk state (hindari redeclare saat SPA cache reload)
   window.SOPerintah = window.SOPerintah || {};
@@ -193,12 +269,17 @@
           </td>
           <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
           <td>
-            <button class="action-btn" onclick="executePerintah(${item.id}, '${item.kode_so || item.kode || ''}')" title="Mulai SO">
+            <button class="action-btn" onclick="executePerintah(${item.id}, '${item.kode_so || item.kode || ''}')" title="Mulai SO" ${item.status !== 'menunggu' ? 'disabled' : ''}>
               <i data-lucide="play"></i>
             </button>
             <button class="action-btn" onclick="viewPerintah(${item.id})" title="Detail">
               <i data-lucide="eye"></i>
             </button>
+            ${item.status === 'menunggu' ? `
+            <button class="action-btn action-btn--danger" onclick="deletePerintah(${item.id}, '${item.kode_so || item.kode || ''}')" title="Hapus">
+              <i data-lucide="trash-2"></i>
+            </button>
+            ` : ''}
           </td>
         </tr>
       `;
@@ -300,8 +381,96 @@
 
   function viewPerintah(id) {
     console.log('View perintah:', id);
-    // TODO: Implementasi modal detail
-    showToast('Fitur detail sedang dikembangkan');
+    
+    // Find the perintah item
+    const item = window.SOPerintah.perintahList.find(p => p.id === id);
+    if (!item) {
+      showToast('Data tidak ditemukan', false);
+      return;
+    }
+    
+    // Store current detail ID for action button
+    window.SOPerintah.currentDetailId = id;
+    window.SOPerintah.currentDetailKode = item.kode_so || item.kode || '';
+    
+    // Populate detail modal
+    document.getElementById('detailKode').textContent = item.kode_so || item.kode || '-';
+    document.getElementById('detailTanggal').textContent = item.tanggal_perintah ? 
+      new Date(item.tanggal_perintah).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-';
+    
+    const bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    document.getElementById('detailPeriode').textContent = `${bulanNames[item.bulan] || '-'} ${item.tahun || '-'}`;
+    
+    document.getElementById('detailSvp').textContent = item.svp_nama || item.svp || '-';
+    document.getElementById('detailLokasi').textContent = item.lokasi || 'Gudang Utama';
+    document.getElementById('detailKeterangan').textContent = item.keterangan || '-';
+    
+    // Status badge
+    const statusBadge = document.getElementById('detailStatus');
+    statusBadge.textContent = getStatusLabel(item.status);
+    statusBadge.className = 'detail-badge badge ' + getStatusClass(item.status);
+    
+    // Progress
+    const targetSku = item.target_sku || 0;
+    const checkedSku = item.checked_sku || 0;
+    const progress = item.progress_percent || 0;
+    
+    document.getElementById('detailTargetSku').textContent = targetSku;
+    document.getElementById('detailCheckedSku').textContent = checkedSku;
+    document.getElementById('detailPercent').textContent = progress.toFixed(1) + '%';
+    document.getElementById('detailProgressText').textContent = `${checkedSku} / ${targetSku} SKU`;
+    document.getElementById('detailProgressBar').style.width = `${Math.min(progress, 100)}%`;
+    
+    // Action button based on status
+    const actionBtn = document.getElementById('detailActionBtn');
+    if (item.status === 'menunggu') {
+      actionBtn.innerHTML = '<i data-lucide="play"></i><span>Mulai SO</span>';
+      actionBtn.onclick = () => executePerintah(id, item.kode_so || item.kode || '');
+      actionBtn.style.display = 'inline-flex';
+    } else if (item.status === 'proses') {
+      actionBtn.innerHTML = '<i data-lucide="external-link"></i><span>Lihat Pelaksanaan</span>';
+      actionBtn.onclick = () => {
+        closeDetailPerintah();
+        executePerintah(id, item.kode_so || item.kode || '');
+      };
+      actionBtn.style.display = 'inline-flex';
+    } else {
+      actionBtn.style.display = 'none';
+    }
+    
+    // Show modal
+    document.getElementById('detailPerintahModal').classList.add('active');
+    
+    if (window.lucide) lucide.createIcons();
+  }
+  
+  function closeDetailPerintah() {
+    document.getElementById('detailPerintahModal').classList.remove('active');
+  }
+  
+  async function deletePerintah(id, kodeSo) {
+    if (!confirm(`Yakin ingin menghapus Perintah SO "${kodeSo}"?\n\nPerintah yang dihapus tidak dapat dikembalikan.`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/opname-perintah/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete');
+      }
+      
+      showToast(`Perintah SO "${kodeSo}" berhasil dihapus`);
+      loadPerintah();
+    } catch (error) {
+      console.error('Error deleting:', error);
+      showToast(error.message || 'Gagal menghapus perintah', false);
+    }
   }
 
   // Load data saat page ready
@@ -356,5 +525,156 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+  
+  /* Detail Modal Styles */
+  .modal--lg {
+    max-width: 560px;
+  }
+  
+  .modal__body {
+    padding: var(--space-xl);
+  }
+  
+  .modal__footer {
+    padding: var(--space-lg) var(--space-xl);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+  }
+  
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+  
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  
+  .detail-item.full-width {
+    grid-column: 1 / -1;
+  }
+  
+  .detail-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .detail-value {
+    font-size: 15px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  
+  .detail-value--muted {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  
+  .detail-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    width: fit-content;
+  }
+  
+  .detail-progress {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+  }
+  
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  .detail-progress .progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: var(--space-md);
+  }
+  
+  .detail-progress .progress-bar__fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  
+  .progress-stats {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .stat {
+    text-align: center;
+  }
+  
+  .stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: var(--space-xs);
+  }
+  
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  
+  /* Action Button Styles */
+  .action-btn {
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .action-btn:hover {
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+  }
+  
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .action-btn--danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+  }
+  
+  .action-btn--danger {
+    color: var(--text-muted);
   }
 </style>
