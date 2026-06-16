@@ -141,16 +141,41 @@ export default async function handler(req, res) {
       const stokSistem = Number(stokSistemResult.rows[0]?.stok_sistem || 0);
       const selisih = Number(stok_fisik) - stokSistem;
       
-      // Insert or update detail
-      const result = await pool.query(`
-        INSERT INTO stok_opname_detail (opname_id, sku, stok_sistem, stok_fisik, selisih, input_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
-        ON CONFLICT (opname_id, sku) DO UPDATE SET
-          stok_fisik = $4,
-          selisih = $5,
-          input_at = NOW()
-        RETURNING *
-      `, [opname_id, sku, stokSistem, Number(stok_fisik), selisih]);
+      // Use upsert approach - try update first, then insert if not exists
+      // This avoids ON CONFLICT which requires unique constraint
+      let result;
+      const client = await pool.connect();
+      
+      try {
+        await client.query('BEGIN');
+        
+        // Try to update existing record
+        const updateResult = await client.query(`
+          UPDATE stok_opname_detail 
+          SET stok_fisik = $1, selisih = $2, input_at = NOW()
+          WHERE opname_id = $3 AND sku = $4
+          RETURNING *
+        `, [Number(stok_fisik), selisih, opname_id, sku]);
+        
+        if (updateResult.rows.length > 0) {
+          // Record exists and was updated
+          result = updateResult;
+        } else {
+          // Record doesn't exist, insert new
+          result = await client.query(`
+            INSERT INTO stok_opname_detail (opname_id, sku, stok_sistem, stok_fisik, selisih, input_at)
+            VALUES ($1, $2, $3, $4, $5, NOW())
+            RETURNING *
+          `, [opname_id, sku, stokSistem, Number(stok_fisik), selisih]);
+        }
+        
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
       
       res.status(200).json({
         success: true,

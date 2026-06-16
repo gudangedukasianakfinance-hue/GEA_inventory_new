@@ -67,10 +67,26 @@
       <div class="scan-container">
         <div class="scan-header">
           <h3>Scan Barcode</h3>
-          <button class="btn btn--secondary btn--sm" onclick="showManualInput()">
-            <i data-lucide="keyboard"></i>
-            <span>Input Manual</span>
-          </button>
+          <div class="scan-header-actions">
+            <button class="btn btn--secondary btn--sm" onclick="startBarcodeScan()" id="btnStartScan">
+              <i data-lucide="camera"></i>
+              <span>Scan</span>
+            </button>
+            <button class="btn btn--secondary btn--sm" onclick="stopBarcodeScan()" id="btnStopScan" style="display:none;">
+              <i data-lucide="x"></i>
+              <span>Stop</span>
+            </button>
+            <button class="btn btn--secondary btn--sm" onclick="showManualInput()">
+              <i data-lucide="keyboard"></i>
+              <span>Manual</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Barcode Scanner Container -->
+        <div id="scannerContainer" style="display:none; margin-bottom: 20px;">
+          <div id="barcodeScanner"></div>
+          <p style="text-align:center; color:#94A3B8; font-size:12px; margin-top:8px;">Arahkan kamera ke barcode</p>
         </div>
 
         <!-- Scan Input -->
@@ -165,16 +181,31 @@
 <div id="manualInputModal" class="modal-overlay">
   <div class="modal">
     <div class="modal__header">
-      <h3 class="modal__title">Input Manual Qty Fisik</h3>
+      <h3 class="modal__title">Input Qty Fisik</h3>
       <button class="modal__close" onclick="closeManualInput()">
         <i data-lucide="x"></i>
       </button>
     </div>
     <form id="manualInputForm" onsubmit="saveManualInput(event)">
-      <div class="form-group">
-        <label>SKU / Barcode</label>
-        <input type="text" id="manualSku" class="form-input" required placeholder="Masukkan SKU">
+      <!-- Product Info Display -->
+      <div class="so-input-info">
+        <div class="so-input-info__row">
+          <span class="so-input-info__label">SKU</span>
+          <span class="so-input-info__value" id="manualDisplaySku">-</span>
+        </div>
+        <div class="so-input-info__row">
+          <span class="so-input-info__label">Produk</span>
+          <span class="so-input-info__value" id="manualDisplayNama">-</span>
+        </div>
+        <div class="so-input-info__row">
+          <span class="so-input-info__label">Stok Sistem</span>
+          <span class="so-input-info__value" id="manualDisplayStokSistem">-</span>
+        </div>
       </div>
+      
+      <!-- Hidden SKU input for form submission -->
+      <input type="hidden" id="manualSku" value="">
+      
       <div class="form-group">
         <label>Qty Fisik</label>
         <input type="number" id="manualQty" class="form-input" required min="0" placeholder="Masukkan jumlah fisik">
@@ -250,6 +281,10 @@
     font-size: 16px;
     color: #FFF;
     margin: 0;
+  }
+  .scan-header-actions {
+    display: flex;
+    gap: 8px;
   }
   .scan-input-area {
     display: flex;
@@ -365,7 +400,36 @@
     color: #94A3B8;
     margin-bottom: 24px;
   }
+  /* SO Input Modal Info */
+  .so-input-info {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .so-input-info__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .so-input-info__row:not(:last-child) {
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .so-input-info__label {
+    font-size: 13px;
+    color: #94A3B8;
+  }
+  .so-input-info__value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFF;
+  }
 </style>
+
+<!-- Html5Qrcode for barcode scanning -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <script>
   // Namespace untuk state (hindari redeclare saat SPA cache reload)
@@ -505,6 +569,95 @@
     if (window.lucide) lucide.createIcons();
   }
 
+  // Barcode Scanner Variables
+  let html5QrCode = null;
+  let isScanning = false;
+
+  async function startBarcodeScan() {
+    if (isScanning) return;
+    
+    try {
+      // Check camera permission
+      const devices = await Html5Qrcode.getCameras();
+      if (!devices || devices.length === 0) {
+        showToast('Kamera tidak ditemukan', false);
+        return;
+      }
+      
+      // Initialize scanner
+      html5QrCode = new Html5Qrcode("barcodeScanner");
+      
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.777778
+      };
+      
+      // Use back camera if available
+      const backCamera = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
+      
+      await html5QrCode.start(
+        backCamera.id,
+        config,
+        onBarcodeScanned,
+        (errorMessage) => {
+          // Ignore scan errors (normal when no barcode visible)
+        }
+      );
+      
+      isScanning = true;
+      document.getElementById('scannerContainer').style.display = 'block';
+      document.getElementById('btnStartScan').style.display = 'none';
+      document.getElementById('btnStopScan').style.display = 'inline-flex';
+      
+      if (window.lucide) lucide.createIcons();
+      console.log('[BarcodeScan] Started scanning with camera:', backCamera.label);
+      
+    } catch (err) {
+      console.error('[BarcodeScan] Error:', err);
+      showToast('Gagal mengakses kamera: ' + err.message, false);
+    }
+  }
+
+  async function stopBarcodeScan() {
+    if (!isScanning || !html5QrCode) return;
+    
+    try {
+      await html5QrCode.stop();
+      html5QrCode = null;
+      isScanning = false;
+      
+      document.getElementById('scannerContainer').style.display = 'none';
+      document.getElementById('btnStartScan').style.display = 'inline-flex';
+      document.getElementById('btnStopScan').style.display = 'none';
+      
+      if (window.lucide) lucide.createIcons();
+      console.log('[BarcodeScan] Stopped');
+      
+    } catch (err) {
+      console.error('[BarcodeScan] Stop error:', err);
+    }
+  }
+
+  function onBarcodeScanned(decodedText) {
+    console.log('[BarcodeScan] Scanned:', decodedText);
+    
+    // Stop scanning after successful scan
+    stopBarcodeScan();
+    
+    // Fill the input and process
+    const input = document.getElementById('scanInput');
+    input.value = decodedText;
+    
+    // Vibrate if available (mobile feedback)
+    if (navigator.vibrate) {
+      navigator.vibrate(100);
+    }
+    
+    // Process the scanned barcode
+    processScanInput();
+  }
+
   async function startSoIfNeeded() {
     if (window.SOPelaksanaan.activeStatus === 'menunggu') {
       try {
@@ -578,8 +731,11 @@
     
     console.log('[processScanInput] Showing modal for SKU:', sku, 'produk:', produk.nama_produk);
     
-    // Show manual input untuk qty fisik
+    // Populate modal with product info
     document.getElementById('manualSku').value = sku;
+    document.getElementById('manualDisplaySku').textContent = sku;
+    document.getElementById('manualDisplayNama').textContent = produk.nama_produk || '-';
+    document.getElementById('manualDisplayStokSistem').textContent = produk.stok_sistem || 0;
     document.getElementById('manualQty').value = '';
     document.getElementById('manualInputModal').classList.add('active');
     document.getElementById('manualQty').focus();
@@ -589,6 +745,9 @@
 
   function showManualInput() {
     document.getElementById('manualSku').value = '';
+    document.getElementById('manualDisplaySku').textContent = '-';
+    document.getElementById('manualDisplayNama').textContent = '-';
+    document.getElementById('manualDisplayStokSistem').textContent = '-';
     document.getElementById('manualQty').value = '';
     document.getElementById('manualInputModal').classList.add('active');
     document.getElementById('manualSku').focus();
