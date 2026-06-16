@@ -2,6 +2,9 @@ import crypto from "crypto";
 import pool from "../services/db.js";
 import { buildToken as createSignedToken } from "../services/auth.js";
 
+// Role yang valid untuk portal user
+const USER_PORTAL_ROLES = ["staff_gudang", "checker_opname"];
+
 function send(res, status, payload) {
   return res.status(status).json(payload);
 }
@@ -39,7 +42,6 @@ function verifyPassword(password, storedHash) {
 }
 
 function buildToken(user, portal) {
-  // Use signed token builder from auth service
   return createSignedToken(user, portal);
 }
 
@@ -68,18 +70,26 @@ async function login(req, res, portal = null) {
           [user.id]
         ).catch(() => {});
       }
-      return send(res, 401, { success: false, message: "Invalid username or password" });
+      return send(res, 401, { success: false, message: "Username atau password salah" });
     }
 
     if (user.is_active === false) {
-      return send(res, 401, { success: false, message: "User account is inactive" });
+      return send(res, 401, { success: false, message: "Akun tidak aktif. Hubungi administrator" });
     }
 
+    // Portal Admin: hanya role admin yang boleh
     if (portal === "admin" && user.role !== "admin") {
-      return send(res, 401, { success: false, message: "Portal admin hanya untuk akun admin" });
+      return send(res, 401, { success: false, message: "Portal admin hanya untuk akun administrator" });
     }
-    if (portal === "user" && user.role === "admin") {
-      return send(res, 401, { success: false, message: "Akun admin harus masuk melalui portal admin" });
+
+    // Portal User: hanya staff_gudang dan checker_opname yang boleh
+    if (portal === "user") {
+      if (user.role === "admin") {
+        return send(res, 401, { success: false, message: "Akun administrator harus masuk melalui portal admin" });
+      }
+      if (!USER_PORTAL_ROLES.includes(user.role)) {
+        return send(res, 401, { success: false, message: "Role tidak diizinkan login melalui portal ini" });
+      }
     }
 
     await pool.query(
@@ -101,11 +111,10 @@ async function login(req, res, portal = null) {
       expires_in: 86400
     };
 
-    return send(res, 200, { success: true, message: "Login successful", data });
+    return send(res, 200, { success: true, message: "Login berhasil", data });
   } catch (error) {
     console.error("auth login error", error);
     
-    // Provide more specific error messages for debugging
     const errorMessage = error.message || "";
     
     if (!process.env.DATABASE_URL) {
@@ -146,7 +155,7 @@ export default async function authHandler(req, res) {
   if (req.method === "POST" && route === "v1/auth/login/user") return login(req, res, "user");
   if (req.method === "POST" && route === "v1/auth/login") return login(req, res, null);
   if (req.method === "POST" && route === "v1/auth/logout") {
-    return send(res, 200, { success: true, message: "Logout successful", data: null });
+    return send(res, 200, { success: true, message: "Logout berhasil", data: null });
   }
   return send(res, 404, { success: false, message: "Route auth tidak ditemukan" });
 }
