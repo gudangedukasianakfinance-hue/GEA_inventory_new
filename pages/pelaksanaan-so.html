@@ -162,7 +162,7 @@
 </section>
 
 <!-- Manual Input Modal -->
-<div id="manualInputModal" class="modal-overlay" style="display:none;">
+<div id="manualInputModal" class="modal-overlay">
   <div class="modal">
     <div class="modal__header">
       <h3 class="modal__title">Input Manual Qty Fisik</h3>
@@ -478,6 +478,8 @@
     const remaining = snapshotTarget - checked;
     const progress = snapshotTarget > 0 ? Math.round((checked / snapshotTarget) * 100) : 0;
     
+    console.log('[updateSoStats] Stats:', { snapshotTarget, checked, remaining, progress });
+    
     // Display target SKU (snapshot) with current count as reference
     document.getElementById('soTargetSku').textContent = snapshotTarget;
     document.getElementById('soCheckedSku').textContent = checked;
@@ -490,6 +492,8 @@
     const terminalStates = ['selesai', 'menunggu_approval', 'ditolak'];
     const isTerminal = terminalStates.includes(window.SOPelaksanaan.activeStatus);
     btnSubmit.disabled = isTerminal || checked === 0;
+    
+    console.log('[updateSoStats] Submit button:', { isTerminal, checked, disabled: btnSubmit.disabled });
     
     if (window.SOPelaksanaan.activeStatus === 'menunggu_approval') {
       btnSubmit.innerHTML = '<i data-lucide="clock"></i><span>Menunggu Approval</span>';
@@ -532,35 +536,52 @@
     const input = document.getElementById('scanInput');
     const skuInput = input.value.trim();
     
-    if (!skuInput) return;
+    console.log('[processScanInput] Start - SKU input:', skuInput);
+    
+    if (!skuInput) {
+      console.log('[processScanInput] Empty input, returning');
+      return;
+    }
     
     // Auto-start SO jika belum dimulai
     if (window.SOPelaksanaan.activeStatus === 'menunggu') {
+      console.log('[processScanInput] Status is menunggu, starting SO...');
       await startSoIfNeeded();
     }
     
     if (!window.SOPelaksanaan.activeOpnameId) {
+      console.log('[processScanInput] No activeOpnameId!');
       showToast('ID opname tidak ditemukan', false);
       return;
     }
     
     // Ensure sku is string for consistent lookup
     const sku = String(skuInput);
+    console.log('[processScanInput] Looking for SKU:', sku);
+    
+    // Log produkMap status
+    const mapKeys = Object.keys(window.SOPelaksanaan.produkMap || {});
+    console.log('[processScanInput] produkMap has', mapKeys.length, 'items');
+    console.log('[processScanInput] produkMap keys sample:', mapKeys.slice(0, 5));
     
     // Cek apakah SKU ada di list
     const produk = window.SOPelaksanaan.produkMap[sku];
+    console.log('[processScanInput] produk from map:', produk ? 'FOUND' : 'NOT FOUND');
+    
     if (!produk) {
-      console.log('SKU not found in map:', sku);
+      console.log('[processScanInput] SKU not found in map:', sku);
       showToast(`SKU ${sku} tidak ditemukan`, false);
       input.value = '';
       input.focus();
       return;
     }
     
+    console.log('[processScanInput] Showing modal for SKU:', sku, 'produk:', produk.nama_produk);
+    
     // Show manual input untuk qty fisik
     document.getElementById('manualSku').value = sku;
     document.getElementById('manualQty').value = '';
-    document.getElementById('manualInputModal').style.display = 'flex';
+    document.getElementById('manualInputModal').classList.add('active');
     document.getElementById('manualQty').focus();
     
     input.value = '';
@@ -569,12 +590,12 @@
   function showManualInput() {
     document.getElementById('manualSku').value = '';
     document.getElementById('manualQty').value = '';
-    document.getElementById('manualInputModal').style.display = 'flex';
+    document.getElementById('manualInputModal').classList.add('active');
     document.getElementById('manualSku').focus();
   }
 
   function closeManualInput() {
-    document.getElementById('manualInputModal').style.display = 'none';
+    document.getElementById('manualInputModal').classList.remove('active');
   }
 
   async function saveManualInput(event) {
@@ -584,7 +605,10 @@
     const stokFisik = parseInt(document.getElementById('manualQty').value) || 0;
     const sku = String(skuInput); // Ensure string key for lookup
     
+    console.log('[saveManualInput] Saving:', { sku, stokFisik });
+    
     if (!sku || !window.SOPelaksanaan.activeOpnameId) {
+      console.log('[saveManualInput] Invalid data');
       showToast('Data tidak valid', false);
       return;
     }
@@ -592,6 +616,7 @@
     try {
       showLoader();
       
+      console.log('[saveManualInput] POST to /api/v3-opname-detail');
       const response = await fetch('/api/v3-opname-detail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -605,10 +630,12 @@
       
       if (!response.ok) {
         const err = await response.json();
+        console.log('[saveManualInput] API error:', err);
         throw new Error(err.error || 'Failed to save');
       }
       
       const data = await response.json();
+      console.log('[saveManualInput] Response:', data);
       
       // Update produk in memory - use string key
       const produk = window.SOPelaksanaan.produkMap[sku];
@@ -617,6 +644,7 @@
         produk.selisih = stokFisik - produk.stok_sistem;
         produk.detail_id = data.detail?.id;
         produk.input_at = new Date().toISOString();
+        console.log('[saveManualInput] Updated produk in map:', produk);
       }
       
       // Show result
@@ -628,9 +656,11 @@
         stok_fisik: stokFisik,
         waktu: new Date().toLocaleTimeString('id-ID')
       });
+      console.log('[saveManualInput] scanHistory length:', window.SOPelaksanaan.scanHistory.length);
       renderScanHistory();
       
       // Update stats and table
+      console.log('[saveManualInput] Calling updateSoStats and renderProgressTable');
       updateSoStats();
       renderProgressTable();
       
