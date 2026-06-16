@@ -240,7 +240,7 @@
     document.getElementById('perintahSvp').value = '';
     document.getElementById('perintahKeterangan').value = '';
     
-    modal.style.display = 'flex';
+    modal.classList.add('active');
 
     console.log('modal display after:', getComputedStyle(modal).display);
 
@@ -253,7 +253,7 @@
   }
 
   function closeBuatPerintah() {
-    document.getElementById('buatPerintahModal').style.display = 'none';
+    document.getElementById('buatPerintahModal').classList.remove('active');
   }
 
   async function savePerintah(event) {
