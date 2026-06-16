@@ -216,8 +216,8 @@ async function updateUser(req, res, userId) {
     return send(res, 403, { success: false, message: "Hanya admin yang dapat mengupdate user" });
   }
 
-  const { name, email, role, status } = req.body || {};
-    const nama = req.body.nama || name;
+  const { name, email, role, status, password } = req.body || {};
+  const nama = req.body.nama || name;
 
   try {
     // Check if user exists
@@ -271,6 +271,17 @@ async function updateUser(req, res, userId) {
       }
       updates.push(`role = $${paramIndex}`);
       params.push(role);
+      paramIndex++;
+    }
+
+    // Handle password update - only update if password is provided
+    if (password !== undefined && password !== '') {
+      if (password.length < 6) {
+        return send(res, 400, { success: false, message: "Password minimal 6 karakter" });
+      }
+      const passwordHash = hashPassword(password);
+      updates.push(`password_hash = $${paramIndex}`);
+      params.push(passwordHash);
       paramIndex++;
     }
 
