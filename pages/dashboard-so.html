@@ -111,15 +111,6 @@
           <div class="monitoring-status-card__label">Task Menunggu</div>
         </div>
       </div>
-      <div class="monitoring-status-card monitoring-status-card--info">
-        <div class="monitoring-status-card__icon">
-          <i data-lucide="hand-grabbing"></i>
-        </div>
-        <div class="monitoring-status-card__content">
-          <div class="monitoring-status-card__value" id="monitor-claimed">0</div>
-          <div class="monitoring-status-card__label">Task Diambil</div>
-        </div>
-      </div>
       <div class="monitoring-status-card monitoring-status-card--process">
         <div class="monitoring-status-card__icon">
           <i data-lucide="loader"></i>
@@ -150,14 +141,13 @@
           <thead>
             <tr>
               <th>Nama User</th>
-              <th>Task Diambil</th>
               <th>Task Proses</th>
               <th>Task Selesai</th>
             </tr>
           </thead>
           <tbody id="monitoring-user-table">
             <tr>
-              <td colspan="4" class="text-center text-muted p-4">Memuat data...</td>
+              <td colspan="3" class="text-center text-muted p-4">Memuat data...</td>
             </tr>
           </tbody>
         </table>
@@ -172,17 +162,6 @@
       <p>Daftar tugas Stock Opname yang ditugaskan kepada Anda</p>
     </div>
     <div id="checker-task-list" class="checker-task-list">
-      <div class="text-center text-muted p-4">Memuat...</div>
-    </div>
-  </div>
-
-  <!-- Available Tasks Section - CLAIM -->
-  <div id="available-task-section" class="checker-task-section" style="display: none;">
-    <div class="checker-task-header">
-      <h2><i data-lucide="inbox"></i> Task Tersedia</h2>
-      <p>Klik CLAIM untuk mengambil tugas Stock Opname</p>
-    </div>
-    <div id="available-task-list" class="checker-task-list">
       <div class="text-center text-muted p-4">Memuat...</div>
     </div>
   </div>
@@ -316,7 +295,6 @@ function formatNumber(num) {
 function getStatusClass(status) {
   const map = {
     'menunggu': 'badge--pending',
-    'claimed': 'badge--info',
     'proses': 'badge--process',
     'selesai': 'badge--done'
   };
@@ -327,7 +305,6 @@ function getStatusClass(status) {
 function getStatusLabel(status) {
   const map = {
     'menunggu': 'Menunggu',
-    'claimed': 'Claimed',
     'proses': 'Proses',
     'selesai': 'Selesai'
   };
@@ -550,24 +527,22 @@ async function loadMonitoringData() {
     if (!response.ok) throw new Error('Gagal memuat data monitoring');
     
     const result = await response.json();
-    const statusSummary = result.status_summary || { menunggu: 0, claimed: 0, proses: 0, selesai: 0 };
+    const statusSummary = result.status_summary || { menunggu: 0, proses: 0, selesai: 0 };
     const userSummary = result.user_summary || [];
     
     // Update status cards
     document.getElementById('monitor-menunggu').textContent = statusSummary.menunggu;
-    document.getElementById('monitor-claimed').textContent = statusSummary.claimed;
     document.getElementById('monitor-proses').textContent = statusSummary.proses;
     document.getElementById('monitor-selesai').textContent = statusSummary.selesai;
     
     // Update user table
     const tbody = document.getElementById('monitoring-user-table');
     if (userSummary.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-4">Belum ada data</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted p-4">Belum ada data</td></tr>`;
     } else {
       tbody.innerHTML = userSummary.map(user => `
         <tr>
           <td><strong>${user.checker}</strong></td>
-          <td><span class="badge badge--info">${user.claimed}</span></td>
           <td><span class="badge badge--process">${user.proses}</span></td>
           <td><span class="badge badge--done">${user.selesai}</span></td>
         </tr>
@@ -577,7 +552,7 @@ async function loadMonitoringData() {
   } catch (error) {
     console.error('Error loading monitoring data:', error);
     document.getElementById('monitoring-user-table').innerHTML = 
-      `<tr><td colspan="4" class="text-center text-muted p-4">Gagal memuat data</td></tr>`;
+      `<tr><td colspan="3" class="text-center text-muted p-4">Gagal memuat data</td></tr>`;
   }
 }
 
@@ -593,18 +568,18 @@ async function loadCheckerTasks(userNama) {
   }
   
   try {
-    // Get perintah dengan status claimed atau proses untuk checker ini
+    // Get semua perintah untuk checker ini (menunggu, proses, selesai)
     const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard?.currentFilterBulan || new Date().getMonth() + 1}&tahun=${window.SODashboard?.currentFilterTahun || new Date().getFullYear()}`);
     if (!response.ok) throw new Error('Gagal memuat tugas');
     
     const result = await response.json();
     const allItems = result.items || [];
     
-    // Filter: claimed atau proses, dan checker sesuai user
+    // Filter: semua status (menunggu, proses, selesai) untuk checker ini
     const items = allItems.filter(item => {
-      const isClaimedOrProses = item.status === 'claimed' || item.status === 'proses';
+      const isValidStatus = item.status === 'menunggu' || item.status === 'proses' || item.status === 'selesai';
       const isMyTask = item.checker === authUser.username;
-      return isClaimedOrProses && isMyTask;
+      return isValidStatus && isMyTask;
     });
     
     if (items.length === 0) {
@@ -620,11 +595,6 @@ async function loadCheckerTasks(userNama) {
         const targetSku = item.target_sku || 0;
         const progressPercent = targetSku > 0 ? Math.round((progress / targetSku) * 100) : 0;
         
-        // Tombol MULAI untuk status claimed, Lanjutkan untuk status proses
-        const isClaimed = item.status === 'claimed';
-        const btnClass = isClaimed ? 'btn btn--primary' : 'checker-task-btn';
-        const btnText = isClaimed ? '<i data-lucide="play"></i> MULAI' : '<i data-lucide="refresh-cw"></i> Lanjutkan';
-        
         return `
           <div class="checker-task-card">
             <div class="checker-task-info">
@@ -636,7 +606,7 @@ async function loadCheckerTasks(userNama) {
                 <span><i data-lucide="package"></i> Kategori: ${item.kategori_nama || '-'}</span>
                 <span><i data-lucide="hash"></i> Target SKU: ${targetSku}</span>
               </div>
-              ${item.status === 'proses' ? `
+              ${item.status !== 'menunggu' ? `
               <div class="checker-task-progress">
                 <div class="checker-task-progress-bar">
                   <div class="checker-task-progress-fill" style="width: ${progressPercent}%"></div>
@@ -645,8 +615,8 @@ async function loadCheckerTasks(userNama) {
               </div>
               ` : ''}
             </div>
-            <button class="${btnClass}" onclick="mulaiCheckerSo(${item.id}, '${item.kode_so}')">
-              ${btnText}
+            <button class="btn btn--primary" onclick="mulaiCheckerSo(${item.id}, '${item.kode_so}')">
+              <i data-lucide="play"></i> MULAI SO
             </button>
           </div>
         `;
