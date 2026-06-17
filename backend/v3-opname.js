@@ -5,6 +5,17 @@ import pool from "../services/db.js";
 // Status flow: menunggu -> proses -> selesai (tanpa approval)
 // No kategori_targets, commands, detail_count
 
+// Kategori label helper
+function kategoriLabel(id) {
+  switch(id) {
+    case "modul": return "Modul";
+    case "poster": return "Poster";
+    case "seragam": return "Seragam";
+    case "lain-lain": return "Lain-Lain";
+    default: return "Lain-Lain";
+  }
+}
+
 // GET Handler - Ambil daftar perintah SO
 export async function handleGet(req, res) {
   try {
@@ -22,7 +33,8 @@ export async function handleGet(req, res) {
         sop.keterangan,
         sop.status,
         sop.checker,
-        sop.kategori,
+        sop.kategori_id,
+        sop.kategori AS kategori_raw,
         sop.opname_id,
         sop.created_at,
         sop.started_at,
@@ -49,13 +61,20 @@ export async function handleGet(req, res) {
     
     const result = await pool.query(query, params);
     
+    // Map result with kategori_nama
+    const items = result.rows.map(row => ({
+      ...row,
+      kategori_id: row.kategori_id || row.kategori_raw || 'lain-lain',
+      kategori_nama: kategoriLabel(row.kategori_id || row.kategori_raw || 'lain-lain')
+    }));
+    
     res.status(200).json({ 
       success: true,
-      items: result.rows,
-      total: result.rows.length 
+      items,
+      total: items.length 
     });
   } catch (err) {
-    console.error("V3 SO GET ERROR:", err);
+    console.error('[V3 OPNAME ERROR]', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -63,13 +82,13 @@ export async function handleGet(req, res) {
 // POST Handler - Admin buat perintah SO baru
 export async function handlePost(req, res) {
   try {
-    const { kode_so, bulan, tahun, svp_nama, lokasi, keterangan, kategori } = req.body;
+    const { kode_so, bulan, tahun, svp_nama, lokasi, keterangan, kategori_id } = req.body;
     
     // Validate required fields
-    if (!kode_so || !bulan || !tahun || !svp_nama || !kategori) {
+    if (!kode_so || !bulan || !tahun || !svp_nama || !kategori_id) {
       return res.status(400).json({ 
         success: false,
-        error: "kode_so, bulan, tahun, svp_nama, kategori wajib diisi" 
+        error: "kode_so, bulan, tahun, svp_nama, kategori_id wajib diisi" 
       });
     }
     
@@ -85,18 +104,23 @@ export async function handlePost(req, res) {
     
     const result = await pool.query(`
       INSERT INTO stok_opname_perintah (
-        kode_so, tanggal_perintah, bulan, tahun, svp_nama, lokasi, keterangan, status, kategori
+        kode_so, tanggal_perintah, bulan, tahun, svp_nama, lokasi, keterangan, status, kategori_id
       ) VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, 'menunggu', $7)
       RETURNING *
-    `, [kode_so, Number(bulan), Number(tahun), svp_nama, lokasi || null, keterangan || null, kategori]);
+    `, [kode_so, Number(bulan), Number(tahun), svp_nama, lokasi || null, keterangan || null, kategori_id]);
+    
+    const item = result.rows[0];
     
     res.status(201).json({ 
       success: true, 
-      item: result.rows[0],
+      item: {
+        ...item,
+        kategori_nama: kategoriLabel(item.kategori_id)
+      },
       message: "Perintah SO berhasil dibuat"
     });
   } catch (err) {
-    console.error("V3 SO POST ERROR:", err);
+    console.error('[V3 OPNAME POST ERROR]', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -181,7 +205,7 @@ export async function handlePut(req, res) {
         res.status(400).json({ success: false, error: `Action '${action}' tidak valid` });
     }
   } catch (err) {
-    console.error("V3 SO PUT ERROR:", err);
+    console.error('[V3 OPNAME PUT ERROR]', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -207,7 +231,7 @@ export default async function handler(req, res) {
       res.status(405).json({ error: "Method not allowed" });
     }
   } catch (err) {
-    console.error("V3 SO Handler Error:", err);
+    console.error('[V3 OPNAME HANDLER ERROR]', err);
     res.status(500).json({ error: err.message });
   }
 }
