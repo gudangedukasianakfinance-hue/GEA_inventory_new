@@ -39,33 +39,36 @@ export default async function handler(req, res) {
         );
 
         if (!result.rows.length) {
-          return res.status(404).json({ error: "Perintah SO tidak ditemukan" });
+          return res.status(404).json({ success: false, error: "Perintah SO tidak ditemukan" });
         }
 
         const row = result.rows[0];
         const progress = await calculateProgress(row.opname_id, row.target_sku);
         
         return res.status(200).json({
-          id: row.id,
-          kode_so: row.kode_so,
-          kategori_id: row.kategori_id,
-          kategori_nama: kategoriLabel(row.kategori_id),
-          target_sku: progress.target_sku,
-          checked_sku: progress.checked_sku,
-          progress_percent: progress.progress_percent,
-          status: row.status,
-          pic_checker: row.pic_checker,
-          checker: row.checker,
-          svp_nama: row.svp_nama,
-          lokasi: row.lokasi,
-          keterangan: row.keterangan,
-          tanggal_perintah: row.tanggal_perintah,
-          bulan: row.bulan,
-          tahun: row.tahun,
-          opname_id: row.opname_id,
-          created_at: row.created_at,
-          started_at: row.started_at,
-          completed_at: row.completed_at
+          success: true,
+          item: {
+            id: row.id,
+            kode_so: row.kode_so,
+            kategori: row.kategori || row.kategori_id,
+            kategori_nama: kategoriLabel(row.kategori || row.kategori_id),
+            target_sku: progress.target_sku,
+            checked_sku: progress.checked_sku,
+            progress_percent: progress.progress_percent,
+            status: row.status,
+            pic_checker: row.pic_checker,
+            checker: row.checker,
+            svp_nama: row.svp_nama,
+            lokasi: row.lokasi,
+            keterangan: row.keterangan,
+            tanggal_perintah: row.tanggal_perintah,
+            bulan: row.bulan,
+            tahun: row.tahun,
+            opname_id: row.opname_id,
+            created_at: row.created_at,
+            started_at: row.started_at,
+            completed_at: row.completed_at
+          }
         });
       }
 
@@ -83,8 +86,8 @@ export default async function handler(req, res) {
         return {
           id: row.id,
           kode_so: row.kode_so,
-          kategori_id: row.kategori_id,
-          kategori_nama: kategoriLabel(row.kategori_id),
+          kategori: row.kategori || row.kategori_id,
+          kategori_nama: kategoriLabel(row.kategori || row.kategori_id),
           target_sku: progress.target_sku,
           checked_sku: progress.checked_sku,
           progress_percent: progress.progress_percent,
