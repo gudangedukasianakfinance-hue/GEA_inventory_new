@@ -24,7 +24,6 @@ const AppRouter = {
   },
   
   currentPage: 'dashboard',
-  loadedPages: {},
   
   init() {
     this.handleRoute();
@@ -43,11 +42,6 @@ const AppRouter = {
     if (!this.routes[page]) {
       console.warn('Route not found:', page);
       page = 'dashboard';
-    }
-    
-    // Clear cache for current page to ensure clean state
-    if (this.loadedPages[this.currentPage]) {
-      delete this.loadedPages[this.currentPage];
     }
     
     this.currentPage = page;
@@ -101,39 +95,35 @@ const AppRouter = {
   
   async loadPage(page) {
     const container = document.getElementById('pageContainer');
+
     if (!container) {
       console.error('Page container not found');
       return;
     }
-    
-    if (this.loadedPages[page]) {
-      // Clone the cached content to avoid mutating the cache
-      container.innerHTML = '';
-      container.appendChild(this.loadedPages[page].cloneNode(true));
-      this.initPage(page);
-      console.log('Page loaded from cache:', page);
-      return;
-    }
-    
+
     container.innerHTML = '<div class="page-loading"><div class="page-loading__spinner"></div><p>Memuat halaman...</p></div>';
-    
+
     try {
       const response = await fetch(this.routes[page]);
-      if (!response.ok) throw new Error('Failed to load page: ' + response.status);
-      
+
+      if (!response.ok) {
+        throw new Error('Failed to load page: ' + response.status);
+      }
+
       const html = await response.text();
+
       container.innerHTML = html;
+
       this.executeScripts(container);
-      
-      // Clone the executed DOM for cache (preserves data-executed attributes)
-      this.loadedPages[page] = container.cloneNode(true);
-      
+
       this.initPage(page);
+
       console.log('Page loaded:', page);
+
     } catch (error) {
       console.error('Error loading page', page, error);
-      container.innerHTML = '<div class="page-error"><i data-lucide="alert-circle"></i><h2>Gagal memuat halaman</h2><p>' + error.message + '</p><button class="btn btn--primary" onclick="AppRouter.loadPage(\'' + page + '\')"><i data-lucide="refresh-cw"></i><span>Coba Lagi</span></button></div>';
-      if (window.lucide) lucide.createIcons();
+
+      container.innerHTML = '<div class="page-error"><h2>Gagal memuat halaman</h2><p>' + error.message + '</p></div>';
     }
   },
   
@@ -172,9 +162,7 @@ const AppRouter = {
   },
   
   getCurrentPage() { return this.currentPage; },
-  isPageLoaded(page) { return !!this.loadedPages[page]; },
-  reloadCurrentPage() { delete this.loadedPages[this.currentPage]; this.loadPage(this.currentPage); },
-  clearCache() { this.loadedPages = {}; }
+  reloadCurrentPage() { this.loadPage(this.currentPage); }
 };
 
 window.AppRouter = AppRouter;
