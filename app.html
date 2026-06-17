@@ -513,6 +513,13 @@
         applyAuthState();
         closeLoginModal();
         
+        // Redirect checker langsung ke Task SO Saya
+        const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+        if (authUser.role === 'checker_opname') {
+          AppRouter.navigateTo('dashboard-so');
+          return;
+        }
+        
       } catch (error) {
         console.error('Login error:', error);
         showToast(error.message || 'Gagal menghubungi server', 'error');

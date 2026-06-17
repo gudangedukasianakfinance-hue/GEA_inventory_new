@@ -195,18 +195,16 @@ if (typeof window.Dashboard !== 'undefined') {
   },
   
   updateUserGreeting() {
-    const authUser = localStorage.getItem('auth_user');
-    let userName = 'Admin';
+    const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
     
-    if (authUser) {
-      try {
-        const user = JSON.parse(authUser);
-        userName = user.nama_lengkap || user.username || 'Admin';
-      } catch (e) {}
-    }
+    const displayName = 
+      authUser.nama_lengkap || 
+      authUser.nama || 
+      authUser.username || 
+      'User';
     
     const titleEl = document.getElementById('welcomeTitle');
-    if (titleEl) titleEl.textContent = 'Selamat Datang, ' + userName;
+    if (titleEl) titleEl.textContent = 'Selamat Datang, ' + displayName;
   },
   
   getEmptyData() {

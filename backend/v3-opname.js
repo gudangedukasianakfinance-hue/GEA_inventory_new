@@ -34,7 +34,6 @@ export async function handleGet(req, res) {
         sop.status,
         sop.checker,
         sop.kategori_id,
-        sop.kategori AS kategori_raw,
         sop.opname_id,
         sop.created_at,
         sop.started_at,
@@ -64,8 +63,8 @@ export async function handleGet(req, res) {
     // Map result with kategori_nama
     const items = result.rows.map(row => ({
       ...row,
-      kategori_id: row.kategori_id || row.kategori_raw || 'lain-lain',
-      kategori_nama: kategoriLabel(row.kategori_id || row.kategori_raw || 'lain-lain')
+      kategori_id: row.kategori_id || 'lain-lain',
+      kategori_nama: kategoriLabel(row.kategori_id || 'lain-lain')
     }));
     
     res.status(200).json({ 
