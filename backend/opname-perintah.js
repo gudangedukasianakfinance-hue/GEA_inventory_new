@@ -119,26 +119,7 @@ export default async function handler(req, res) {
       const body = req.body || {};
       const action = String(body.action || "create").toLowerCase();
 
-      if (action === "start") {
-        const perintahId = Number(body.perintah_id);
-        if (!perintahId) {
-          return res.status(400).json({ error: "perintah_id wajib" });
-        }
-
-        const result = await pool.query(
-          `UPDATE stok_opname_perintah SET status = 'proses', checker = COALESCE(NULLIF($2, ''), checker), started_at = COALESCE(started_at, NOW()), updated_at = NOW() WHERE id = $1 AND status IN ('menunggu', 'proses') RETURNING *`,
-          [perintahId, body.checker || null]
-        );
-
-        if (!result.rows.length) {
-          return res.status(404).json({ error: "Perintah SO tidak ditemukan atau sudah selesai" });
-        }
-
-        return res.status(200).json({
-          success: true,
-          item: result.rows[0]
-        });
-      }
+      
 
       if (action === "update") {
         const perintahId = Number(body.perintah_id);
@@ -265,10 +246,9 @@ export default async function handler(req, res) {
       const userId = authResult.user.id;
       const result = await pool.query(
         `UPDATE stok_opname_perintah 
-         SET status = 'proses', 
+         SET status = 'claimed', 
              checker_user_id = $1, 
              claimed_at = NOW(),
-             started_at = NOW(),
              updated_at = NOW()
          WHERE id = $2 AND status = 'menunggu'
          RETURNING *`,
@@ -279,7 +259,52 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Gagal mengklaim task" });
       }
       
-      // Create opname record
+      return res.status(200).json({
+        success: true,
+        message: "Task berhasil diklaim. Silakan mulai SO untuk mulai dikerjakan.",
+        item: result.rows[0]
+      });
+    }
+    
+    // MULAI SO - Checker mulai mengerjakan task (claimed → proses)
+    if (req.method === "POST" && action === "mulai") {
+      const auth = await import('../services/auth.js');
+      const authResult = auth.authenticate(req);
+      if (!authResult.authorized) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      if (authResult.user.role !== 'checker_opname') {
+        return res.status(403).json({ error: "Hanya checker yang dapat memulai SO" });
+      }
+      
+      const perintahId = Number(body.perintah_id);
+      if (!perintahId) {
+        return res.status(400).json({ error: "perintah_id wajib" });
+      }
+      
+      const userId = authResult.user.id;
+      
+      // Check if task is claimed by this checker
+      const checkResult = await pool.query(
+        `SELECT id, kode_so, status, checker_user_id FROM stok_opname_perintah WHERE id = $1`,
+        [perintahId]
+      );
+      
+      if (!checkResult.rows.length) {
+        return res.status(404).json({ error: "Perintah SO tidak ditemukan" });
+      }
+      
+      const perintah = checkResult.rows[0];
+      
+      if (perintah.status !== 'claimed') {
+        return res.status(400).json({ error: `Task tidak bisa dimulai (status: ${perintah.status})` });
+      }
+      
+      if (perintah.checker_user_id !== userId) {
+        return res.status(403).json({ error: "Task ini diklaim oleh checker lain" });
+      }
+      
+      // Create opname record and update status to 'proses'
       const opnameResult = await pool.query(
         `INSERT INTO stok_opname (tanggal, keterangan, perintah_id, checker, lokasi)
          VALUES (CURRENT_DATE, $1, $2, $3, $4)
@@ -287,19 +312,22 @@ export default async function handler(req, res) {
         [`SO dari perintah ${perintah.kode_so}`, perintahId, authResult.user.nama, null]
       );
       
-      // Update perintah with opname_id
-      await pool.query(
-        `UPDATE stok_opname_perintah SET opname_id = $1 WHERE id = $2`,
+      const result = await pool.query(
+        `UPDATE stok_opname_perintah 
+         SET status = 'proses', 
+             started_at = NOW(),
+             updated_at = NOW(),
+             opname_id = $1
+         WHERE id = $2
+         RETURNING *`,
         [opnameResult.rows[0].id, perintahId]
       );
       
       return res.status(200).json({
         success: true,
-        message: "Task berhasil diklaim",
-        item: {
-          ...result.rows[0],
-          opname_id: opnameResult.rows[0].id
-        }
+        message: "SO dimulai, siap untuk input qty fisik",
+        item: result.rows[0],
+        opname_id: opnameResult.rows[0].id
       });
     }
     

@@ -50,45 +50,74 @@
     </button>
   </div>
 
-  <!-- Admin KPI Section -->
-  <div class="kpi-grid admin-only-section">
-    <div class="kpi-card">
-      <div class="kpi-card__icon kpi-card__icon--primary">
-        <i data-lucide="clipboard-list"></i>
+  <!-- Admin: Monitor Task Checker -->
+  <div class="admin-only-section">
+    <div class="monitor-section">
+      <h3 class="monitor-title"><i data-lucide="users"></i> Monitor Task Checker</h3>
+      
+      <!-- Status Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--warning">
+            <i data-lucide="clock"></i>
+          </div>
+          <div class="kpi-card__content">
+            <div class="kpi-card__label">Menunggu</div>
+            <div class="kpi-card__value" id="kpi-menunggu">0</div>
+          </div>
+        </div>
+        
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--info">
+            <i data-lucide="hand-grabbed"></i>
+          </div>
+          <div class="kpi-card__content">
+            <div class="kpi-card__label">Diambil</div>
+            <div class="kpi-card__value" id="kpi-claimed">0</div>
+          </div>
+        </div>
+        
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--danger">
+            <i data-lucide="loader"></i>
+          </div>
+          <div class="kpi-card__content">
+            <div class="kpi-card__label">Proses</div>
+            <div class="kpi-card__value" id="kpi-proses">0</div>
+          </div>
+        </div>
+        
+        <div class="kpi-card">
+          <div class="kpi-card__icon kpi-card__icon--success">
+            <i data-lucide="check-circle"></i>
+          </div>
+          <div class="kpi-card__content">
+            <div class="kpi-card__label">Selesai</div>
+            <div class="kpi-card__value" id="kpi-selesai">0</div>
+          </div>
+        </div>
       </div>
-      <div class="kpi-card__content">
-        <div class="kpi-card__label">Total Perintah SO</div>
-        <div class="kpi-card__value" id="kpi-total-perintah">0</div>
-      </div>
-    </div>
-    
-    <div class="kpi-card">
-      <div class="kpi-card__icon kpi-card__icon--warning">
-        <i data-lucide="clock"></i>
-      </div>
-      <div class="kpi-card__content">
-        <div class="kpi-card__label">Menunggu</div>
-        <div class="kpi-card__value" id="kpi-menunggu">0</div>
-      </div>
-    </div>
-    
-    <div class="kpi-card">
-      <div class="kpi-card__icon kpi-card__icon--info">
-        <i data-lucide="loader"></i>
-      </div>
-      <div class="kpi-card__content">
-        <div class="kpi-card__label">Proses</div>
-        <div class="kpi-card__value" id="kpi-proses">0</div>
-      </div>
-    </div>
-    
-    <div class="kpi-card">
-      <div class="kpi-card__icon kpi-card__icon--success">
-        <i data-lucide="check-circle"></i>
-      </div>
-      <div class="kpi-card__content">
-        <div class="kpi-card__label">Selesai</div>
-        <div class="kpi-card__value" id="kpi-selesai">0</div>
+      
+      <!-- Checker Performance Table -->
+      <div class="monitor-table-card">
+        <h4 class="monitor-table-title"><i data-lucide="table"></i> Performa Per Checker</h4>
+        <table class="data-table" id="checkerPerformanceTable">
+          <thead>
+            <tr>
+              <th>Checker</th>
+              <th>Diambil</th>
+              <th>Proses</th>
+              <th>Selesai</th>
+            </tr>
+          </thead>
+          <tbody id="checkerPerformanceBody">
+            <tr>
+              <td colspan="4" class="text-center text-muted">
+                <i data-lucide="loader-2" class="spin"></i> Memuat data...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -106,9 +135,13 @@
         <i data-lucide="inbox"></i>
         <span>Tersedia</span>
       </button>
+      <button class="checker-so-tab" data-tab="claimed" onclick="switchCheckerTab('claimed')">
+        <i data-lucide="hand-grabbed"></i>
+        <span>Diambil</span>
+      </button>
       <button class="checker-so-tab" data-tab="progress" onclick="switchCheckerTab('progress')">
         <i data-lucide="loader"></i>
-        <span>Dikerjakan</span>
+        <span>Proses</span>
       </button>
       <button class="checker-so-tab" data-tab="done" onclick="switchCheckerTab('done')">
         <i data-lucide="check-circle"></i>
@@ -119,6 +152,13 @@
     <!-- Tab Content: Available -->
     <div id="checker-available-tab" class="checker-so-tab-content active">
       <div id="checker-available-list" class="checker-so-list">
+        <div class="text-center text-muted p-4">Memuat...</div>
+      </div>
+    </div>
+    
+    <!-- Tab Content: Claimed -->
+    <div id="checker-claimed-tab" class="checker-so-tab-content" style="display: none;">
+      <div id="checker-claimed-list" class="checker-so-list">
         <div class="text-center text-muted p-4">Memuat...</div>
       </div>
     </div>
@@ -286,49 +326,80 @@ function getStatusLabel(status) {
   return map[status] || status;
 }
 
-// Load KPI data dari API
+// Load Monitor Task Checker data dari API
 async function loadSoKpiData() {
   try {
+    // Load all status untuk monitor
     const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard.currentFilterBulan}&tahun=${window.SODashboard.currentFilterTahun}`);
     if (!response.ok) throw new Error('Failed to load');
     
     const data = await response.json();
     const items = data.items || [];
     
-    // Hitung statistik
-    const total = items.length;
+    // Hitung statistik per status
     const menunggu = items.filter(item => item.status === 'menunggu').length;
+    const claimed = items.filter(item => item.status === 'claimed').length;
     const proses = items.filter(item => item.status === 'proses').length;
     const selesai = items.filter(item => item.status === 'selesai').length;
     
-    // Update KPI cards
-    document.getElementById('kpi-total-perintah').textContent = formatNumber(total);
+    // Update status cards
     document.getElementById('kpi-menunggu').textContent = formatNumber(menunggu);
+    document.getElementById('kpi-claimed').textContent = formatNumber(claimed);
     document.getElementById('kpi-proses').textContent = formatNumber(proses);
     document.getElementById('kpi-selesai').textContent = formatNumber(selesai);
     
-    // Update progress bar
-    const progressPercent = total > 0 ? Math.round((selesai / total) * 100) : 0;
-    document.getElementById('progressPercent').textContent = progressPercent + '%';
-    document.getElementById('progressBarFill').style.width = progressPercent + '%';
-    document.getElementById('progressDone').textContent = selesai;
-    document.getElementById('progressTotal').textContent = total;
-    document.getElementById('progressPeriod').textContent = window.SODashboard.NAMA_BULAN[window.SODashboard.currentFilterBulan] + ' ' + window.SODashboard.currentFilterTahun;
-    
-    // Render recent commands
-    renderRecentPerintah(items.slice(0, 5));
-    
-    // Render kategori progress
-    renderKategoriProgress(data.period_kategori || []);
+    // Render checker performance table
+    renderCheckerPerformance(items);
     
   } catch (error) {
-    console.error('Error loading SO KPI:', error);
-    // Tampilkan error state
-    document.getElementById('kpi-total-perintah').textContent = '-';
+    console.error('Error loading Monitor:', error);
     document.getElementById('kpi-menunggu').textContent = '-';
+    document.getElementById('kpi-claimed').textContent = '-';
     document.getElementById('kpi-proses').textContent = '-';
     document.getElementById('kpi-selesai').textContent = '-';
   }
+}
+
+// Render checker performance table
+function renderCheckerPerformance(items) {
+  const tbody = document.getElementById('checkerPerformanceBody');
+  if (!tbody) return;
+  
+  // Group by checker
+  const checkerStats = {};
+  items.forEach(item => {
+    if (item.checker_user_id && item.checker) {
+      if (!checkerStats[item.checker]) {
+        checkerStats[item.checker] = { nama: item.checker, claimed: 0, proses: 0, selesai: 0 };
+      }
+      if (item.status === 'claimed') checkerStats[item.checker].claimed++;
+      if (item.status === 'proses') checkerStats[item.checker].proses++;
+      if (item.status === 'selesai') checkerStats[item.checker].selesai++;
+    }
+  });
+  
+  const checkerList = Object.values(checkerStats);
+  
+  if (checkerList.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted">
+          <i data-lucide="users"></i> Belum ada data checker
+        </td>
+      </tr>
+    `;
+  } else {
+    tbody.innerHTML = checkerList.map(c => `
+      <tr>
+        <td><strong>${c.nama}</strong></td>
+        <td><span class="badge badge--info">${c.claimed}</span></td>
+        <td><span class="badge badge--danger">${c.proses}</span></td>
+        <td><span class="badge badge--success">${c.selesai}</span></td>
+      </tr>
+    `).join('');
+  }
+  
+  if (window.lucide) lucide.createIcons({ nodes: [tbody] });
 }
 
 // Render recent perintah table
@@ -495,11 +566,13 @@ function switchCheckerTab(tab) {
   
   // Update tab content
   document.getElementById('checker-available-tab').style.display = tab === 'available' ? 'block' : 'none';
+  document.getElementById('checker-claimed-tab').style.display = tab === 'claimed' ? 'block' : 'none';
   document.getElementById('checker-progress-tab').style.display = tab === 'progress' ? 'block' : 'none';
   document.getElementById('checker-done-tab').style.display = tab === 'done' ? 'block' : 'none';
   
   // Load data for selected tab
   if (tab === 'available') loadCheckerAvailableTasks();
+  if (tab === 'claimed') loadCheckerClaimedTasks();
   if (tab === 'progress') loadCheckerProgressTasks();
   if (tab === 'done') loadCheckerDoneTasks();
 }
@@ -580,6 +653,123 @@ async function loadCheckerAvailableTasks() {
   }
 }
 
+// Load Checker CLAIMED tasks (status = claimed, sudah diambil belum mulai)
+async function loadCheckerClaimedTasks() {
+  const taskList = document.getElementById('checker-claimed-list');
+  if (!taskList) return;
+  
+  taskList.innerHTML = '<div class="text-center text-muted p-4">Memuat...</div>';
+  
+  try {
+    const url = '/api/v3-opname?status=claimed';
+    console.log('claimed url', url);
+    
+    const response = await fetch(url);
+    console.log('response status', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error('HTTP ' + response.status + ' : ' + errorText);
+    }
+    
+    const result = await response.json();
+    let items = result.items || result.data || [];
+    
+    // Filter: task yang status=claimed dan checker=currentUser
+    const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+    const currentUserId = authUser?.id;
+    
+    if (currentUserId) {
+      items = items.filter(item =>
+        item.status === 'claimed' && item.checker_user_id === currentUserId
+      );
+    } else {
+      items = [];
+    }
+    
+    if (items.length === 0) {
+      taskList.innerHTML = `
+        <div class="checker-so-empty">
+          <i data-lucide="hand-grabbed"></i>
+          <p>Tidak ada task yang diambil</p>
+        </div>
+      `;
+    } else {
+      taskList.innerHTML = items.map(item => {
+        const targetSku = item.target_sku || 0;
+        
+        return `
+          <div class="checker-so-card">
+            <div class="checker-so-info">
+              <div class="checker-so-kode">${item.kode_so || '-'}</div>
+              <div class="checker-so-detail">
+                <span><i data-lucide="package"></i> ${item.kategori_nama || item.kategori || '-'}</span>
+                <span><i data-lucide="hash"></i> Target: ${targetSku} SKU</span>
+                <span><i data-lucide="calendar"></i> Diambil: ${item.claimed_at ? formatDate(item.claimed_at) : '-'}</span>
+              </div>
+            </div>
+            <button class="checker-so-btn checker-so-btn--primary" onclick="mulaiTask('${item.id}')">
+              <i data-lucide="play"></i> MULAI
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    if (window.lucide) lucide.createIcons({ nodes: [taskList] });
+    
+  } catch (error) {
+    console.error('Error loading claimed tasks:', error);
+    taskList.innerHTML = `
+      <div class="checker-so-empty">
+        <i data-lucide="alert-circle"></i>
+        <p>Gagal memuat. Silakan refresh.</p>
+        <small>${error.message}</small>
+      </div>
+    `;
+  }
+}
+
+// Mulai task - Checker mulai mengerjakan (claimed → proses)
+async function mulaiTask(perintahId) {
+  if (!confirm('Yakin ingin mulai mengerjakan task ini?')) return;
+  
+  const btn = event.target.closest('.checker-so-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Memproses...';
+  }
+  
+  try {
+    const response = await fetch('/api/opname-perintah', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mulai', perintah_id: Number(perintahId) })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Gagal memulai task');
+    }
+    
+    showToast(data.message || 'Task dimulai! Siap untuk input qty fisik.', 'success');
+    
+    // Reload tabs
+    loadCheckerClaimedTasks();
+    switchCheckerTab('progress');
+    
+  } catch (error) {
+    console.error('Error starting task:', error);
+    showToast(error.message || 'Gagal memulai task', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="play"></i> MULAI';
+      if (window.lucide) lucide.createIcons({ nodes: [btn] });
+    }
+  }
+}
+
 // Claim task - Checker klaim task SO
 async function claimTask(perintahId) {
   if (!confirm('Yakin ingin mengklaim task ini?')) return;
@@ -603,13 +793,13 @@ async function claimTask(perintahId) {
       throw new Error(data.error || 'Gagal mengklaim task');
     }
     
-    showToast('Task berhasil diklaim!', 'success');
+    showToast(data.message || 'Task berhasil diklaim! Klik MULAI untuk mulai mengerjakan.', 'success');
     
-    // Reload available tasks
+    // Reload all tabs
     loadCheckerAvailableTasks();
     
-    // Switch to progress tab
-    switchCheckerTab('progress');
+    // Switch to claimed tab (task yang sudah diambil tapi belum mulai)
+    switchCheckerTab('claimed');
     
   } catch (error) {
     console.error('Error claiming task:', error);
