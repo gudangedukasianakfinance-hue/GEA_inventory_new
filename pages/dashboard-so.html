@@ -753,11 +753,15 @@ async function mulaiTask(perintahId) {
       throw new Error(data.error || 'Gagal memulai task');
     }
     
-    showToast(data.message || 'Task dimulai! Siap untuk input qty fisik.', 'success');
+    // Simpan activePerintahId dan activePerintahKode untuk pelaksanaan-so.html
+    const item = data.item;
+    localStorage.setItem('activePerintahId', item.id);
+    localStorage.setItem('activePerintahKode', item.kode_so);
     
-    // Reload tabs
-    loadCheckerClaimedTasks();
-    switchCheckerTab('progress');
+    showToast(data.message || 'Task dimulai!', 'success');
+    
+    // Navigasi ke pelaksanaan-so.html yang sudah ada
+    AppRouter.navigateTo('pelaksanaan-so');
     
   } catch (error) {
     console.error('Error starting task:', error);
@@ -810,6 +814,13 @@ async function claimTask(perintahId) {
       if (window.lucide) lucide.createIcons({ nodes: [btn] });
     }
   }
+}
+
+// Buka pelaksanaan-so.html dengan task yang dipilih
+function bukaPelaksanaan(perintahId, kodeSo) {
+  localStorage.setItem('activePerintahId', perintahId);
+  localStorage.setItem('activePerintahKode', kodeSo);
+  AppRouter.navigateTo('pelaksanaan-so');
 }
 
 // Load Checker PROGRESS tasks (status = proses)
@@ -874,8 +885,8 @@ async function loadCheckerProgressTasks() {
                 <div class="checker-so-progress-text">${progress} / ${targetSku} (${progressPercent}%)</div>
               </div>
             </div>
-            <button class="checker-so-btn" onclick="lanjutkanSo('${item.id}')">
-              <i data-lucide="play"></i> Lanjutkan
+            <button class="checker-so-btn" onclick="bukaPelaksanaan('${item.id}', '${item.kode_so}')">
+              <i data-lucide="play"></i> LANJUTKAN
             </button>
           </div>
         `;
