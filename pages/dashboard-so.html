@@ -1,8 +1,8 @@
 <!-- Dashboard SO Page -->
 <section class="dashboard">
   
-  <!-- Welcome Section -->
-  <div class="welcome">
+  <!-- Welcome Section (hide filter for checker) -->
+  <div class="welcome" data-role-admin-only>
     <div class="welcome__content">
       <h1 class="welcome__title">Dashboard Stock Opname</h1>
       <p class="welcome__subtitle">Monitoring dan statistik stok opname gudang</p>
@@ -35,7 +35,7 @@
   </div>
 
   <!-- Quick Actions -->
-  <div class="quick-actions">
+  <div class="quick-actions" data-role-admin-only>
     <button class="quick-action-btn" onclick="AppRouter.navigateTo('perintah-so')">
       <i data-lucide="plus-circle"></i>
       <span>Buat Perintah SO</span>
@@ -50,8 +50,8 @@
     </button>
   </div>
 
-  <!-- KPI Section - SO Stats -->
-  <div class="kpi-grid">
+  <!-- KPI Section - SO Stats (hide for checker) -->
+  <div class="kpi-grid" data-role-admin-only>
     <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--primary">
         <i data-lucide="clipboard-list"></i>
@@ -93,6 +93,17 @@
     </div>
   </div>
 
+  <!-- Checker Task Section - Task Saya -->
+  <div id="checker-task-section" class="checker-task-section" style="display: none;">
+    <div class="checker-task-header">
+      <h2><i data-lucide="clipboard-check"></i> Task Stock Opname Saya</h2>
+      <p>Daftar tugas Stock Opname yang ditugaskan kepada Anda</p>
+    </div>
+    <div id="checker-task-list" class="checker-task-list">
+      <div class="text-center text-muted p-4">Memuat...</div>
+    </div>
+  </div>
+
   <!-- Progress Overview -->
   <div class="progress-overview-card">
     <div class="progress-overview-header">
@@ -124,7 +135,7 @@
   </div>
 
   <!-- Tables Grid -->
-  <div class="tables-grid">
+  <div class="tables-grid" data-role-admin-only>
     <!-- Perintah SO Terbaru -->
     <div class="table-card" style="grid-column: span 2;">
       <div class="table-card__header">
@@ -366,23 +377,148 @@ function handleFilterChange() {
 
 // Inisialisasi saat page load
 function initDashboardSo() {
-  // Set filter values
-  document.getElementById('filterBulan').value = window.SODashboard.currentFilterBulan;
-  document.getElementById('filterTahun').value = window.SODashboard.currentFilterTahun;
+  // Get current user role
+  const authUser = localStorage.getItem('auth_user');
+  let userRole = null;
+  let userNama = null;
+  
+  if (authUser) {
+    const user = JSON.parse(authUser);
+    userRole = user.role;
+    userNama = user.nama_lengkap || user.username;
+  }
   
   // Update datetime
   updateDateTime();
   setInterval(updateDateTime, 1000);
   
-  // Load data
-  loadSoKpiData();
-  
-  // Add event listeners
-  document.getElementById('filterBulan')?.addEventListener('change', handleFilterChange);
-  document.getElementById('filterTahun')?.addEventListener('change', handleFilterChange);
+  // Apply role-based visibility
+  if (userRole === 'checker_opname') {
+    // Checker: hide ALL admin sections, show checker task
+    document.body.classList.add('role-checker');
+    document.body.classList.remove('role-admin', 'role-staff_gudang');
+    
+    // Hide all admin-only sections
+    document.querySelectorAll('[data-role-admin-only]').forEach(el => {
+      el.style.display = 'none';
+    });
+    
+    // Show checker task section
+    const checkerSection = document.getElementById('checker-task-section');
+    if (checkerSection) {
+      checkerSection.style.display = 'block';
+      loadCheckerTasks(userNama);
+    }
+    
+  } else if (userRole === 'admin' || userRole === 'staff_gudang') {
+    // Admin/Staff: show admin sections, hide checker task
+    document.body.classList.add('role-' + userRole);
+    document.body.classList.remove('role-checker');
+    
+    // Set filter values
+    document.getElementById('filterBulan').value = window.SODashboard.currentFilterBulan;
+    document.getElementById('filterTahun').value = window.SODashboard.currentFilterTahun;
+    
+    // Load admin KPI data
+    loadSoKpiData();
+    
+    // Add event listeners
+    document.getElementById('filterBulan')?.addEventListener('change', handleFilterChange);
+    document.getElementById('filterTahun')?.addEventListener('change', handleFilterChange);
+    
+    // Hide checker section
+    const checkerSection = document.getElementById('checker-task-section');
+    if (checkerSection) checkerSection.style.display = 'none';
+    
+  } else {
+    // No role or guest: show admin view as default
+    document.getElementById('filterBulan').value = window.SODashboard.currentFilterBulan;
+    document.getElementById('filterTahun').value = window.SODashboard.currentFilterTahun;
+    loadSoKpiData();
+    document.getElementById('filterBulan')?.addEventListener('change', handleFilterChange);
+    document.getElementById('filterTahun')?.addEventListener('change', handleFilterChange);
+    
+    const checkerSection = document.getElementById('checker-task-section');
+    if (checkerSection) checkerSection.style.display = 'none';
+  }
   
   // Initialize lucide icons
   if (window.lucide) lucide.createIcons();
+}
+
+// Load Checker tasks
+async function loadCheckerTasks(userNama) {
+  const taskList = document.getElementById('checker-task-list');
+  if (!taskList) return;
+  
+  try {
+    // Get SO with status = proses and pic_checker = user
+    const response = await fetch('/api/v3-opname?status=proses');
+    if (!response.ok) throw new Error('Gagal memuat tugas');
+    
+    const result = await response.json();
+    let items = result.items || result.data || [];
+    
+    // Filter by pic_checker
+    if (userNama) {
+      items = items.filter(item => 
+        item.pic_checker === userNama || 
+        item.pic_checker_name === userNama
+      );
+    }
+    
+    if (items.length === 0) {
+      taskList.innerHTML = `
+        <div class="checker-task-empty">
+          <i data-lucide="clipboard-x"></i>
+          <p>Belum ada tugas Stock Opname yang ditugaskan.</p>
+        </div>
+      `;
+    } else {
+      taskList.innerHTML = items.map(item => {
+        const progress = item.progress_count || 0;
+        const targetSku = item.target_sku || item.total_sku || 0;
+        const progressPercent = targetSku > 0 ? Math.round((progress / targetSku) * 100) : 0;
+        
+        return `
+          <div class="checker-task-card">
+            <div class="checker-task-info">
+              <div class="checker-task-kode">${item.kode_so || item.id}</div>
+              <div class="checker-task-detail">
+                <span><i data-lucide="package"></i> Kategori: ${item.kategori || '-'}</span>
+                <span><i data-lucide="hash"></i> Target SKU: ${targetSku}</span>
+              </div>
+              <div class="checker-task-progress">
+                <div class="checker-task-progress-bar">
+                  <div class="checker-task-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+                <div class="checker-task-progress-text">Progress: ${progress} / ${targetSku} (${progressPercent}%)</div>
+              </div>
+            </div>
+            <button class="checker-task-btn" onclick="startCheckerSo('${item.id}')">
+              <i data-lucide="play"></i> Mulai SO
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    if (window.lucide) lucide.createIcons({ nodes: [taskList] });
+    
+  } catch (error) {
+    console.error('Error loading checker tasks:', error);
+    taskList.innerHTML = `
+      <div class="checker-task-empty">
+        <i data-lucide="alert-circle"></i>
+        <p>Gagal memuat tugas. Silakan refresh halaman.</p>
+      </div>
+    `;
+  }
+}
+
+// Start SO from checker task
+function startCheckerSo(perintahId) {
+  AppRouter.navigateTo('pelaksanaan-so', { perintah_id: perintahId });
 }
 
 // Auto init on page load - hanya jalankan jika page container ada
@@ -403,7 +539,150 @@ if (document.readyState === 'loading') {
 </script>
 
 <style>
+/* Role-based visibility */
+[data-role-admin-only] {
+  display: none;
+}
+body.role-admin [data-role-admin-only],
+body.role-staff_gudang [data-role-admin-only] {
+  display: block;
+}
+
 /* Progress Overview Card */
+/* Checker Task Section */
+.checker-task-section {
+  margin-bottom: 24px;
+}
+
+.checker-task-header {
+  margin-bottom: 20px;
+}
+
+.checker-task-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checker-task-header h2 i {
+  color: #FF6B6B;
+}
+
+.checker-task-header p {
+  color: #64748B;
+  font-size: 14px;
+}
+
+.checker-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checker-task-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.checker-task-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 107, 107, 0.4);
+}
+
+.checker-task-info {
+  flex: 1;
+}
+
+.checker-task-kode {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FF6B6B;
+  margin-bottom: 4px;
+}
+
+.checker-task-detail {
+  font-size: 13px;
+  color: #94A3B8;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.checker-task-detail span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checker-task-progress {
+  margin-top: 8px;
+}
+
+.checker-task-progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.checker-task-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF6B6B, #FF8E8E);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.checker-task-progress-text {
+  font-size: 12px;
+  color: #64748B;
+  margin-top: 4px;
+}
+
+.checker-task-empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 107, 107, 0.3);
+  border-radius: 12px;
+}
+
+.checker-task-empty i {
+  font-size: 48px;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.checker-task-empty p {
+  color: #64748B;
+  font-size: 14px;
+}
+
+.checker-task-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.checker-task-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
 .progress-overview-card {
   background: linear-gradient(135deg, rgba(255, 77, 58, 0.15), rgba(255, 107, 91, 0.05));
   border: 1px solid rgba(255, 77, 58, 0.2);
