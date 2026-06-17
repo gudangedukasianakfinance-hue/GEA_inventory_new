@@ -168,7 +168,11 @@ export default async function handler(req, res) {
         });
       }
 
-      // CREATE
+      // CREATE - hanya jika action = 'create'
+      if (action !== "create") {
+        return res.status(400).json({ error: `Action '${action}' tidak dikenal` });
+      }
+      
       const kodeSo = normalizeKodeSo(body.kode_so);
       const kategoriId = body.kategori_id || 'modul';
       
