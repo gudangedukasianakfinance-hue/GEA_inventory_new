@@ -1,43 +1,11 @@
 import pool from "../services/db.js";
 
-// V3 Stock Opname - Workflow sesuai model bisnis V3
-// Admin: Buat Perintah SO -> User: Input Qty Fisik -> Admin: Approval/Finalisasi
+// V3 Stock Opname - Simplified Workflow
+// 1 SO = 1 kategori
+// Status flow: menunggu -> proses -> selesai (tanpa approval)
+// Tidak ada kategori_targets, commands, atau dependency tabel stok
 
-// 1. GET - Ambil daftar perintah SO
-// 2. POST - Admin buat perintah SO baru
-// 3. PUT - Update status SO (User: mulai/submit, Admin: approval/finalisasi)
-
-// Get current user from token
-async function getCurrentUser(req) {
-  const authHeader = req.headers?.authorization;
-  if (!authHeader?.startsWith("Bearer ")) return null;
-
-  try {
-    const token = authHeader.slice(7);
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
-
-    return JSON.parse(Buffer.from(parts[0], "base64url").toString());
-  } catch {
-    return null;
-  }
-}
-
-// Check admin authorization - matches approval-api.js behavior
-async function requireAdmin(req, res) {
-  const user = await getCurrentUser(req);
-  if (!user) {
-    res.status(401).json({ success: false, message: "Unauthorized" });
-    return null;
-  }
-  if (user.role !== "admin") {
-    res.status(403).json({ success: false, message: "Admin access required" });
-    return null;
-  }
-  return user;
-}
-
-// GET Handler
+// GET Handler - Ambil daftar perintah SO
 export async function handleGet(req, res) {
   try {
     const { status, bulan, tahun } = req.query;
@@ -54,12 +22,11 @@ export async function handleGet(req, res) {
         sop.keterangan,
         sop.status,
         sop.checker,
-        sop.kategori_targets,
+        sop.kategori,
         sop.opname_id,
         sop.created_at,
         sop.started_at,
-        sop.completed_at,
-        (SELECT COUNT(*) FROM stok_opname so WHERE so.perintah_id = sop.id) AS detail_count
+        sop.completed_at
       FROM stok_opname_perintah sop
       WHERE 1=1
     `;
@@ -82,13 +49,11 @@ export async function handleGet(req, res) {
     
     const result = await pool.query(query, params);
     
-    // Parse kategori_targets
-    const commands = result.rows.map(row => ({
-      ...row,
-      kategori_targets: row.kategori_targets ? JSON.parse(row.kategori_targets) : ['modul', 'seragam', 'poster', 'lain-lain']
-    }));
-    
-    res.status(200).json({ commands, total: result.rows.length });
+    res.status(200).json({ 
+      success: true,
+      items: result.rows,
+      total: result.rows.length 
+    });
   } catch (err) {
     console.error("V3 SO GET ERROR:", err);
     res.status(500).json({ error: err.message });
@@ -98,11 +63,14 @@ export async function handleGet(req, res) {
 // POST Handler - Admin buat perintah SO baru
 export async function handlePost(req, res) {
   try {
-    const { kode_so, bulan, tahun, svp_nama, lokasi, keterangan, kategori_targets } = req.body;
+    const { kode_so, bulan, tahun, svp_nama, lokasi, keterangan, kategori } = req.body;
     
     // Validate required fields
-    if (!kode_so || !bulan || !tahun || !svp_nama) {
-      return res.status(400).json({ error: "kode_so, bulan, tahun, svp_nama wajib diisi" });
+    if (!kode_so || !bulan || !tahun || !svp_nama || !kategori) {
+      return res.status(400).json({ 
+        success: false,
+        error: "kode_so, bulan, tahun, svp_nama, kategori wajib diisi" 
+      });
     }
     
     // Check if kode_so already exists
@@ -112,22 +80,19 @@ export async function handlePost(req, res) {
     );
     
     if (existing.rows.length > 0) {
-      return res.status(400).json({ error: "Kode SO sudah ada" });
+      return res.status(400).json({ success: false, error: "Kode SO sudah ada" });
     }
-    
-    // Parse kategori_targets
-    const targets = Array.isArray(kategori_targets) ? kategori_targets : ['modul', 'seragam', 'poster', 'lain-lain'];
     
     const result = await pool.query(`
       INSERT INTO stok_opname_perintah (
-        kode_so, tanggal_perintah, bulan, tahun, svp_nama, lokasi, keterangan, status, kategori_targets
+        kode_so, tanggal_perintah, bulan, tahun, svp_nama, lokasi, keterangan, status, kategori
       ) VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, 'menunggu', $7)
       RETURNING *
-    `, [kode_so, Number(bulan), Number(tahun), svp_nama, lokasi || null, keterangan || null, JSON.stringify(targets)]);
+    `, [kode_so, Number(bulan), Number(tahun), svp_nama, lokasi || null, keterangan || null, kategori]);
     
     res.status(201).json({ 
       success: true, 
-      command: result.rows[0],
+      item: result.rows[0],
       message: "Perintah SO berhasil dibuat"
     });
   } catch (err) {
@@ -142,7 +107,7 @@ export async function handlePut(req, res) {
     const { id, action, checker, lokasi } = req.body;
     
     if (!id || !action) {
-      return res.status(400).json({ error: "id dan action wajib diisi" });
+      return res.status(400).json({ success: false, error: "id dan action wajib diisi" });
     }
     
     // Get current SO
@@ -152,7 +117,7 @@ export async function handlePut(req, res) {
     );
     
     if (current.rows.length === 0) {
-      return res.status(404).json({ error: "Perintah SO tidak ditemukan" });
+      return res.status(404).json({ success: false, error: "Perintah SO tidak ditemukan" });
     }
     
     const so = current.rows[0];
@@ -161,7 +126,7 @@ export async function handlePut(req, res) {
       case 'start':
         // User memulai SO
         if (so.status !== 'menunggu') {
-          return res.status(400).json({ error: "SO tidak bisa dimulai dari status ini" });
+          return res.status(400).json({ success: false, error: "SO tidak bisa dimulai dari status ini" });
         }
         await pool.query(`
           UPDATE stok_opname_perintah 
@@ -190,9 +155,9 @@ export async function handlePut(req, res) {
         
       case 'submit':
         // User submit SO (setelah input qty fisik)
-        // Phase 1: Direct to 'selesai' (no approval)
+        // Direct to 'selesai' (no approval)
         if (so.status !== 'proses') {
-          return res.status(400).json({ error: "SO tidak bisa disubmit dari status ini" });
+          return res.status(400).json({ success: false, error: "SO tidak bisa disubmit dari status ini" });
         }
         await pool.query(`
           UPDATE stok_opname_perintah 
@@ -212,10 +177,8 @@ export async function handlePut(req, res) {
         res.status(200).json({ success: true, message: "SO submitted dan selesai", status: 'selesai' });
         break;
         
-      // APPROVE/REJECT actions removed - workflow is direct: menunggu -> proses -> selesai
-        
       default:
-        res.status(400).json({ error: `Action '${action}' tidak valid` });
+        res.status(400).json({ success: false, error: `Action '${action}' tidak valid` });
     }
   } catch (err) {
     console.error("V3 SO PUT ERROR:", err);
