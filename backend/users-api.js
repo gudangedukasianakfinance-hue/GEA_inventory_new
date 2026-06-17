@@ -1,6 +1,6 @@
 /* ============================================
    CV EPIC Warehouse V3 - Users API Handler
-   Handles user management CRUD operations
+   Standardized response format: { success, item/items }
    ============================================ */
 
 import crypto from "crypto";
@@ -87,39 +87,18 @@ async function listUsers(req, res) {
 
     const usersResult = await pool.query(
       `SELECT id, username, email, nama_lengkap, role, outlet_id, is_active, last_login, created_at, updated_at
-       FROM users
-       ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+       FROM users ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...params, limit, offset]
     );
 
-    // Map untuk frontend - nama_lengkap jadi nama, is_active jadi status
-    const users = usersResult.rows.map(u => ({
-      id: u.id,
-      username: u.username,
-      email: u.email,
-      nama: u.nama_lengkap,
-      name: u.nama_lengkap,
-      role: u.role,
-      outlet_id: u.outlet_id,
-      status: u.is_active ? 'active' : 'inactive',
-      is_active: u.is_active,
-      last_login: u.last_login,
-      created_at: u.created_at,
-      updated_at: u.updated_at
+    const items = usersResult.rows.map(u => ({
+      id: u.id, username: u.username, email: u.email, nama: u.nama_lengkap, name: u.nama_lengkap,
+      role: u.role, outlet_id: u.outlet_id, status: u.is_active ? 'active' : 'inactive',
+      is_active: u.is_active, last_login: u.last_login, created_at: u.created_at, updated_at: u.updated_at
     }));
 
     return send(res, 200, {
-      success: true,
-      data: users,
-      items: users,
-      pagination: {
-        page,
-        limit,
-        total,
-        total_pages: Math.ceil(total / limit)
-      }
+      success: true, items, pagination: { page, limit, total, total_pages: Math.ceil(total / limit) }
     });
   } catch (error) {
     console.error("Error listing users:", error);
@@ -130,8 +109,7 @@ async function listUsers(req, res) {
 async function getUser(req, res, userId) {
   try {
     const result = await pool.query(
-      `SELECT id, username, email, nama_lengkap as name, role, outlet_id, is_active, last_login, created_at, updated_at
-       FROM users WHERE id = $1`,
+      `SELECT id, username, email, nama_lengkap as name, role, outlet_id, is_active, last_login, created_at, updated_at FROM users WHERE id = $1`,
       [userId]
     );
 
@@ -139,7 +117,7 @@ async function getUser(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, data: result.rows[0] });
+    return send(res, 200, { success: true, item: result.rows[0] });
   } catch (error) {
     console.error("Error getting user:", error);
     return send(res, 500, { success: false, message: "Gagal mengambil data user" });
@@ -182,16 +160,11 @@ async function createUser(req, res) {
 
     const result = await pool.query(
       `INSERT INTO users (username, email, password_hash, nama_lengkap, role, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-       RETURNING id, username, email, nama_lengkap as name, role, is_active, created_at`,
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) RETURNING id, username, email, nama_lengkap as name, role, is_active, created_at`,
       [username.trim(), finalEmail, passwordHash, finalName, finalRole, status === 'inactive' ? 'FALSE' : 'TRUE']
     );
 
-    return send(res, 201, {
-      success: true,
-      message: "User berhasil dibuat",
-      data: result.rows[0]
-    });
+    return send(res, 201, { success: true, item: result.rows[0], message: "User berhasil dibuat" });
   } catch (error) {
     console.error("Error creating user:", error);
     return send(res, 500, { success: false, message: "Gagal membuat user" });
@@ -203,7 +176,6 @@ async function updateUser(req, res, userId) {
   const name = req.body.name || nama;
 
   try {
-    // Cek user exists
     const existingUser = await pool.query("SELECT id FROM users WHERE id = $1", [userId]);
     if (existingUser.rows.length === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
@@ -213,13 +185,8 @@ async function updateUser(req, res, userId) {
     const params = [];
     let paramIndex = 1;
 
-    // Update username
     if (username !== undefined && username !== '') {
-      // Cek username tidak digunakan user lain
-      const usernameCheck = await pool.query(
-        "SELECT id FROM users WHERE username = $1 AND id != $2",
-        [username.trim(), userId]
-      );
+      const usernameCheck = await pool.query("SELECT id FROM users WHERE username = $1 AND id != $2", [username.trim(), userId]);
       if (usernameCheck.rows.length > 0) {
         return send(res, 400, { success: false, message: "Username sudah digunakan" });
       }
@@ -228,12 +195,8 @@ async function updateUser(req, res, userId) {
       paramIndex++;
     }
 
-    // Update email
     if (email !== undefined && email !== '') {
-      const emailCheck = await pool.query(
-        "SELECT id FROM users WHERE email = $1 AND id != $2",
-        [email.trim(), userId]
-      );
+      const emailCheck = await pool.query("SELECT id FROM users WHERE email = $1 AND id != $2", [email.trim(), userId]);
       if (emailCheck.rows.length > 0) {
         return send(res, 400, { success: false, message: "Email sudah digunakan user lain" });
       }
@@ -242,21 +205,18 @@ async function updateUser(req, res, userId) {
       paramIndex++;
     }
 
-    // Update nama_lengkap
     if (name !== undefined && name !== '') {
       updates.push(`nama_lengkap = $${paramIndex}`);
       params.push(name);
       paramIndex++;
     }
     
-    // Update status
     if (status !== undefined) {
       updates.push(`is_active = $${paramIndex}`);
       params.push(status === 'inactive' ? false : true);
       paramIndex++;
     }
     
-    // Update role
     if (role !== undefined && role !== '') {
       if (!VALID_ROLES.includes(role)) {
         return send(res, 400, { success: false, message: "Role tidak valid" });
@@ -266,7 +226,6 @@ async function updateUser(req, res, userId) {
       paramIndex++;
     }
 
-    // Update password jika ada
     if (password !== undefined && password !== '') {
       if (password.length < 6) {
         return send(res, 400, { success: false, message: "Password minimal 6 karakter" });
@@ -284,14 +243,7 @@ async function updateUser(req, res, userId) {
     updates.push(`updated_at = NOW()`);
     params.push(userId);
 
-    console.log('[UPDATE USER] Payload:', { id: userId, role, email, nama, status, updates: updates });
-
-    const result = await pool.query(
-      `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex}`,
-      params
-    );
-
-    console.log('[UPDATE USER] Result:', { id: userId, role, rowCount: result.rowCount });
+    const result = await pool.query(`UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex}`, params);
 
     if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
@@ -321,10 +273,7 @@ async function deleteUser(req, res, userId) {
 
 async function enableUser(req, res, userId) {
   try {
-    const result = await pool.query(
-      `UPDATE users SET is_active = TRUE, updated_at = NOW() WHERE id = $1`,
-      [userId]
-    );
+    const result = await pool.query(`UPDATE users SET is_active = TRUE, updated_at = NOW() WHERE id = $1`, [userId]);
 
     if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
@@ -339,10 +288,7 @@ async function enableUser(req, res, userId) {
 
 async function disableUser(req, res, userId) {
   try {
-    const result = await pool.query(
-      `UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE id = $1`,
-      [userId]
-    );
+    const result = await pool.query(`UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE id = $1`, [userId]);
 
     if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
@@ -360,16 +306,13 @@ async function resetPassword(req, res, userId) {
     const tempPassword = generateTempPassword();
     const passwordHash = hashPassword(tempPassword);
 
-    const result = await pool.query(
-      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
-      [passwordHash, userId]
-    );
+    const result = await pool.query(`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, [passwordHash, userId]);
 
     if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, message: "Password berhasil direset", data: { temp_password: tempPassword } });
+    return send(res, 200, { success: true, item: { temp_password: tempPassword }, message: "Password berhasil direset" });
   } catch (error) {
     console.error("Error resetting password:", error);
     return send(res, 500, { success: false, message: "Gagal reset password" });
@@ -385,8 +328,7 @@ async function getUserStats(req, res) {
     const checkerResult = await pool.query("SELECT COUNT(*) as checkers FROM users WHERE role = 'checker_opname'");
 
     return send(res, 200, {
-      success: true,
-      data: {
+      success: true, item: {
         total: parseInt(totalResult.rows[0]?.total || 0, 10),
         active: parseInt(activeResult.rows[0]?.active || 0, 10),
         inactive: parseInt(totalResult.rows[0]?.total || 0, 10) - parseInt(activeResult.rows[0]?.active || 0, 10),
@@ -399,17 +341,6 @@ async function getUserStats(req, res) {
     console.error("Error getting user stats:", error);
     return send(res, 500, { success: false, message: "Gagal mengambil statistik user" });
   }
-}
-
-async function getRoles(req, res) {
-  return send(res, 200, {
-    success: true,
-    data: [
-      { value: "admin", label: "Admin" },
-      { value: "staff_gudang", label: "Staff Gudang" },
-      { value: "checker_opname", label: "Checker Opname" }
-    ]
-  });
 }
 
 export default async function usersApiHandler(req, res) {
@@ -431,10 +362,6 @@ export default async function usersApiHandler(req, res) {
     return getUserStats(req, res);
   }
 
-  if (method === "GET" && normalizedPath === "v1/users/roles") {
-    return getRoles(req, res);
-  }
-
   if (method === "GET" && normalizedPath === "v1/users") {
     return listUsers(req, res);
   }
@@ -444,15 +371,9 @@ export default async function usersApiHandler(req, res) {
   }
 
   if (userId) {
-    if (method === "GET") {
-      return getUser(req, res, userId);
-    }
-    if (method === "PUT") {
-      return updateUser(req, res, userId);
-    }
-    if (method === "DELETE") {
-      return deleteUser(req, res, userId);
-    }
+    if (method === "GET") return getUser(req, res, userId);
+    if (method === "PUT") return updateUser(req, res, userId);
+    if (method === "DELETE") return deleteUser(req, res, userId);
   }
 
   return send(res, 404, { success: false, message: `Route tidak ditemukan: ${method} ${routePath}` });

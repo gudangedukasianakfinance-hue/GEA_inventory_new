@@ -544,11 +544,11 @@
       const kategoriId = localStorage.getItem('activePerintahKategori') || 'modul';
       
       // Load dari v3-opname-detail endpoint with kategori filter
-      const response = await fetch(`/api/v3-opname-detail?perintah_id=${window.SOPelaksanaan.activePerintahId}&kategori=${kategoriId}`);
+      const response = await fetch(`/api/v3-opname-detail?opname_id=${window.SOPelaksanaan.activeOpnameId}&kategori_id=${kategoriId}`);
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
-      window.SOPelaksanaan.produkList = data.produk || [];
+      window.SOPelaksanaan.produkList = data.items || [];
       window.SOPelaksanaan.targetSku = window.SOPelaksanaan.produkList.length;
       
       // Build map untuk quick lookup (ensure sku is string for consistent lookup)

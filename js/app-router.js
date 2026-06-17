@@ -1,10 +1,9 @@
 /***********************************************
  * CV EPIC Warehouse - Client-Side Router
- * SPA Page Navigation
+ * SPA Page Navigation - No Caching
  ***********************************************/
 
 const AppRouter = {
-  // Route configuration
   routes: {
     'dashboard': 'pages/dashboard.html',
     'penjualan': 'pages/penjualan.html',
@@ -24,8 +23,7 @@ const AppRouter = {
   },
   
   currentPage: 'dashboard',
-  loadedPages: {},
-  
+
   init() {
     this.handleRoute();
     window.addEventListener('popstate', () => this.handleRoute());
@@ -43,11 +41,6 @@ const AppRouter = {
     if (!this.routes[page]) {
       console.warn('Route not found:', page);
       page = 'dashboard';
-    }
-    
-    // Clear cache for current page to ensure clean state
-    if (this.loadedPages[this.currentPage]) {
-      delete this.loadedPages[this.currentPage];
     }
     
     this.currentPage = page;
@@ -106,15 +99,6 @@ const AppRouter = {
       return;
     }
     
-    if (this.loadedPages[page]) {
-      // Clone the cached content to avoid mutating the cache
-      container.innerHTML = '';
-      container.appendChild(this.loadedPages[page].cloneNode(true));
-      this.initPage(page);
-      console.log('Page loaded from cache:', page);
-      return;
-    }
-    
     container.innerHTML = '<div class="page-loading"><div class="page-loading__spinner"></div><p>Memuat halaman...</p></div>';
     
     try {
@@ -124,10 +108,6 @@ const AppRouter = {
       const html = await response.text();
       container.innerHTML = html;
       this.executeScripts(container);
-      
-      // Clone the executed DOM for cache (preserves data-executed attributes)
-      this.loadedPages[page] = container.cloneNode(true);
-      
       this.initPage(page);
       console.log('Page loaded:', page);
     } catch (error) {
@@ -136,7 +116,7 @@ const AppRouter = {
       if (window.lucide) lucide.createIcons();
     }
   },
-  
+
   executeScripts(container) {
     const scripts = container.querySelectorAll('script');
     scripts.forEach(oldScript => {
@@ -148,21 +128,18 @@ const AppRouter = {
       oldScript.parentNode.replaceChild(newScript, oldScript);
     });
   },
-  
+
   initPage(page) {
     if (window.lucide) lucide.createIcons();
     
-    // Dispatch page-specific event for clean re-initialization
     window.dispatchEvent(new CustomEvent('pageInit', { detail: { page } }));
     
-    // Call page-specific init functions - each handles its own cleanup
     if (page === 'dashboard' && typeof initDashboard === 'function') initDashboard();
     if (page === 'user' && typeof initUserManagement === 'function') initUserManagement();
     if (page === 'persediaan' && typeof initPersediaanPage === 'function') initPersediaanPage();
     if (page === 'penjualan' && typeof initPenjualanPage === 'function') initPenjualanPage();
     if (page === 'pembelian' && typeof initPembelianPage === 'function') initPembelianPage();
     
-    // SO Pages - reload data when returning from cache
     if (page === 'dashboard-so' && typeof loadDashboardSO === 'function') loadDashboardSO();
     if (page === 'perintah-so' && typeof loadPerintah === 'function') loadPerintah();
     if (page === 'pelaksanaan-so' && typeof SOPelaksanaanInit === 'function') SOPelaksanaanInit();
@@ -170,11 +147,9 @@ const AppRouter = {
     
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },
-  
+
   getCurrentPage() { return this.currentPage; },
-  isPageLoaded(page) { return !!this.loadedPages[page]; },
-  reloadCurrentPage() { delete this.loadedPages[this.currentPage]; this.loadPage(this.currentPage); },
-  clearCache() { this.loadedPages = {}; }
+  reloadCurrentPage() { this.loadPage(this.currentPage); }
 };
 
 window.AppRouter = AppRouter;

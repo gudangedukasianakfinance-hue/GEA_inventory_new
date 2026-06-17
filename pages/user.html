@@ -19,9 +19,9 @@
       <label>Role</label>
       <select id="filterRole">
         <option value="">Semua Role</option>
-        <option value="admin">Admin</option>
-        <option value="staff_gudang">Staff Gudang</option>
-        <option value="checker_opname">Checker Opname</option>
+        <option value="admin">Administrator</option>
+        <option value="staff_gudang">Supervisor</option>
+        <option value="checker_opname">Checker</option>
       </select>
     </div>
     <div class="filter-group">
@@ -81,9 +81,9 @@
       <div class="form-group">
         <label>Role</label>
         <select id="userRole" class="form-input" required>
-          <option value="staff_gudang">Staff Gudang</option>
-          <option value="checker_opname">Checker Opname</option>
-          <option value="admin">Admin</option>
+          <option value="staff_gudang">Supervisor</option>
+          <option value="checker_opname">Checker</option>
+          <option value="admin">Administrator</option>
         </select>
       </div>
       <div class="form-group">
@@ -126,11 +126,9 @@
 
 <script>
 (function() {
-  // State
   let userList = [];
   let editingUserId = null;
 
-  // Load users from server
   async function loadUsers() {
     try {
       const role = document.getElementById('filterRole')?.value || '';
@@ -153,7 +151,6 @@
     }
   }
 
-  // Render table
   function renderUsersTable() {
     const tbody = document.getElementById('usersTableBody');
     if (userList.length === 0) {
@@ -166,45 +163,43 @@
       const statusClass = user.status === 'active' ? 'status-active' : 'status-inactive';
       const isActive = user.status === 'active';
       
-      return `
+      return \`
         <tr>
-          <td>${user.nama || user.name || '-'}</td>
-          <td><code>${user.username}</code></td>
-          <td>${user.email || '-'}</td>
-          <td><span class="role-badge ${roleClass}">${formatRole(user.role)}</span></td>
-          <td><span class="status-badge ${statusClass}">${isActive ? 'Aktif' : 'Nonaktif'}</span></td>
+          <td>\${user.nama || user.name || '-'}</td>
+          <td><code>\${user.username}</code></td>
+          <td>\${user.email || '-'}</td>
+          <td><span class="role-badge \${roleClass}">\${formatRole(user.role)}</span></td>
+          <td><span class="status-badge \${statusClass}">\${isActive ? 'Aktif' : 'Nonaktif'}</span></td>
           <td>
-            <button class="action-btn" onclick="window.editUser('${user.id}')">
+            <button class="action-btn" onclick="window.editUser('\${user.id}')">
               <i data-lucide="edit-2"></i>
             </button>
-            <button class="action-btn" onclick="window.toggleUserStatus('${user.id}', ${!isActive})" title="${isActive ? 'Nonaktifkan' : 'Aktifkan'}">
-              <i data-lucide="${isActive ? 'user-x' : 'user-check'}"></i>
+            <button class="action-btn" onclick="window.toggleUserStatus('\${user.id}', \${!isActive})" title="\${isActive ? 'Nonaktifkan' : 'Aktifkan'}">
+              <i data-lucide="\${isActive ? 'user-x' : 'user-check'}"></i>
             </button>
-            <button class="action-btn" onclick="window.resetUserPassword('${user.id}')" title="Reset Password">
+            <button class="action-btn" onclick="window.resetUserPassword('\${user.id}')" title="Reset Password">
               <i data-lucide="key"></i>
             </button>
-            <button class="action-btn danger" onclick="window.deleteUser('${user.id}')">
+            <button class="action-btn danger" onclick="window.deleteUser('\${user.id}')">
               <i data-lucide="trash-2"></i>
             </button>
           </td>
         </tr>
-      `;
+      \`;
     }).join('');
     
     if (window.lucide) lucide.createIcons({ nodes: [tbody] });
   }
 
-  // Format role label
   function formatRole(role) {
     const roles = {
-      'admin': 'Admin',
-      'staff_gudang': 'Staff Gudang',
+      'admin': 'Administrator',
+      'staff_gudang': 'Supervisor',
       'checker_opname': 'Checker'
     };
     return roles[role] || role || '-';
   }
 
-  // Show add modal
   window.showAddUserModal = function() {
     editingUserId = null;
     document.getElementById('userModalTitle').textContent = 'Tambah User';
@@ -214,13 +209,12 @@
     document.getElementById('userModal').classList.add('active');
   };
 
-  // Edit user - fetch dari server
   window.editUser = async function(id) {
     try {
-      const response = await fetch(`/api/v1/users/${id}`);
+      const response = await fetch(\`/api/v1/users/\${id}\`);
       if (!response.ok) throw new Error('User tidak ditemukan');
       const result = await response.json();
-      const user = result.data;
+      const user = result.item || result.data;
       
       editingUserId = id;
       document.getElementById('userModalTitle').textContent = 'Edit User';
@@ -239,13 +233,11 @@
     }
   };
 
-  // Close modal
   window.closeUserModal = function() {
     document.getElementById('userModal').classList.remove('active');
     editingUserId = null;
   };
 
-  // Save user
   window.saveUser = async function(event) {
     event.preventDefault();
     
@@ -258,15 +250,12 @@
       status: document.getElementById('userActive').checked ? 'active' : 'inactive'
     };
     
-    // Hanya tambah password jika diisi
     if (password) {
       data.password = password;
     }
 
-    console.log('[EDIT USER PAYLOAD]', data);
-
     try {
-      const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
+      const url = editingUserId ? \`/api/v1/users/\${editingUserId}\` : '/api/v1/users';
       const method = editingUserId ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -289,12 +278,11 @@
     }
   };
 
-  // Delete user
   window.deleteUser = async function(id) {
     if (!confirm('Yakin hapus user ini?')) return;
     
     try {
-      const response = await fetch(`/api/v1/users/${id}`, { method: 'DELETE' });
+      const response = await fetch(\`/api/v1/users/\${id}\`, { method: 'DELETE' });
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.message || 'Gagal menghapus');
@@ -308,10 +296,9 @@
     }
   };
 
-  // Toggle user status (enable/disable)
   window.toggleUserStatus = async function(id, enable) {
     try {
-      const url = enable ? `/api/v1/users/${id}/enable` : `/api/v1/users/${id}/disable`;
+      const url = enable ? \`/api/v1/users/\${id}/enable\` : \`/api/v1/users/\${id}/disable\`;
       const response = await fetch(url, { method: 'POST' });
       
       if (!response.ok) {
@@ -327,19 +314,18 @@
     }
   };
 
-  // Reset password
   window.resetUserPassword = async function(id) {
     if (!confirm('Reset password user ini?')) return;
     
     try {
-      const response = await fetch(`/api/v1/users/${id}/reset-password`, { method: 'POST' });
+      const response = await fetch(\`/api/v1/users/\${id}/reset-password\`, { method: 'POST' });
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.message || 'Gagal reset password');
       }
       
       const result = await response.json();
-      showToast('Password berhasil direset: ' + (result.data?.temp_password || '[Lihat di sistem]'));
+      showToast('Password berhasil direset: ' + (result.item?.temp_password || result.data?.temp_password || '[Lihat di sistem]'));
       loadUsers();
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -347,11 +333,9 @@
     }
   };
 
-  // Filter handlers
   document.getElementById('filterRole')?.addEventListener('change', loadUsers);
   document.getElementById('filterStatus')?.addEventListener('change', loadUsers);
 
-  // Init
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadUsers);
   } else {
