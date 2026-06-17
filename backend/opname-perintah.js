@@ -283,6 +283,32 @@ export default async function handler(req, res) {
         return res.status(200).json({ message: `Perintah ${kodeSo} berhasil diperbarui`, perintah: updateResult.rows[0] });
       }
 
+      if (action === "submit") {
+        // Submit SO - ubah status ke 'selesai'
+        const perintahId = Number(body.perintah_id);
+        if (!perintahId) {
+          return res.status(400).json({ error: "perintah_id wajib" });
+        }
+
+        const result = await pool.query(
+          `UPDATE stok_opname_perintah 
+           SET status = 'selesai', completed_at = NOW(), updated_at = NOW() 
+           WHERE id = $1 AND status = 'proses' 
+           RETURNING *`,
+          [perintahId]
+        );
+
+        if (!result.rows.length) {
+          return res.status(404).json({ error: "Perintah tidak ditemukan atau tidak dapat diselesaikan" });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: `SO berhasil disubmit`, 
+          perintah: result.rows[0] 
+        });
+      }
+
       // CREATE
       const kodeSo = normalizeKodeSo(body.kode_so);
       const kategoriId = body.kategori_id || 'modul';
