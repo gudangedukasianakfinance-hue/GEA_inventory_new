@@ -130,6 +130,57 @@ export default async function handler(req, res) {
         return res.status(200).json(result.rows[0]);
       }
 
+      if (action === "claim") {
+        // Claim task - checker takes ownership
+        const { authenticate } = await import('../services/auth.js');
+        const authResult = authenticate(req);
+        if (!authResult.authorized) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+        
+        const user = authResult.user;
+        const perintahId = Number(body.perintah_id);
+        
+        if (!perintahId) {
+          return res.status(400).json({ error: "perintah_id wajib" });
+        }
+        
+        // Check if task already claimed by another user
+        const checkResult = await pool.query(
+          `SELECT id, checker_user_id, status FROM stok_opname_perintah WHERE id = $1`,
+          [perintahId]
+        );
+        
+        if (!checkResult.rows.length) {
+          return res.status(404).json({ error: "Perintah SO tidak ditemukan" });
+        }
+        
+        const existingTask = checkResult.rows[0];
+        
+        if (existingTask.checker_user_id && existingTask.checker_user_id !== user.id) {
+          return res.status(400).json({ error: "Task sudah diklaim oleh user lain" });
+        }
+        
+        if (existingTask.status === 'proses' || existingTask.status === 'selesai') {
+          return res.status(400).json({ error: "Task tidak bisa diklaim, status sudah berubah" });
+        }
+        
+        // Claim the task
+        const result = await pool.query(
+          `UPDATE stok_opname_perintah 
+           SET checker_user_id = $1, claimed_at = NOW(), updated_at = NOW() 
+           WHERE id = $2 
+           RETURNING *`,
+          [user.id, perintahId]
+        );
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: "Task berhasil diklaim",
+          perintah: result.rows[0]
+        });
+      }
+
       if (action === "update") {
         const perintahId = Number(body.perintah_id);
         if (!perintahId) {

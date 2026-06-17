@@ -377,15 +377,17 @@ function handleFilterChange() {
 
 // Inisialisasi saat page load
 function initDashboardSo() {
-  // Get current user role
+  // Get current user info
   const authUser = localStorage.getItem('auth_user');
   let userRole = null;
   let userNama = null;
+  let userId = null;
   
   if (authUser) {
     const user = JSON.parse(authUser);
     userRole = user.role;
     userNama = user.nama_lengkap || user.username;
+    userId = user.id || user.user_id;
   }
   
   // Update datetime
@@ -407,7 +409,7 @@ function initDashboardSo() {
     const checkerSection = document.getElementById('checker-task-section');
     if (checkerSection) {
       checkerSection.style.display = 'block';
-      loadCheckerTasks(userNama);
+      loadCheckerTasks(userNama, userId);
     }
     
   } else if (userRole === 'admin' || userRole === 'staff_gudang') {
@@ -447,78 +449,540 @@ function initDashboardSo() {
 }
 
 // Load Checker tasks
-async function loadCheckerTasks(userNama) {
+
+async function loadCheckerTasks(userNama, userId) {
   const taskList = document.getElementById('checker-task-list');
   if (!taskList) return;
-  
   try {
-    // Get SO with status = proses and pic_checker = user
-    const response = await fetch('/api/v3-opname?status=proses');
+    const response = await fetch('/api/v3-opname');
     if (!response.ok) throw new Error('Gagal memuat tugas');
-    
     const result = await response.json();
-    let items = result.items || result.data || [];
-    
-    // Filter by pic_checker
-    if (userNama) {
-      items = items.filter(item => 
-        item.pic_checker === userNama || 
-        item.pic_checker_name === userNama
-      );
-    }
-    
+    const allItems = result.commands || result.items || result.data || [];
+    const items = allItems.filter(item => {
+      const isAvailable = item.status === 'menunggu' && !item.checker_user_id;
+      const isOwned = item.checker_user_id === userId;
+      return isAvailable || isOwned;
+    });
     if (items.length === 0) {
-      taskList.innerHTML = `
-        <div class="checker-task-empty">
-          <i data-lucide="clipboard-x"></i>
-          <p>Belum ada tugas Stock Opname yang ditugaskan.</p>
-        </div>
-      `;
+      taskList.innerHTML = '<div class="checker-task-empty"><i data-lucide="clipboard-x"></i><p>Belum ada tugas Stock Opname.</p></div>';
     } else {
       taskList.innerHTML = items.map(item => {
         const progress = item.progress_count || 0;
         const targetSku = item.target_sku || item.total_sku || 0;
         const progressPercent = targetSku > 0 ? Math.round((progress / targetSku) * 100) : 0;
-        
-        return `
-          <div class="checker-task-card">
-            <div class="checker-task-info">
-              <div class="checker-task-kode">${item.kode_so || item.id}</div>
-              <div class="checker-task-detail">
-                <span><i data-lucide="package"></i> Kategori: ${item.kategori || '-'}</span>
-                <span><i data-lucide="hash"></i> Target SKU: ${targetSku}</span>
-              </div>
-              <div class="checker-task-progress">
-                <div class="checker-task-progress-bar">
-                  <div class="checker-task-progress-fill" style="width: ${progressPercent}%"></div>
-                </div>
-                <div class="checker-task-progress-text">Progress: ${progress} / ${targetSku} (${progressPercent}%)</div>
-              </div>
-            </div>
-            <button class="checker-task-btn" onclick="startCheckerSo('${item.id}')">
-              <i data-lucide="play"></i> Mulai SO
-            </button>
-          </div>
-        `;
+        const isOwned = item.checker_user_id === userId;
+        const isAvailable = item.status === 'menunggu' && !item.checker_user_id;
+        let buttonHtml = '';
+        if (isOwned) {
+          buttonHtml = '<button class="checker-task-btn" onclick="startCheckerSo(\'' + item.id + '\')"><i data-lucide="play"></i> Mulai SO</button>';
+        } else if (isAvailable) {
+          buttonHtml = '<button class="checker-task-btn checker-task-btn--claim" onclick="claimTask(\'' + item.id + '\')"><i data-lucide="hand-pointer"></i> CLAIM</button>';
+        }
+        return '<div class="checker-task-card"><div class="checker-task-info"><div class="checker-task-kode">' + (item.kode_so || item.id) + '</div><div class="checker-task-detail"><span><i data-lucide="package"></i> Kategori: ' + (item.kategori_nama || item.kategori || '-') + '</span><span><i data-lucide="hash"></i> Target SKU: ' + targetSku + '</span>' + (isOwned ? '<span class="checker-task-owned"><i data-lucide="user-check"></i> Milik Saya</span>' : '') + '</div><div class="checker-task-progress"><div class="checker-task-progress-bar"><div class="checker-task-progress-fill" style="width: ' + progressPercent + '%"></div></div><div class="checker-task-progress-text">Progress: ' + progress + ' / ' + targetSku + ' (' + progressPercent + '%)</div></div></div>' + buttonHtml + '</div>';
       }).join('');
     }
-    
     if (window.lucide) lucide.createIcons({ nodes: [taskList] });
-    
   } catch (error) {
     console.error('Error loading checker tasks:', error);
-    taskList.innerHTML = `
-      <div class="checker-task-empty">
-        <i data-lucide="alert-circle"></i>
-        <p>Gagal memuat tugas. Silakan refresh halaman.</p>
+    taskList.innerHTML = '<div class="checker-task-empty"><i data-lucide="alert-circle"></i><p>Gagal memuat tugas. Silakan refresh halaman.</p></div>';
+  }
+}
+async function claimTask(perintahId) {
+  try {
+    showLoader();
+    const response = await fetch('/api/opname-perintah', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claim', perintah_id: Number(perintahId) })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Gagal mengklaim task');
+    showToast('Task berhasil diklaim!');
+    const authUser = localStorage.getItem('auth_user');
+    if (authUser) {
+      const user = JSON.parse(authUser);
+      const userId = user.id || user.user_id;
+      loadCheckerTasks(user.nama_lengkap || user.username, userId);
+    }
+  } catch (error) {
+    console.error('Error claiming task:', error);
+    showToast(error.message || 'Gagal mengklaim task', false);
+  } finally {
+    hideLoader();
+  }
+}
+<!-- Dashboard SO Page -->
+<section class="dashboard">
+  
+  <!-- Welcome Section (hide filter for checker) -->
+  <div class="welcome" data-role-admin-only>
+    <div class="welcome__content">
+      <h1 class="welcome__title">Dashboard Stock Opname</h1>
+      <p class="welcome__subtitle">Monitoring dan statistik stok opname gudang</p>
+    </div>
+    <div class="welcome__filter">
+      <select id="filterBulan" class="filter-select">
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6">Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+      <select id="filterTahun" class="filter-select">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <div class="welcome__datetime">
+      <div class="welcome__date" id="currentDate">-</div>
+      <div class="welcome__time" id="currentTime">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions" data-role-admin-only>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('perintah-so')">
+      <i data-lucide="plus-circle"></i>
+      <span>Buat Perintah SO</span>
+    </button>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('pelaksanaan-so')">
+      <i data-lucide="clipboard-check"></i>
+      <span>Pelaksanaan SO</span>
+    </button>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('riwayat-so')">
+      <i data-lucide="history"></i>
+      <span>Riwayat SO</span>
+    </button>
+  </div>
+
+  <!-- KPI Section - SO Stats (hide for checker) -->
+  <div class="kpi-grid" data-role-admin-only>
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--primary">
+        <i data-lucide="clipboard-list"></i>
       </div>
-    `;
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Total Perintah SO</div>
+        <div class="kpi-card__value" id="kpi-total-perintah">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--warning">
+        <i data-lucide="clock"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Menunggu</div>
+        <div class="kpi-card__value" id="kpi-menunggu">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--info">
+        <i data-lucide="loader"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Proses</div>
+        <div class="kpi-card__value" id="kpi-proses">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--success">
+        <i data-lucide="check-circle"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Selesai</div>
+        <div class="kpi-card__value" id="kpi-selesai">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checker Task Section - Task Saya -->
+  <div id="checker-task-section" class="checker-task-section" style="display: none;">
+    <div class="checker-task-header">
+      <h2><i data-lucide="clipboard-check"></i> Task Stock Opname Saya</h2>
+      <p>Daftar tugas Stock Opname yang ditugaskan kepada Anda</p>
+    </div>
+    <div id="checker-task-list" class="checker-task-list">
+      <div class="text-center text-muted p-4">Memuat...</div>
+    </div>
+  </div>
+
+  <!-- Progress Overview -->
+  <div class="progress-overview-card">
+    <div class="progress-overview-header">
+      <h3><i data-lucide="trending-up"></i> Progress SO Periode</h3>
+      <span class="progress-overview-period" id="progressPeriod">-</span>
+    </div>
+    <div class="progress-overview-body">
+      <div class="progress-bar-container">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+        </div>
+        <div class="progress-bar-label">
+          <span id="progressPercent">0%</span>
+          <span>Selesai</span>
+        </div>
+      </div>
+      <div class="progress-stats">
+        <div class="progress-stat">
+          <span class="progress-stat__value" id="progressDone">0</span>
+          <span class="progress-stat__label">Selesai</span>
+        </div>
+        <div class="progress-stat-divider">/</div>
+        <div class="progress-stat">
+          <span class="progress-stat__value" id="progressTotal">0</span>
+          <span class="progress-stat__label">Total</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables Grid -->
+  <div class="tables-grid" data-role-admin-only>
+    <!-- Perintah SO Terbaru -->
+    <div class="table-card" style="grid-column: span 2;">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
+          <i data-lucide="file-text"></i>
+          Perintah SO Terbaru
+        </h3>
+        <a href="#" class="table-card__link" onclick="AppRouter.navigateTo('perintah-so'); return false;">Lihat Semua</a>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Kode SO</th>
+            <th>Tanggal</th>
+            <th>SVP</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="recentPerintahTable">
+          <tr>
+            <td colspan="5" class="text-center text-muted">
+              <i data-lucide="loader-2" class="spin"></i> Memuat data...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Kategori Progress -->
+    <div class="table-card">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
+          <i data-lucide="package"></i>
+          Progress per Kategori
+        </h3>
+      </div>
+      <div class="table-card__body" id="kategoriProgressList">
+        <div class="table-card__empty">
+          <i data-lucide="package"></i>
+          <p class="table-card__empty-text">Tidak ada data kategori</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<script>
+/**
+ * Dashboard SO - Inisialisasi dan fungsi load data
+ */
+
+// Namespace untuk state (hindari redeclare saat SPA cache reload)
+window.SODashboard = window.SODashboard || {};
+
+// State filter - hanya init sekali, jangan reset
+if (!window.SODashboard.currentFilterBulan) {
+  window.SODashboard.currentFilterBulan = new Date().getMonth() + 1;
+}
+if (!window.SODashboard.currentFilterTahun) {
+  window.SODashboard.currentFilterTahun = new Date().getFullYear();
+}
+
+// Format nama bulan (constant - aman untuk const)
+window.SODashboard.NAMA_BULAN = window.SODashboard.NAMA_BULAN || ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+// Update jam dan tanggal
+function updateDateTime() {
+  const dateEl = document.getElementById('currentDate');
+  const timeEl = document.getElementById('currentTime');
+  if (!dateEl || !timeEl) return;
+  
+  const now = new Date();
+  dateEl.textContent = now.toLocaleDateString('id-ID', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  timeEl.textContent = now.toLocaleTimeString('id-ID');
+}
+
+// Format tanggal Indonesia
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Format angka
+function formatNumber(num) {
+  return num ? num.toLocaleString('id-ID') : '0';
+}
+
+// Get status class
+function getStatusClass(status) {
+  const map = {
+    'menunggu': 'badge--pending',
+    'proses': 'badge--process',
+    'selesai': 'badge--done'
+  };
+  return map[status] || 'badge--pending';
+}
+
+// Get status label
+function getStatusLabel(status) {
+  const map = {
+    'menunggu': 'Menunggu',
+    'proses': 'Proses',
+    'selesai': 'Selesai'
+  };
+  return map[status] || status;
+}
+
+// Load KPI data dari API
+async function loadSoKpiData() {
+  try {
+    const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard.currentFilterBulan}&tahun=${window.SODashboard.currentFilterTahun}`);
+    if (!response.ok) throw new Error('Failed to load');
+    
+    const data = await response.json();
+    const items = data.items || [];
+    
+    // Hitung statistik
+    const total = items.length;
+    const menunggu = items.filter(item => item.status === 'menunggu').length;
+    const proses = items.filter(item => item.status === 'proses').length;
+    const selesai = items.filter(item => item.status === 'selesai').length;
+    
+    // Update KPI cards
+    document.getElementById('kpi-total-perintah').textContent = formatNumber(total);
+    document.getElementById('kpi-menunggu').textContent = formatNumber(menunggu);
+    document.getElementById('kpi-proses').textContent = formatNumber(proses);
+    document.getElementById('kpi-selesai').textContent = formatNumber(selesai);
+    
+    // Update progress bar
+    const progressPercent = total > 0 ? Math.round((selesai / total) * 100) : 0;
+    document.getElementById('progressPercent').textContent = progressPercent + '%';
+    document.getElementById('progressBarFill').style.width = progressPercent + '%';
+    document.getElementById('progressDone').textContent = selesai;
+    document.getElementById('progressTotal').textContent = total;
+    document.getElementById('progressPeriod').textContent = window.SODashboard.NAMA_BULAN[window.SODashboard.currentFilterBulan] + ' ' + window.SODashboard.currentFilterTahun;
+    
+    // Render recent commands
+    renderRecentPerintah(items.slice(0, 5));
+    
+    // Render kategori progress
+    renderKategoriProgress(data.period_kategori || []);
+    
+  } catch (error) {
+    console.error('Error loading SO KPI:', error);
+    // Tampilkan error state
+    document.getElementById('kpi-total-perintah').textContent = '-';
+    document.getElementById('kpi-menunggu').textContent = '-';
+    document.getElementById('kpi-proses').textContent = '-';
+    document.getElementById('kpi-selesai').textContent = '-';
   }
 }
 
-// Start SO from checker task
-function startCheckerSo(perintahId) {
-  AppRouter.navigateTo('pelaksanaan-so', { perintah_id: perintahId });
+// Render recent perintah table
+function renderRecentPerintah(items) {
+  const tbody = document.getElementById('recentPerintahTable');
+  
+  if (!items.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          Tidak ada perintah SO periode ini
+        </td>
+      </tr>
+    `;
+    if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+    return;
+  }
+  
+  tbody.innerHTML = items.map(item => `
+    <tr>
+      <td><code>${item.kode_so || '-'}</code></td>
+      <td>${formatDate(item.tanggal_perintah)}</td>
+      <td>${item.svp_nama || '-'}</td>
+      <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
+      <td>
+        <button class="action-btn" onclick="executePerintahFromDashboard(${item.id}, '${item.kode_so || ''}')" title="Proses SO">
+          <i data-lucide="play"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  
+  if (window.lucide) lucide.createIcons({ nodes: [tbody] });
+}
+
+// Render kategori progress
+function renderKategoriProgress(kategoriData) {
+  const container = document.getElementById('kategoriProgressList');
+  
+  if (!kategoriData || !kategoriData.length) {
+    container.innerHTML = `
+      <div class="table-card__empty">
+        <i data-lucide="package"></i>
+        <p class="table-card__empty-text">Tidak ada data kategori</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = kategoriData.map(k => {
+    const statusClass = k.status === 'selesai' ? 'status--success' : 
+                        k.status === 'proses' ? 'status--warning' : 'status--pending';
+    const statusLabel = k.status === 'selesai' ? 'Selesai' : 
+                        k.status === 'proses' ? 'Proses' : 'Menunggu';
+    
+    return `
+      <div class="kategori-progress-item ${statusClass}">
+        <div class="kategori-progress-header">
+          <strong>${k.label || k.kategori}</strong>
+          <span class="badge ${k.status === 'selesai' ? 'badge--done' : k.status === 'proses' ? 'badge--process' : 'badge--pending'}">${statusLabel}</span>
+        </div>
+        <div class="kategori-progress-detail">
+          ${k.perintah_count || 0} perintah · ${k.progress || 0}% selesai
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Navigate ke pelaksanaan SO
+function executePerintahFromDashboard(id, kodeSo) {
+  localStorage.setItem('activePerintahId', id);
+  localStorage.setItem('activePerintahKode', kodeSo);
+  AppRouter.navigateTo('pelaksanaan-so');
+}
+
+// Handle filter change
+function handleFilterChange() {
+  window.SODashboard.currentFilterBulan = parseInt(document.getElementById('filterBulan').value);
+  window.SODashboard.currentFilterTahun = parseInt(document.getElementById('filterTahun').value);
+  loadSoKpiData();
+}
+
+// Inisialisasi saat page load
+function initDashboardSo() {
+  // Get current user info
+  const authUser = localStorage.getItem('auth_user');
+  let userRole = null;
+  let userNama = null;
+  let userId = null;
+  
+  if (authUser) {
+    const user = JSON.parse(authUser);
+    userRole = user.role;
+    userNama = user.nama_lengkap || user.username;
+    userId = user.id || user.user_id;
+  }
+  
+  // Update datetime
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+  
+  // Apply role-based visibility
+  if (userRole === 'checker_opname') {
+    // Checker: hide ALL admin sections, show checker task
+    document.body.classList.add('role-checker');
+    document.body.classList.remove('role-admin', 'role-staff_gudang');
+    
+    // Hide all admin-only sections
+    document.querySelectorAll('[data-role-admin-only]').forEach(el => {
+      el.style.display = 'none';
+    });
+    
+    // Show checker task section
+    const checkerSection = document.getElementById('checker-task-section');
+    if (checkerSection) {
+      checkerSection.style.display = 'block';
+      loadCheckerTasks(userNama, userId);
+    }
+    
+  } else if (userRole === 'admin' || userRole === 'staff_gudang') {
+    // Admin/Staff: show admin sections, hide checker task
+    document.body.classList.add('role-' + userRole);
+    document.body.classList.remove('role-checker');
+    
+    // Set filter values
+    document.getElementById('filterBulan').value = window.SODashboard.currentFilterBulan;
+    document.getElementById('filterTahun').value = window.SODashboard.currentFilterTahun;
+    
+    // Load admin KPI data
+    loadSoKpiData();
+    
+    // Add event listeners
+    document.getElementById('filterBulan')?.addEventListener('change', handleFilterChange);
+    document.getElementById('filterTahun')?.addEventListener('change', handleFilterChange);
+    
+    // Hide checker section
+    const checkerSection = document.getElementById('checker-task-section');
+    if (checkerSection) checkerSection.style.display = 'none';
+    
+  } else {
+    // No role or guest: show admin view as default
+    document.getElementById('filterBulan').value = window.SODashboard.currentFilterBulan;
+    document.getElementById('filterTahun').value = window.SODashboard.currentFilterTahun;
+    loadSoKpiData();
+    document.getElementById('filterBulan')?.addEventListener('change', handleFilterChange);
+    document.getElementById('filterTahun')?.addEventListener('change', handleFilterChange);
+    
+    const checkerSection = document.getElementById('checker-task-section');
+    if (checkerSection) checkerSection.style.display = 'none';
+  }
+  
+
+// Start SO from checker task - Fix: fetch data first, save to localStorage, then navigate
+async function startCheckerSo(perintahId) {
+  try {
+    showLoader();
+    
+    // 1. Ambil data perintah yang dipilih
+    const response = await fetch(`/api/opname-perintah?id=${perintahId}`);
+    if (!response.ok) throw new Error('Gagal mengambil data perintah');
+    
+    const data = await response.json();
+    
+    // 2. Set localStorage dengan data yang diperlukan
+    localStorage.setItem('activePerintahId', perintahId);
+    localStorage.setItem('activePerintahKode', data.kode_so || data.kode || '');
+    localStorage.setItem('activePerintahKategori', data.kategori_id || data.kategori || 'modul');
+    
+    // 3. Navigate ke pelaksanaan-so
+    AppRouter.navigateTo('pelaksanaan-so');
+    
+  } catch (error) {
+    console.error('Error starting checker SO:', error);
+    showToast('Gagal memulai SO. Silakan coba lagi.', false);
+  } finally {
+    hideLoader();
+  }
 }
 
 // Auto init on page load - hanya jalankan jika page container ada
