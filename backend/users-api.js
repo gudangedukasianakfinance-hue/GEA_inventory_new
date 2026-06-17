@@ -86,7 +86,7 @@ async function listUsers(req, res) {
     const total = parseInt(countResult.rows[0]?.total || 0, 10);
 
     const usersResult = await pool.query(
-      `SELECT id, username, email, nama_lengkap as name, role, outlet_id, is_active, last_login, created_at, updated_at
+      `SELECT id, username, email, nama_lengkap, role, outlet_id, is_active, last_login, created_at, updated_at
        FROM users
        ${whereClause}
        ORDER BY created_at DESC
@@ -94,9 +94,26 @@ async function listUsers(req, res) {
       [...params, limit, offset]
     );
 
+    // Map untuk frontend - nama_lengkap jadi nama, is_active jadi status
+    const users = usersResult.rows.map(u => ({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      nama: u.nama_lengkap,
+      name: u.nama_lengkap,
+      role: u.role,
+      outlet_id: u.outlet_id,
+      status: u.is_active ? 'active' : 'inactive',
+      is_active: u.is_active,
+      last_login: u.last_login,
+      created_at: u.created_at,
+      updated_at: u.updated_at
+    }));
+
     return send(res, 200, {
       success: true,
-      data: usersResult.rows,
+      data: users,
+      items: users,
       pagination: {
         page,
         limit,
@@ -182,10 +199,11 @@ async function createUser(req, res) {
 }
 
 async function updateUser(req, res, userId) {
-  const { name, email, role, status, password } = req.body || {};
-  const nama = req.body.nama || name;
+  const { username, email, nama, role, status, password } = req.body || {};
+  const name = req.body.name || nama;
 
   try {
+    // Cek user exists
     const existingUser = await pool.query("SELECT id FROM users WHERE id = $1", [userId]);
     if (existingUser.rows.length === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
@@ -195,13 +213,23 @@ async function updateUser(req, res, userId) {
     const params = [];
     let paramIndex = 1;
 
-    if (name !== undefined) {
-      updates.push(`nama_lengkap = $${paramIndex}`);
-      params.push(name);
+    // Update username
+    if (username !== undefined && username !== '') {
+      // Cek username tidak digunakan user lain
+      const usernameCheck = await pool.query(
+        "SELECT id FROM users WHERE username = $1 AND id != $2",
+        [username.trim(), userId]
+      );
+      if (usernameCheck.rows.length > 0) {
+        return send(res, 400, { success: false, message: "Username sudah digunakan" });
+      }
+      updates.push(`username = $${paramIndex}`);
+      params.push(username.trim());
       paramIndex++;
     }
 
-    if (email !== undefined) {
+    // Update email
+    if (email !== undefined && email !== '') {
       const emailCheck = await pool.query(
         "SELECT id FROM users WHERE email = $1 AND id != $2",
         [email.trim(), userId]
@@ -214,20 +242,22 @@ async function updateUser(req, res, userId) {
       paramIndex++;
     }
 
-    if (nama !== undefined && nama !== '') {
+    // Update nama_lengkap
+    if (name !== undefined && name !== '') {
       updates.push(`nama_lengkap = $${paramIndex}`);
-      params.push(nama);
+      params.push(name);
       paramIndex++;
     }
     
+    // Update status
     if (status !== undefined) {
-      const isActive = status === 'inactive' ? 'FALSE' : 'TRUE';
       updates.push(`is_active = $${paramIndex}`);
-      params.push(isActive);
+      params.push(status === 'inactive' ? false : true);
       paramIndex++;
     }
     
-    if (role !== undefined) {
+    // Update role
+    if (role !== undefined && role !== '') {
       if (!VALID_ROLES.includes(role)) {
         return send(res, 400, { success: false, message: "Role tidak valid" });
       }
@@ -236,6 +266,7 @@ async function updateUser(req, res, userId) {
       paramIndex++;
     }
 
+    // Update password jika ada
     if (password !== undefined && password !== '') {
       if (password.length < 6) {
         return send(res, 400, { success: false, message: "Password minimal 6 karakter" });
@@ -254,12 +285,15 @@ async function updateUser(req, res, userId) {
     params.push(userId);
 
     const result = await pool.query(
-      `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex}
-       RETURNING id, username, email, nama_lengkap as name, role, is_active, updated_at`,
+      `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex}`,
       params
     );
 
-    return send(res, 200, { success: true, message: "User berhasil diupdate", data: result.rows[0] });
+    if (result.rowCount === 0) {
+      return send(res, 404, { success: false, message: "User tidak ditemukan" });
+    }
+
+    return send(res, 200, { success: true, message: "User berhasil diupdate" });
   } catch (error) {
     console.error("Error updating user:", error);
     return send(res, 500, { success: false, message: "Gagal mengupdate user" });
@@ -268,12 +302,11 @@ async function updateUser(req, res, userId) {
 
 async function deleteUser(req, res, userId) {
   try {
-    const existingUser = await pool.query("SELECT id FROM users WHERE id = $1", [userId]);
-    if (existingUser.rows.length === 0) {
+    const result = await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+
+    if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
-
-    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
 
     return send(res, 200, { success: true, message: "User berhasil dihapus" });
   } catch (error) {
@@ -285,16 +318,15 @@ async function deleteUser(req, res, userId) {
 async function enableUser(req, res, userId) {
   try {
     const result = await pool.query(
-      `UPDATE users SET is_active = TRUE, updated_at = NOW() WHERE id = $1
-       RETURNING id, username, email, nama_lengkap as name, role, is_active`,
+      `UPDATE users SET is_active = TRUE, updated_at = NOW() WHERE id = $1`,
       [userId]
     );
 
-    if (result.rows.length === 0) {
+    if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, message: "User berhasil diaktifkan", data: result.rows[0] });
+    return send(res, 200, { success: true, message: "User berhasil diaktifkan" });
   } catch (error) {
     console.error("Error enabling user:", error);
     return send(res, 500, { success: false, message: "Gagal mengaktifkan user" });
@@ -304,16 +336,15 @@ async function enableUser(req, res, userId) {
 async function disableUser(req, res, userId) {
   try {
     const result = await pool.query(
-      `UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE id = $1
-       RETURNING id, username, email, nama_lengkap as name, role, is_active`,
+      `UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE id = $1`,
       [userId]
     );
 
-    if (result.rows.length === 0) {
+    if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, message: "User berhasil dinonaktifkan", data: result.rows[0] });
+    return send(res, 200, { success: true, message: "User berhasil dinonaktifkan" });
   } catch (error) {
     console.error("Error disabling user:", error);
     return send(res, 500, { success: false, message: "Gagal menonaktifkan user" });
@@ -326,12 +357,11 @@ async function resetPassword(req, res, userId) {
     const passwordHash = hashPassword(tempPassword);
 
     const result = await pool.query(
-      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2
-       RETURNING id, username`,
+      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
       [passwordHash, userId]
     );
 
-    if (result.rows.length === 0) {
+    if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
