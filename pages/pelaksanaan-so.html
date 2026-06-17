@@ -489,6 +489,9 @@
   }
 
   function initPelaksanaanSo() {
+    bindTabEvents();
+    bindScanInputEvent();
+    
     // Ambil active perintah dari localStorage
     window.SOPelaksanaan.activePerintahId = localStorage.getItem('activePerintahId');
     window.SOPelaksanaan.activePerintahKode = localStorage.getItem('activePerintahKode');
@@ -516,15 +519,12 @@
       if (!response.ok) throw new Error('Failed to load');
       
       const data = await response.json();
-      window.SOPelaksanaan.activeStatus = data.status || 'menunggu';
-      window.SOPelaksanaan.activeOpnameId = data.opname_id;
-      
-      // Store target_sku as snapshot (not recalculated)
-      window.SOPelaksanaan.targetSku = Number(data.target_sku) || 0;
-      
-      // Update UI
-      document.getElementById('soKode').textContent = data.kode_so || activePerintahKode;
-      updateStatusBadge(data.status);
+      const item = data.item || data;
+      window.SOPelaksanaan.activeStatus = item.status || 'menunggu';
+      window.SOPelaksanaan.activeOpnameId = item.opname_id;
+      window.SOPelaksanaan.targetSku = Number(item.target_sku) || 0;
+      document.getElementById('soKode').textContent = item.kode_so || window.SOPelaksanaan.activePerintahKode;
+      updateStatusBadge(item.status);
       
       // Load produk list untuk opname
       await loadProdukList();
@@ -548,7 +548,10 @@
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
-      window.SOPelaksanaan.produkList = data.produk || [];
+      window.SOPelaksanaan.produkList =
+        data.items ||
+        data.produk ||
+        [];
       window.SOPelaksanaan.targetSku = window.SOPelaksanaan.produkList.length;
       
       // Build map untuk quick lookup (ensure sku is string for consistent lookup)
@@ -614,10 +617,12 @@
   // Barcode Scanner Variables - use namespace to prevent redeclaration
   window.SOPelaksanaan = window.SOPelaksanaan || {};
   window.SOPelaksanaan.html5QrCode = window.SOPelaksanaan.html5QrCode || null;
-  let isScanning = false;
+  window.SOPelaksanaan.isScanning = window.SOPelaksanaan.isScanning || false;
 
   async function startBarcodeScan() {
-    if (isScanning) return;
+    if (window.SOPelaksanaan.isScanning) {
+      return;
+    }
     
     try {
       // Check camera permission
@@ -648,7 +653,7 @@
         }
       );
       
-      isScanning = true;
+      window.SOPelaksanaan.isScanning = true;
       document.getElementById('scannerContainer').style.display = 'block';
       document.getElementById('btnStartScan').style.display = 'none';
       document.getElementById('btnStopScan').style.display = 'inline-flex';
@@ -663,12 +668,15 @@
   }
 
   async function stopBarcodeScan() {
-    if (!isScanning || !window.SOPelaksanaan.html5QrCode) return;
+    if (
+      !window.SOPelaksanaan.isScanning ||
+      !window.SOPelaksanaan.html5QrCode
+    ) return;
     
     try {
       await window.SOPelaksanaan.html5QrCode.stop();
       window.SOPelaksanaan.html5QrCode = null;
-      isScanning = false;
+      window.SOPelaksanaan.isScanning = false;
       
       document.getElementById('scannerContainer').style.display = 'none';
       document.getElementById('btnStartScan').style.display = 'inline-flex';
@@ -1054,6 +1062,7 @@
     
     localStorage.removeItem('activePerintahId');
     localStorage.removeItem('activePerintahKode');
+    localStorage.removeItem('activePerintahKategori');
     window.SOPelaksanaan.activePerintahId = null;
     window.SOPelaksanaan.activePerintahKode = null;
     window.SOPelaksanaan.activeOpnameId = null;
@@ -1063,24 +1072,115 @@
     AppRouter.navigateTo('perintah-so');
   }
 
-  // Tab switching
-  document.querySelectorAll('.tabs__item').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tabs__item').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-      
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.tab + 'Tab').style.display = 'block';
-    });
-  });
+  function bindTabEvents() {
+    document
+      .querySelectorAll('.tabs__item')
+      .forEach(tab => {
 
-  // Enter key to submit scan
-  document.getElementById('scanInput')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      processScanInput();
+
+        if (
+          tab.dataset.bound === 'true'
+        ) {
+          return;
+        }
+
+
+        tab.dataset.bound = 'true';
+
+
+        tab.addEventListener(
+          'click',
+          () => {
+
+
+            document
+              .querySelectorAll(
+                '.tabs__item'
+              )
+              .forEach(
+                t => t.classList.remove(
+                  'active'
+                )
+              );
+
+
+            document
+              .querySelectorAll(
+                '.tab-content'
+              )
+              .forEach(
+                c => c.style.display = 'none'
+              );
+
+
+            tab.classList.add(
+              'active'
+            );
+
+
+            const target =
+              document.getElementById(
+                tab.dataset.tab + 'Tab'
+              );
+
+
+            if (target) {
+              target.style.display =
+                'block';
+            }
+
+
+          }
+        );
+
+
+      });
+
+
+  }
+
+  function bindScanInputEvent() {
+    const input =
+      document.getElementById(
+        'scanInput'
+      );
+
+
+    if (!input) return;
+
+
+    if (
+      input.dataset.bound === 'true'
+    ) {
+      return;
     }
-  });
+
+
+    input.dataset.bound = 'true';
+
+
+    input.addEventListener(
+      'keypress',
+      e => {
+
+
+        if (e.key === 'Enter') {
+
+
+          e.preventDefault();
+
+
+          processScanInput();
+
+
+        }
+
+
+      }
+    );
+
+
+  }
 
   // Init on page load
   if (document.readyState === 'loading') {
