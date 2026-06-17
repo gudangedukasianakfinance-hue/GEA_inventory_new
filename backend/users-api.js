@@ -139,7 +139,7 @@ async function getUser(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, data: result.rows[0] });
+    return send(res, 200, { success: true, item: result.rows[0] });
   } catch (error) {
     console.error("Error getting user:", error);
     return send(res, 500, { success: false, message: "Gagal mengambil data user" });
@@ -189,8 +189,7 @@ async function createUser(req, res) {
 
     return send(res, 201, {
       success: true,
-      message: "User berhasil dibuat",
-      data: result.rows[0]
+      item: result.rows[0]
     });
   } catch (error) {
     console.error("Error creating user:", error);
@@ -297,7 +296,25 @@ async function updateUser(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, message: "User berhasil diupdate" });
+    const userResult = await pool.query(
+`
+SELECT
+  id,
+  username,
+  email,
+  nama_lengkap as name,
+  role,
+  is_active
+FROM users
+WHERE id=$1
+`,
+[userId]
+);
+
+    return send(res, 200, {
+      success: true,
+      item: userResult.rows[0]
+    });
   } catch (error) {
     console.error("Error updating user:", error);
     return send(res, 500, { success: false, message: "Gagal mengupdate user" });
@@ -369,7 +386,12 @@ async function resetPassword(req, res, userId) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
     }
 
-    return send(res, 200, { success: true, message: "Password berhasil direset", data: { temp_password: tempPassword } });
+    return send(res, 200, {
+      success: true,
+      item: {
+        temp_password: tempPassword
+      }
+    });
   } catch (error) {
     console.error("Error resetting password:", error);
     return send(res, 500, { success: false, message: "Gagal reset password" });
@@ -405,9 +427,9 @@ async function getRoles(req, res) {
   return send(res, 200, {
     success: true,
     data: [
-      { value: "admin", label: "Admin" },
-      { value: "staff_gudang", label: "Staff Gudang" },
-      { value: "checker_opname", label: "Checker Opname" }
+      { value: "admin", label: "Administrator" },
+      { value: "staff_gudang", label: "Supervisor" },
+      { value: "checker_opname", label: "Checker" }
     ]
   });
 }
