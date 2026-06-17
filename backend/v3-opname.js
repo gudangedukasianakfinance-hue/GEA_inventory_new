@@ -33,6 +33,8 @@ export async function handleGet(req, res) {
         sop.keterangan,
         sop.status,
         sop.checker,
+        sop.checker_user_id,
+        sop.claimed_at,
         sop.kategori_id,
         sop.opname_id,
         sop.created_at,

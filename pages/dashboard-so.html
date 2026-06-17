@@ -102,9 +102,13 @@
     
     <!-- Tabs -->
     <div class="checker-so-tabs">
-      <button class="checker-so-tab active" data-tab="progress" onclick="switchCheckerTab('progress')">
+      <button class="checker-so-tab active" data-tab="available" onclick="switchCheckerTab('available')">
+        <i data-lucide="inbox"></i>
+        <span>Tersedia</span>
+      </button>
+      <button class="checker-so-tab" data-tab="progress" onclick="switchCheckerTab('progress')">
         <i data-lucide="loader"></i>
-        <span>Belum Selesai</span>
+        <span>Dikerjakan</span>
       </button>
       <button class="checker-so-tab" data-tab="done" onclick="switchCheckerTab('done')">
         <i data-lucide="check-circle"></i>
@@ -112,8 +116,15 @@
       </button>
     </div>
     
+    <!-- Tab Content: Available -->
+    <div id="checker-available-tab" class="checker-so-tab-content active">
+      <div id="checker-available-list" class="checker-so-list">
+        <div class="text-center text-muted p-4">Memuat...</div>
+      </div>
+    </div>
+    
     <!-- Tab Content: Progress -->
-    <div id="checker-progress-tab" class="checker-so-tab-content active">
+    <div id="checker-progress-tab" class="checker-so-tab-content" style="display: none;">
       <div id="checker-progress-list" class="checker-so-list">
         <div class="text-center text-muted p-4">Memuat...</div>
       </div>
@@ -436,8 +447,7 @@ function initDashboardSo() {
     const checkerSection = document.getElementById('checker-so-section');
     if (checkerSection) {
       checkerSection.style.display = 'block';
-      loadCheckerProgressTasks(userNama);
-      loadCheckerDoneTasks(userNama);
+      loadCheckerAvailableTasks();
     }
     
   } else if (userRole === 'admin' || userRole === 'staff_gudang') {
@@ -484,8 +494,14 @@ function switchCheckerTab(tab) {
   });
   
   // Update tab content
+  document.getElementById('checker-available-tab').style.display = tab === 'available' ? 'block' : 'none';
   document.getElementById('checker-progress-tab').style.display = tab === 'progress' ? 'block' : 'none';
   document.getElementById('checker-done-tab').style.display = tab === 'done' ? 'block' : 'none';
+  
+  // Load data for selected tab
+  if (tab === 'available') loadCheckerAvailableTasks();
+  if (tab === 'progress') loadCheckerProgressTasks();
+  if (tab === 'done') loadCheckerDoneTasks();
 }
 
 // Get current checker user
@@ -494,6 +510,116 @@ function getCheckerUser() {
   if (!authUser) return null;
   const user = JSON.parse(authUser);
   return user.nama_lengkap || user.username;
+}
+
+// Load Checker AVAILABLE tasks (status = menunggu, belum diklaim)
+async function loadCheckerAvailableTasks() {
+  const taskList = document.getElementById('checker-available-list');
+  if (!taskList) return;
+  
+  taskList.innerHTML = '<div class="text-center text-muted p-4">Memuat...</div>';
+  
+  try {
+    const url = '/api/v3-opname?status=menunggu';
+    console.log('available url', url);
+    
+    const response = await fetch(url);
+    console.log('response status', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error('HTTP ' + response.status + ' : ' + errorText);
+    }
+    
+    const result = await response.json();
+    let items = result.items || result.data || [];
+    
+    // Filter: hanya task yang belum diklaim (checker_user_id = null)
+    items = items.filter(item => !item.checker_user_id);
+    
+    if (items.length === 0) {
+      taskList.innerHTML = `
+        <div class="checker-so-empty">
+          <i data-lucide="inbox"></i>
+          <p>Tidak ada task tersedia</p>
+        </div>
+      `;
+    } else {
+      taskList.innerHTML = items.map(item => {
+        const targetSku = item.target_sku || 0;
+        
+        return `
+          <div class="checker-so-card">
+            <div class="checker-so-info">
+              <div class="checker-so-kode">${item.kode_so || '-'}</div>
+              <div class="checker-so-detail">
+                <span><i data-lucide="package"></i> ${item.kategori_nama || item.kategori || '-'}</span>
+                <span><i data-lucide="hash"></i> Target: ${targetSku} SKU</span>
+                <span><i data-lucide="user"></i> ${item.svp_nama || '-'}</span>
+              </div>
+            </div>
+            <button class="checker-so-btn" onclick="claimTask('${item.id}')">
+              <i data-lucide="hand-grabbed"></i> CLAIM
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    if (window.lucide) lucide.createIcons({ nodes: [taskList] });
+    
+  } catch (error) {
+    console.error('Error loading available tasks:', error);
+    taskList.innerHTML = `
+      <div class="checker-so-empty">
+        <i data-lucide="alert-circle"></i>
+        <p>Gagal memuat. Silakan refresh.</p>
+        <small>${error.message}</small>
+      </div>
+    `;
+  }
+}
+
+// Claim task - Checker klaim task SO
+async function claimTask(perintahId) {
+  if (!confirm('Yakin ingin mengklaim task ini?')) return;
+  
+  const btn = event.target.closest('.checker-so-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Memproses...';
+  }
+  
+  try {
+    const response = await fetch('/api/opname-perintah', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claim', perintah_id: Number(perintahId) })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Gagal mengklaim task');
+    }
+    
+    showToast('Task berhasil diklaim!', 'success');
+    
+    // Reload available tasks
+    loadCheckerAvailableTasks();
+    
+    // Switch to progress tab
+    switchCheckerTab('progress');
+    
+  } catch (error) {
+    console.error('Error claiming task:', error);
+    showToast(error.message || 'Gagal mengklaim task', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="hand-grabbed"></i> CLAIM';
+      if (window.lucide) lucide.createIcons({ nodes: [btn] });
+    }
+  }
 }
 
 // Load Checker PROGRESS tasks (status = proses)

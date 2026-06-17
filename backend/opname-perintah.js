@@ -225,6 +225,84 @@ export default async function handler(req, res) {
       });
     }
     
+    // CLAIM TASK - Checker klaim task SO
+    if (req.method === "POST" && action === "claim") {
+      const auth = await import('../services/auth.js');
+      const authResult = auth.authenticate(req);
+      if (!authResult.authorized) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      if (authResult.user.role !== 'checker_opname') {
+        return res.status(403).json({ error: "Hanya checker yang dapat klaim task" });
+      }
+      
+      const perintahId = Number(body.perintah_id);
+      if (!perintahId) {
+        return res.status(400).json({ error: "perintah_id wajib" });
+      }
+      
+      // Check if task still available (status = menunggu)
+      const checkResult = await pool.query(
+        `SELECT id, kode_so, status, checker_user_id FROM stok_opname_perintah WHERE id = $1`,
+        [perintahId]
+      );
+      
+      if (!checkResult.rows.length) {
+        return res.status(404).json({ error: "Perintah SO tidak ditemukan" });
+      }
+      
+      const perintah = checkResult.rows[0];
+      
+      if (perintah.status !== 'menunggu') {
+        return res.status(400).json({ error: `Task sudah diambil atau tidak tersedia (status: ${perintah.status})` });
+      }
+      
+      if (perintah.checker_user_id) {
+        return res.status(400).json({ error: "Task sudah diklaim checker lain" });
+      }
+      
+      // Claim task
+      const userId = authResult.user.id;
+      const result = await pool.query(
+        `UPDATE stok_opname_perintah 
+         SET status = 'proses', 
+             checker_user_id = $1, 
+             claimed_at = NOW(),
+             started_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $2 AND status = 'menunggu'
+         RETURNING *`,
+        [userId, perintahId]
+      );
+      
+      if (!result.rows.length) {
+        return res.status(400).json({ error: "Gagal mengklaim task" });
+      }
+      
+      // Create opname record
+      const opnameResult = await pool.query(
+        `INSERT INTO stok_opname (tanggal, keterangan, perintah_id, checker, lokasi)
+         VALUES (CURRENT_DATE, $1, $2, $3, $4)
+         RETURNING id`,
+        [`SO dari perintah ${perintah.kode_so}`, perintahId, authResult.user.nama, null]
+      );
+      
+      // Update perintah with opname_id
+      await pool.query(
+        `UPDATE stok_opname_perintah SET opname_id = $1 WHERE id = $2`,
+        [opnameResult.rows[0].id, perintahId]
+      );
+      
+      return res.status(200).json({
+        success: true,
+        message: "Task berhasil diklaim",
+        item: {
+          ...result.rows[0],
+          opname_id: opnameResult.rows[0].id
+        }
+      });
+    }
+    
     if (req.method === "DELETE") {
       const auth = await import('../services/auth.js');
       const authResult = auth.authenticate(req);
