@@ -1,6 +1,13 @@
 import pool from "../services/db.js";
 import { kategoriLabel } from "./opname-kategori-utils.js";
 
+const VALID_KATEGORI = [
+  "modul",
+  "poster",
+  "seragam",
+  "lain-lain"
+];
+
 function normalizeKodeSo(value) {
   return String(value || "").trim().toUpperCase();
 }
@@ -50,8 +57,8 @@ export default async function handler(req, res) {
           item: {
             id: row.id,
             kode_so: row.kode_so,
-            kategori: row.kategori || row.kategori_id,
-            kategori_nama: kategoriLabel(row.kategori || row.kategori_id),
+            kategori_id: row.kategori_id,
+            kategori_nama: kategoriLabel(row.kategori_id),
             target_sku: progress.target_sku,
             checked_sku: progress.checked_sku,
             progress_percent: progress.progress_percent,
@@ -86,8 +93,8 @@ export default async function handler(req, res) {
         return {
           id: row.id,
           kode_so: row.kode_so,
-          kategori: row.kategori || row.kategori_id,
-          kategori_nama: kategoriLabel(row.kategori || row.kategori_id),
+          kategori_id: row.kategori_id,
+          kategori_nama: kategoriLabel(row.kategori_id),
           target_sku: progress.target_sku,
           checked_sku: progress.checked_sku,
           progress_percent: progress.progress_percent,
@@ -107,7 +114,6 @@ export default async function handler(req, res) {
         };
       }));
 
-      console.log("[SO LIST]", { bulan, tahun, count: items.length });
       return res.status(200).json({ success: true, items });
     }
 
@@ -130,7 +136,10 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: "Perintah SO tidak ditemukan atau sudah selesai" });
         }
 
-        return res.status(200).json(result.rows[0]);
+        return res.status(200).json({
+          success: true,
+          item: result.rows[0]
+        });
       }
 
       if (action === "update") {
@@ -141,6 +150,10 @@ export default async function handler(req, res) {
 
         const kodeSo = normalizeKodeSo(body.kode_so);
         const kategoriId = body.kategori_id;
+        
+        if (!VALID_KATEGORI.includes(kategoriId)) {
+          return res.status(400).json({ error: "kategori tidak valid" });
+        }
         const picChecker = body.pic_checker;
         const svpNama = String(body.svp_nama || "").trim();
         const lokasi = String(body.lokasi || "").trim() || null;
@@ -171,12 +184,19 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Perintah tidak dapat diperbarui" });
         }
 
-        return res.status(200).json({ message: `Perintah ${kodeSo} berhasil diperbarui`, perintah: updateResult.rows[0] });
+        return res.status(200).json({
+          success: true,
+          item: updateResult.rows[0]
+        });
       }
 
       // CREATE
       const kodeSo = normalizeKodeSo(body.kode_so);
       const kategoriId = body.kategori_id || 'modul';
+      
+      if (!VALID_KATEGORI.includes(kategoriId)) {
+        return res.status(400).json({ error: "kategori tidak valid" });
+      }
       const picChecker = body.pic_checker;
       const svpNama = String(body.svp_nama || "").trim();
       const lokasi = String(body.lokasi || "").trim() || null;
@@ -203,7 +223,10 @@ export default async function handler(req, res) {
         [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, targetSku]
       );
 
-      return res.status(201).json({ message: `Perintah ${kodeSo} berhasil dibuat`, perintah: insertResult.rows[0] });
+      return res.status(201).json({
+        success: true,
+        item: insertResult.rows[0]
+      });
     }
     
     if (req.method === "DELETE") {
@@ -239,7 +262,9 @@ export default async function handler(req, res) {
       
       await pool.query(`DELETE FROM stok_opname_perintah WHERE id = $1`, [id]);
       
-      return res.status(200).json({ message: `Perintah ${perintah.kode_so} berhasil dihapus` });
+      return res.status(200).json({
+        success: true
+      });
     }
 
     return res.status(405).json({ error: "Method tidak diizinkan" });
