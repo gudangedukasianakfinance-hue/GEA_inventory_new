@@ -114,79 +114,75 @@
     </div>
     
     <nav class="sidebar__nav">
-      <!-- Dashboard -->
-      <a href="#" class="sidebar__link active" data-page="dashboard" onclick="navigateTo('dashboard'); return false;">
+      <!-- Dashboard - ALL ROLES -->
+      <a href="#" class="sidebar__link active" data-page="dashboard" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('dashboard'); return false;">
         <i data-lucide="layout-dashboard"></i>
         <span>Dashboard</span>
       </a>
       
-      <!-- Transaksi Section -->
-      <div class="sidebar__section">
+      <!-- Transaksi Section - ADMIN ONLY -->
+      <div class="sidebar__section" data-role-section="admin">
         <span class="sidebar__section-title">Transaksi</span>
-        <a href="#" class="sidebar__link" data-page="penjualan" onclick="navigateTo('penjualan'); return false;">
+        <a href="#" class="sidebar__link" data-page="penjualan" data-role="admin" onclick="navigateTo('penjualan'); return false;">
           <i data-lucide="shopping-cart"></i>
           <span>Penjualan</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="pembelian" onclick="navigateTo('pembelian'); return false;">
+        <a href="#" class="sidebar__link" data-page="pembelian" data-role="admin" onclick="navigateTo('pembelian'); return false;">
           <i data-lucide="package-plus"></i>
           <span>Pembelian</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="persediaan" onclick="navigateTo('persediaan'); return false;">
+        <a href="#" class="sidebar__link" data-page="persediaan" data-role="admin,staff_gudang" onclick="navigateTo('persediaan'); return false;">
           <i data-lucide="package"></i>
           <span>Persediaan</span>
-        </a>
-        <a href="#" class="sidebar__link" data-page="forecasting" onclick="navigateTo('forecasting'); return false;">
-          <i data-lucide="trending-up"></i>
-          <span>Forecasting</span>
         </a>
       </div>
       
       <!-- Stock Opname Section -->
-      <div class="sidebar__section">
+      <div class="sidebar__section" data-role-section="admin,staff_gudang,checker_opname">
         <span class="sidebar__section-title">Stock Opname</span>
-        <a href="#" class="sidebar__link" data-page="dashboard-so" onclick="navigateTo('dashboard-so'); return false;">
+        <a href="#" class="sidebar__link" data-page="dashboard-so" data-role="admin,staff_gudang" onclick="navigateTo('dashboard-so'); return false;">
           <i data-lucide="bar-chart-2"></i>
           <span>Dashboard SO</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="perintah-so" onclick="navigateTo('perintah-so'); return false;">
+        <a href="#" class="sidebar__link" data-page="perintah-so" data-role="admin,staff_gudang" onclick="navigateTo('perintah-so'); return false;">
           <i data-lucide="file-text"></i>
           <span>Perintah SO</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="pelaksanaan-so" onclick="navigateTo('pelaksanaan-so'); return false;">
+        <a href="#" class="sidebar__link" data-page="pelaksanaan-so" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('pelaksanaan-so'); return false;">
           <i data-lucide="clipboard-check"></i>
           <span>Pelaksanaan SO</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="riwayat-so" onclick="navigateTo('riwayat-so'); return false;">
+        <a href="#" class="sidebar__link" data-page="riwayat-so" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('riwayat-so'); return false;">
           <i data-lucide="history"></i>
           <span>Riwayat SO</span>
         </a>
       </div>
       
-      <!-- Distribusi Section -->
-      <div class="sidebar__section">
+      <!-- Distribusi Section - ADMIN ONLY -->
+      <div class="sidebar__section" data-role-section="admin">
         <span class="sidebar__section-title">Distribusi</span>
-        <a href="#" class="sidebar__link" data-page="distribusi-outlet" onclick="navigateTo('distribusi-outlet'); return false;">
+        <a href="#" class="sidebar__link" data-page="distribusi-outlet" data-role="admin" onclick="navigateTo('distribusi-outlet'); return false;">
           <i data-lucide="send"></i>
           <span>Distribusi Outlet</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="monitoring-outlet" onclick="navigateTo('monitoring-outlet'); return false;">
+        <a href="#" class="sidebar__link" data-page="monitoring-outlet" data-role="admin" onclick="navigateTo('monitoring-outlet'); return false;">
           <i data-lucide="activity"></i>
           <span>Monitoring Outlet</span>
         </a>
       </div>
       
       <!-- Lainnya Section -->
-      <div class="sidebar__section">
+      <div class="sidebar__section" data-role-section="admin,staff_gudang,checker_opname">
         <span class="sidebar__section-title">Lainnya</span>
-        <a href="#" class="sidebar__link" data-page="laporan" onclick="navigateTo('laporan'); return false;">
+        <a href="#" class="sidebar__link" data-page="laporan" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('laporan'); return false;">
           <i data-lucide="file-bar-chart"></i>
           <span>Laporan</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="user" onclick="navigateTo('user'); return false;">
+        <a href="#" class="sidebar__link" data-page="user" data-role="admin" onclick="navigateTo('user'); return false;">
           <i data-lucide="users"></i>
           <span>Manajemen User</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="pengaturan" onclick="navigateTo('pengaturan'); return false;">
+        <a href="#" class="sidebar__link" data-page="pengaturan" data-role="admin" onclick="navigateTo('pengaturan'); return false;">
           <i data-lucide="settings"></i>
           <span>Pengaturan</span>
         </a>
@@ -378,13 +374,58 @@
         userAvatar.querySelector('span').textContent = (user.nama_lengkap || user.username || 'U').charAt(0).toUpperCase();
         document.getElementById('logoutBtn').style.display = 'flex';
         document.getElementById('loginBtn').style.display = 'none';
+        
+        // Filter menu berdasarkan role
+        filterMenuByRole(user.role);
       } else {
         userName.textContent = 'Login';
         userRole.textContent = '';
         userAvatar.querySelector('span').textContent = 'A';
         document.getElementById('logoutBtn').style.display = 'none';
         document.getElementById('loginBtn').style.display = 'flex';
+        
+        // Tampilkan semua menu untuk guest
+        showAllMenu();
       }
+    }
+    
+    // Filter menu berdasarkan role user
+    function filterMenuByRole(userRole) {
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar) return;
+      
+      // Tampilkan/hapus section berdasarkan role
+      sidebar.querySelectorAll('[data-role-section]').forEach(section => {
+        const allowedRoles = section.getAttribute('data-role-section').split(',');
+        if (allowedRoles.includes(userRole)) {
+          section.style.display = '';
+        } else {
+          section.style.display = 'none';
+        }
+      });
+      
+      // Tampilkan/hapus link berdasarkan role
+      sidebar.querySelectorAll('[data-role]').forEach(link => {
+        const allowedRoles = link.getAttribute('data-role').split(',');
+        if (allowedRoles.includes(userRole)) {
+          link.style.display = '';
+        } else {
+          link.style.display = 'none';
+        }
+      });
+    }
+    
+    // Tampilkan semua menu (untuk guest/non-login)
+    function showAllMenu() {
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar) return;
+      
+      sidebar.querySelectorAll('[data-role-section]').forEach(section => {
+        section.style.display = '';
+      });
+      sidebar.querySelectorAll('[data-role]').forEach(link => {
+        link.style.display = '';
+      });
     }
     
     function formatRole(role) {

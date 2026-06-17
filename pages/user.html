@@ -125,15 +125,26 @@
 </style>
 
 <script>
+(function() {
+  // State
   let userList = [];
   let editingUserId = null;
 
+  // Load users from server
   async function loadUsers() {
     try {
-      const response = await fetch('/api/v1/users');
+      const role = document.getElementById('filterRole')?.value || '';
+      const isActive = document.getElementById('filterStatus')?.value || '';
+      
+      let url = '/api/v1/users?';
+      if (role) url += `role=${role}&`;
+      if (isActive) url += `is_active=${isActive}`;
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to load');
       const payload = await response.json();
-      userList = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : Array.isArray(payload.data) ? payload.data : [];
+      
+      userList = payload.items || payload.data || [];
       renderUsersTable();
     } catch (error) {
       console.error('Error loading users:', error);
@@ -142,6 +153,7 @@
     }
   }
 
+  // Render table
   function renderUsersTable() {
     const tbody = document.getElementById('usersTableBody');
     if (userList.length === 0) {
@@ -152,19 +164,26 @@
     tbody.innerHTML = userList.map(user => {
       const roleClass = user.role === 'admin' ? 'role-admin' : user.role === 'staff_gudang' ? 'role-staff_gudang' : 'role-checker_opname';
       const statusClass = user.status === 'active' ? 'status-active' : 'status-inactive';
+      const isActive = user.status === 'active';
       
       return `
         <tr>
-          <td>${user.nama}</td>
+          <td>${user.nama || user.name || '-'}</td>
           <td><code>${user.username}</code></td>
-          <td>${user.email}</td>
+          <td>${user.email || '-'}</td>
           <td><span class="role-badge ${roleClass}">${formatRole(user.role)}</span></td>
-          <td><span class="status-badge ${statusClass}">${user.status === 'active' ? 'Aktif' : 'Nonaktif'}</span></td>
+          <td><span class="status-badge ${statusClass}">${isActive ? 'Aktif' : 'Nonaktif'}</span></td>
           <td>
-            <button class="action-btn" onclick="editUser('${user.id}')">
+            <button class="action-btn" onclick="window.editUser('${user.id}')">
               <i data-lucide="edit-2"></i>
             </button>
-            <button class="action-btn danger" onclick="deleteUser('${user.id}')">
+            <button class="action-btn" onclick="window.toggleUserStatus('${user.id}', ${!isActive})" title="${isActive ? 'Nonaktifkan' : 'Aktifkan'}">
+              <i data-lucide="${isActive ? 'user-x' : 'user-check'}"></i>
+            </button>
+            <button class="action-btn" onclick="window.resetUserPassword('${user.id}')" title="Reset Password">
+              <i data-lucide="key"></i>
+            </button>
+            <button class="action-btn danger" onclick="window.deleteUser('${user.id}')">
               <i data-lucide="trash-2"></i>
             </button>
           </td>
@@ -175,55 +194,76 @@
     if (window.lucide) lucide.createIcons({ nodes: [tbody] });
   }
 
+  // Format role label
   function formatRole(role) {
     const roles = {
       'admin': 'Admin',
       'staff_gudang': 'Staff Gudang',
       'checker_opname': 'Checker'
     };
-    return roles[role] || role;
+    return roles[role] || role || '-';
   }
 
-  function showAddUserModal() {
+  // Show add modal
+  window.showAddUserModal = function() {
     editingUserId = null;
     document.getElementById('userModalTitle').textContent = 'Tambah User';
     document.getElementById('userForm').reset();
+    document.getElementById('userUsername').disabled = false;
     document.getElementById('passwordHint').style.display = 'none';
     document.getElementById('userModal').classList.add('active');
-  }
+  };
 
-  function editUser(id) {
-    const user = userList.find(u => u.id == id);
-    if (!user) return;
-    
-    editingUserId = id;
-    document.getElementById('userModalTitle').textContent = 'Edit User';
-    document.getElementById('userUsername').value = user.username;
-    document.getElementById('userEmail').value = user.email;
-    document.getElementById('userNama').value = user.nama;
-    document.getElementById('userRole').value = user.role;
-    document.getElementById('userPassword').value = '';
-    document.getElementById('userActive').checked = user.status === 'active';
-    document.getElementById('passwordHint').style.display = 'inline';
-    document.getElementById('userModal').classList.add('active');
-  }
+  // Edit user - fetch dari server
+  window.editUser = async function(id) {
+    try {
+      const response = await fetch(`/api/v1/users/${id}`);
+      if (!response.ok) throw new Error('User tidak ditemukan');
+      const result = await response.json();
+      const user = result.data;
+      
+      editingUserId = id;
+      document.getElementById('userModalTitle').textContent = 'Edit User';
+      document.getElementById('userUsername').value = user.username || '';
+      document.getElementById('userUsername').disabled = true;
+      document.getElementById('userEmail').value = user.email || '';
+      document.getElementById('userNama').value = user.name || user.nama_lengkap || '';
+      document.getElementById('userRole').value = user.role || 'staff_gudang';
+      document.getElementById('userPassword').value = '';
+      document.getElementById('userActive').checked = user.is_active === true || user.status === 'active';
+      document.getElementById('passwordHint').style.display = 'inline';
+      document.getElementById('userModal').classList.add('active');
+    } catch (error) {
+      console.error('Error loading user:', error);
+      showToast('Gagal memuat data user', false);
+    }
+  };
 
-  function closeUserModal() {
+  // Close modal
+  window.closeUserModal = function() {
     document.getElementById('userModal').classList.remove('active');
     editingUserId = null;
-  }
+  };
 
-  async function saveUser(event) {
+  // Save user
+  window.saveUser = async function(event) {
     event.preventDefault();
     
+    const password = document.getElementById('userPassword').value;
     const data = {
       username: document.getElementById('userUsername').value,
       email: document.getElementById('userEmail').value,
       nama: document.getElementById('userNama').value,
       role: document.getElementById('userRole').value,
-      password: document.getElementById('userPassword').value,
       status: document.getElementById('userActive').checked ? 'active' : 'inactive'
     };
+    
+    // Hanya tambah password jika diisi
+    if (password) {
+      data.password = password;
+    }
+
+    console.log('[EDIT USER PAYLOAD]', data);
 
     try {
       const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
@@ -235,11 +275,9 @@
         body: JSON.stringify(data)
       });
 
-      console.log('Response:', response.status);
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        console.error('Save error:', errData);
-        throw new Error(errData.message || 'Failed to save');
+        throw new Error(errData.message || 'Gagal menyimpan');
       }
       
       showToast(editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
@@ -247,32 +285,77 @@
       loadUsers();
     } catch (error) {
       console.error('Error saving user:', error);
-      showToast('Gagal menyimpan user', false);
+      showToast(error.message || 'Gagal menyimpan user', false);
     }
-  }
+  };
 
-  async function deleteUser(id) {
+  // Delete user
+  window.deleteUser = async function(id) {
     if (!confirm('Yakin hapus user ini?')) return;
     
     try {
       const response = await fetch(`/api/v1/users/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Gagal menghapus');
+      }
       
       showToast('User berhasil dihapus');
       loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      showToast('Gagal menghapus user', false);
+      showToast(error.message || 'Gagal menghapus user', false);
     }
-  }
+  };
 
-  // Filters
+  // Toggle user status (enable/disable)
+  window.toggleUserStatus = async function(id, enable) {
+    try {
+      const url = enable ? `/api/v1/users/${id}/enable` : `/api/v1/users/${id}/disable`;
+      const response = await fetch(url, { method: 'POST' });
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Gagal update status');
+      }
+      
+      showToast(enable ? 'User berhasil diaktifkan' : 'User berhasil dinonaktifkan');
+      loadUsers();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      showToast(error.message || 'Gagal update status', false);
+    }
+  };
+
+  // Reset password
+  window.resetUserPassword = async function(id) {
+    if (!confirm('Reset password user ini?')) return;
+    
+    try {
+      const response = await fetch(`/api/v1/users/${id}/reset-password`, { method: 'POST' });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Gagal reset password');
+      }
+      
+      const result = await response.json();
+      showToast('Password berhasil direset: ' + (result.data?.temp_password || '[Lihat di sistem]'));
+      loadUsers();
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      showToast(error.message || 'Gagal reset password', false);
+    }
+  };
+
+  // Filter handlers
   document.getElementById('filterRole')?.addEventListener('change', loadUsers);
   document.getElementById('filterStatus')?.addEventListener('change', loadUsers);
 
+  // Init
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadUsers);
   } else {
     loadUsers();
   }
+})();
 </script>
