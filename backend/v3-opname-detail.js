@@ -17,28 +17,25 @@ export default async function handler(req, res) {
     // GET - Ambil produk list untuk opname
     if (req.method === 'GET') {
       // Support both naming conventions from frontend
-      const opnameId = req.query.opname_id || req.query.perintah_id;
-      const kategoriId = req.query.kategori_id || req.query.kategori;
+      const opname_id = req.query.opname_id || req.query.perintah_id;
+      const kategori_id = req.query.kategori_id || req.query.kategori;
       
-      console.log("[SO DETAIL GET]", { opnameId, kategoriId });
-      
-      if (!opnameId) {
+      if (!opname_id) {
         return res.status(400).json({ success: false, error: "opname_id atau perintah_id wajib" });
       }
       
-      if (!kategoriId) {
+      if (!kategori_id) {
         return res.status(400).json({ success: false, error: "kategori_id atau kategori wajib" });
       }
       
       // Query: JOIN produk dengan stok_opname_detail
-      // Tidak ada dependency terhadap tabel stok
+      // TIDAK ADA dependency terhadap tabel stok
       const produkList = await pool.query(`
         SELECT
           p.sku,
           p.nama_produk,
           p.kategori,
           COALESCE(sod.stok_sistem, 0)::int AS stok_sistem,
-          sod.id AS detail_id,
           sod.stok_fisik,
           sod.selisih,
           sod.input_at
@@ -48,7 +45,7 @@ export default async function handler(req, res) {
           AND sod.opname_id = $1
         WHERE p.kategori = $2
         ORDER BY p.nama_produk
-      `, [Number(opnameId), kategoriId]);
+      `, [Number(opname_id), kategori_id]);
       
       res.status(200).json({
         success: true,
@@ -57,7 +54,6 @@ export default async function handler(req, res) {
           nama_produk: r.nama_produk,
           kategori: r.kategori,
           stok_sistem: Number(r.stok_sistem || 0),
-          detail_id: r.detail_id,
           stok_fisik: r.stok_fisik,
           selisih: r.selisih,
           input_at: r.input_at
@@ -68,15 +64,15 @@ export default async function handler(req, res) {
     
     // POST - Simpan hasil scan
     else if (req.method === 'POST') {
-      const { opname_id, sku, stok_fisik, stok_sistem } = req.body;
+      const { opname_id, sku, stok_fisik } = req.body;
       
       if (!opname_id || !sku || stok_fisik === undefined) {
         return res.status(400).json({ success: false, error: "opname_id, sku, dan stok_fisik wajib diisi" });
       }
       
-      // stok_sistem dari frontend (stok_opname_detail) atau default 0
-      // Tidak query dari tabel stok
-      const stokSistemVal = Number(stok_sistem || 0);
+      // stok_sistem dari existing detail atau default 0
+      // TIDAK ADA query ke tabel stok
+      const stokSistemVal = 0;
       const selisih = Number(stok_fisik) - stokSistemVal;
       
       let result;
@@ -85,15 +81,15 @@ export default async function handler(req, res) {
       try {
         await client.query('BEGIN');
         
-        // Check existing detail
+        // Check existing detail for stok_sistem value
         const existingDetail = await client.query(`
           SELECT id, stok_sistem FROM stok_opname_detail 
           WHERE opname_id = $1 AND sku = $2
         `, [Number(opname_id), sku]);
         
-        // Use existing stok_sistem if available, otherwise use passed value or 0
+        // Use existing stok_sistem if available, otherwise 0
         const existingStokSistem = Number(existingDetail.rows[0]?.stok_sistem || 0);
-        const finalStokSistem = existingStokSistem || stokSistemVal;
+        const finalStokSistem = existingStokSistem;
         const finalSelisih = Number(stok_fisik) - finalStokSistem;
         
         const updateResult = await client.query(`

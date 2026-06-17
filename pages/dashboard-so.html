@@ -192,6 +192,9 @@
 // Namespace untuk state (hindari redeclare saat SPA cache reload)
 window.SODashboard = window.SODashboard || {};
 
+// Clock interval untuk di-clear saat reload
+window.SODashboard.clockInterval = window.SODashboard.clockInterval || null;
+
 // State filter - hanya init sekali, jangan reset
 if (!window.SODashboard.currentFilterBulan) {
   window.SODashboard.currentFilterBulan = new Date().getMonth() + 1;
@@ -390,7 +393,10 @@ function initDashboardSo() {
   
   // Update datetime
   updateDateTime();
-  setInterval(updateDateTime, 1000);
+  if (window.SODashboard.clockInterval) {
+    clearInterval(window.SODashboard.clockInterval);
+  }
+  window.SODashboard.clockInterval = setInterval(updateDateTime, 1000);
   
   // Apply role-based visibility
   if (userRole === 'checker_opname') {
@@ -485,7 +491,7 @@ async function loadCheckerTasks(userNama) {
             <div class="checker-task-info">
               <div class="checker-task-kode">${item.kode_so || item.id}</div>
               <div class="checker-task-detail">
-                <span><i data-lucide="package"></i> Kategori: ${item.kategori || '-'}</span>
+                <span><i data-lucide="package"></i> Kategori: ${item.kategori_nama || '-'}</span>
                 <span><i data-lucide="hash"></i> Target SKU: ${targetSku}</span>
               </div>
               <div class="checker-task-progress">

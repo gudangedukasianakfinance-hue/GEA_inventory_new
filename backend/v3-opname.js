@@ -3,7 +3,7 @@ import pool from "../services/db.js";
 // V3 Stock Opname - Simplified Workflow
 // 1 SO = 1 kategori
 // Status flow: menunggu -> proses -> selesai (tanpa approval)
-// Tidak ada kategori_targets, commands, atau dependency tabel stok
+// No kategori_targets, commands, detail_count
 
 // GET Handler - Ambil daftar perintah SO
 export async function handleGet(req, res) {
@@ -188,7 +188,6 @@ export async function handlePut(req, res) {
 
 // Export handlers
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
