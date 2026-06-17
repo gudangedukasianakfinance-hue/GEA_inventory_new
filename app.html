@@ -114,74 +114,61 @@
     </div>
     
     <nav class="sidebar__nav">
-      <!-- Dashboard - ALL ROLES -->
-      <a href="#" class="sidebar__link active" data-page="dashboard" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('dashboard'); return false;">
-        <i data-lucide="layout-dashboard"></i>
-        <span>Dashboard</span>
-      </a>
-      
-      <!-- Transaksi Section - ADMIN ONLY -->
-      <div class="sidebar__section" data-role-section="admin">
-        <span class="sidebar__section-title">Transaksi</span>
-        <a href="#" class="sidebar__link" data-page="penjualan" data-role="admin" onclick="navigateTo('penjualan'); return false;">
-          <i data-lucide="shopping-cart"></i>
-          <span>Penjualan</span>
-        </a>
-        <a href="#" class="sidebar__link" data-page="pembelian" data-role="admin" onclick="navigateTo('pembelian'); return false;">
-          <i data-lucide="package-plus"></i>
-          <span>Pembelian</span>
-        </a>
-        <a href="#" class="sidebar__link" data-page="persediaan" data-role="admin,staff_gudang" onclick="navigateTo('persediaan'); return false;">
-          <i data-lucide="package"></i>
-          <span>Persediaan</span>
-        </a>
-      </div>
-      
-      <!-- Stock Opname Section -->
-      <div class="sidebar__section" data-role-section="admin,staff_gudang,checker_opname">
+      <!-- CHECKER MENU -->
+      <div class="sidebar__section" data-role-section="checker_opname">
         <span class="sidebar__section-title">Stock Opname</span>
-        <a href="#" class="sidebar__link" data-page="dashboard-so" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('dashboard-so'); return false;">
-          <i data-lucide="bar-chart-2"></i>
-          <span data-role-label="admin,staff_gudang">Dashboard SO</span>
-          <span data-role-label="checker_opname">Task SO Saya</span>
+        <a href="#" class="sidebar__link" data-page="dashboard-so" data-role="checker_opname" onclick="navigateTo('dashboard-so'); return false;">
+          <i data-lucide="clipboard-check"></i>
+          <span>Task SO Saya</span>
         </a>
-        <a href="#" class="sidebar__link" data-page="perintah-so" data-role="admin,staff_gudang" onclick="navigateTo('perintah-so'); return false;">
-          <i data-lucide="file-text"></i>
-          <span>Perintah SO</span>
-        </a>
-        <a href="#" class="sidebar__link" data-page="riwayat-so" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('riwayat-so'); return false;">
+        <a href="#" class="sidebar__link" data-page="riwayat-so" data-role="checker_opname" onclick="navigateTo('riwayat-so'); return false;">
           <i data-lucide="history"></i>
           <span>Riwayat SO</span>
         </a>
       </div>
       
-      <!-- Distribusi Section - ADMIN ONLY -->
-      <div class="sidebar__section" data-role-section="admin">
-        <span class="sidebar__section-title">Distribusi</span>
-        <a href="#" class="sidebar__link" data-page="distribusi-outlet" data-role="admin" onclick="navigateTo('distribusi-outlet'); return false;">
-          <i data-lucide="send"></i>
-          <span>Distribusi Outlet</span>
-        </a>
-        <a href="#" class="sidebar__link" data-page="monitoring-outlet" data-role="admin" onclick="navigateTo('monitoring-outlet'); return false;">
-          <i data-lucide="activity"></i>
-          <span>Monitoring Outlet</span>
+      <div class="sidebar__section" data-role-section="checker_opname">
+        <span class="sidebar__section-title">Lainnya</span>
+        <a href="#" class="sidebar__link" data-page="laporan" data-role="checker_opname" onclick="navigateTo('laporan'); return false;">
+          <i data-lucide="file-bar-chart"></i>
+          <span>Laporan</span>
         </a>
       </div>
       
-      <!-- Lainnya Section -->
-      <div class="sidebar__section" data-role-section="admin,staff_gudang,checker_opname">
+      <!-- ADMIN MENU -->
+      <div class="sidebar__section" data-role-section="admin">
+        <span class="sidebar__section-title">Dashboard</span>
+        <a href="#" class="sidebar__link active" data-page="dashboard" data-role="admin" onclick="navigateTo('dashboard'); return false;">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+      </div>
+      
+      <div class="sidebar__section" data-role-section="admin">
+        <span class="sidebar__section-title">Stock Opname</span>
+        <a href="#" class="sidebar__link" data-page="dashboard-so" data-role="admin" onclick="navigateTo('dashboard-so'); return false;">
+          <i data-lucide="bar-chart-2"></i>
+          <span>Monitoring SO</span>
+        </a>
+        <a href="#" class="sidebar__link" data-page="perintah-so" data-role="admin" onclick="navigateTo('perintah-so'); return false;">
+          <i data-lucide="file-text"></i>
+          <span>Perintah SO</span>
+        </a>
+        <a href="#" class="sidebar__link" data-page="riwayat-so" data-role="admin" onclick="navigateTo('riwayat-so'); return false;">
+          <i data-lucide="history"></i>
+          <span>Riwayat SO</span>
+        </a>
+      </div>
+      
+      <div class="sidebar__section" data-role-section="admin">
         <span class="sidebar__section-title">Lainnya</span>
-        <a href="#" class="sidebar__link" data-page="laporan" data-role="admin,staff_gudang,checker_opname" onclick="navigateTo('laporan'); return false;">
+        <a href="#" class="sidebar__link" data-page="laporan" data-role="admin" onclick="navigateTo('laporan'); return false;">
           <i data-lucide="file-bar-chart"></i>
           <span>Laporan</span>
         </a>
         <a href="#" class="sidebar__link" data-page="user" data-role="admin" onclick="navigateTo('user'); return false;">
           <i data-lucide="users"></i>
-          <span>Manajemen User</span>
-        </a>
-        <a href="#" class="sidebar__link" data-page="pengaturan" data-role="admin" onclick="navigateTo('pengaturan'); return false;">
-          <i data-lucide="settings"></i>
-          <span>Pengaturan</span>
+          <span>User Management</span>
         </a>
       </div>
     </nav>
