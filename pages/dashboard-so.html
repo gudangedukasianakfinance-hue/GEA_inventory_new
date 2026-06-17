@@ -93,6 +93,78 @@
     </div>
   </div>
 
+  <!-- Monitoring Section - ADMIN ONLY -->
+  <div id="monitoring-section" class="monitoring-section" data-role-admin-only>
+    <div class="monitoring-header">
+      <h2><i data-lucide="activity"></i> Monitoring SO</h2>
+      <p>Real-time monitoring task Stock Opname berdasarkan status</p>
+    </div>
+    
+    <!-- Status Summary Cards -->
+    <div class="monitoring-status-cards">
+      <div class="monitoring-status-card monitoring-status-card--pending">
+        <div class="monitoring-status-card__icon">
+          <i data-lucide="clock"></i>
+        </div>
+        <div class="monitoring-status-card__content">
+          <div class="monitoring-status-card__value" id="monitor-menunggu">0</div>
+          <div class="monitoring-status-card__label">Task Menunggu</div>
+        </div>
+      </div>
+      <div class="monitoring-status-card monitoring-status-card--info">
+        <div class="monitoring-status-card__icon">
+          <i data-lucide="hand-grabbing"></i>
+        </div>
+        <div class="monitoring-status-card__content">
+          <div class="monitoring-status-card__value" id="monitor-claimed">0</div>
+          <div class="monitoring-status-card__label">Task Diambil</div>
+        </div>
+      </div>
+      <div class="monitoring-status-card monitoring-status-card--process">
+        <div class="monitoring-status-card__icon">
+          <i data-lucide="loader"></i>
+        </div>
+        <div class="monitoring-status-card__content">
+          <div class="monitoring-status-card__value" id="monitor-proses">0</div>
+          <div class="monitoring-status-card__label">Task Proses</div>
+        </div>
+      </div>
+      <div class="monitoring-status-card monitoring-status-card--done">
+        <div class="monitoring-status-card__icon">
+          <i data-lucide="check-circle"></i>
+        </div>
+        <div class="monitoring-status-card__content">
+          <div class="monitoring-status-card__value" id="monitor-selesai">0</div>
+          <div class="monitoring-status-card__label">Task Selesai</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- User Summary Table -->
+    <div class="monitoring-table-card">
+      <div class="monitoring-table-header">
+        <h3><i data-lucide="users"></i> Rekap per User</h3>
+      </div>
+      <div class="monitoring-table-wrapper">
+        <table class="monitoring-table">
+          <thead>
+            <tr>
+              <th>Nama User</th>
+              <th>Task Diambil</th>
+              <th>Task Proses</th>
+              <th>Task Selesai</th>
+            </tr>
+          </thead>
+          <tbody id="monitoring-user-table">
+            <tr>
+              <td colspan="4" class="text-center text-muted p-4">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- Checker Task Section - Task Saya -->
   <div id="checker-task-section" class="checker-task-section" style="display: none;">
     <div class="checker-task-header">
@@ -100,6 +172,17 @@
       <p>Daftar tugas Stock Opname yang ditugaskan kepada Anda</p>
     </div>
     <div id="checker-task-list" class="checker-task-list">
+      <div class="text-center text-muted p-4">Memuat...</div>
+    </div>
+  </div>
+
+  <!-- Available Tasks Section - CLAIM -->
+  <div id="available-task-section" class="checker-task-section" style="display: none;">
+    <div class="checker-task-header">
+      <h2><i data-lucide="inbox"></i> Task Tersedia</h2>
+      <p>Klik CLAIM untuk mengambil tugas Stock Opname</p>
+    </div>
+    <div id="available-task-list" class="checker-task-list">
       <div class="text-center text-muted p-4">Memuat...</div>
     </div>
   </div>
@@ -233,6 +316,7 @@ function formatNumber(num) {
 function getStatusClass(status) {
   const map = {
     'menunggu': 'badge--pending',
+    'claimed': 'badge--info',
     'proses': 'badge--process',
     'selesai': 'badge--done'
   };
@@ -243,6 +327,7 @@ function getStatusClass(status) {
 function getStatusLabel(status) {
   const map = {
     'menunggu': 'Menunggu',
+    'claimed': 'Claimed',
     'proses': 'Proses',
     'selesai': 'Selesai'
   };
@@ -440,10 +525,60 @@ function initDashboardSo() {
     
     const checkerSection = document.getElementById('checker-task-section');
     if (checkerSection) checkerSection.style.display = 'none';
+    
+    // Load monitoring data for admin
+    loadMonitoringData();
   }
   
   // Initialize lucide icons
   if (window.lucide) lucide.createIcons();
+  
+  // Load available tasks for checker
+  loadAvailableTasks();
+}
+
+// Load monitoring data
+async function loadMonitoringData() {
+  const section = document.getElementById('monitoring-section');
+  if (!section) return;
+  
+  const bulan = window.SODashboard?.currentFilterBulan || new Date().getMonth() + 1;
+  const tahun = window.SODashboard?.currentFilterTahun || new Date().getFullYear();
+  
+  try {
+    const response = await fetch(`/api/opname-perintah?action=monitoring&bulan=${bulan}&tahun=${tahun}`);
+    if (!response.ok) throw new Error('Gagal memuat data monitoring');
+    
+    const result = await response.json();
+    const statusSummary = result.status_summary || { menunggu: 0, claimed: 0, proses: 0, selesai: 0 };
+    const userSummary = result.user_summary || [];
+    
+    // Update status cards
+    document.getElementById('monitor-menunggu').textContent = statusSummary.menunggu;
+    document.getElementById('monitor-claimed').textContent = statusSummary.claimed;
+    document.getElementById('monitor-proses').textContent = statusSummary.proses;
+    document.getElementById('monitor-selesai').textContent = statusSummary.selesai;
+    
+    // Update user table
+    const tbody = document.getElementById('monitoring-user-table');
+    if (userSummary.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-4">Belum ada data</td></tr>`;
+    } else {
+      tbody.innerHTML = userSummary.map(user => `
+        <tr>
+          <td><strong>${user.checker}</strong></td>
+          <td><span class="badge badge--info">${user.claimed}</span></td>
+          <td><span class="badge badge--process">${user.proses}</span></td>
+          <td><span class="badge badge--done">${user.selesai}</span></td>
+        </tr>
+      `).join('');
+    }
+    
+  } catch (error) {
+    console.error('Error loading monitoring data:', error);
+    document.getElementById('monitoring-user-table').innerHTML = 
+      `<tr><td colspan="4" class="text-center text-muted p-4">Gagal memuat data</td></tr>`;
+  }
 }
 
 // Load Checker tasks
@@ -451,52 +586,67 @@ async function loadCheckerTasks(userNama) {
   const taskList = document.getElementById('checker-task-list');
   if (!taskList) return;
   
+  const authUser = getAuthUser();
+  if (!authUser) {
+    taskList.innerHTML = `<div class="checker-task-empty"><i data-lucide="lock"></i><p>Silakan login terlebih dahulu</p></div>`;
+    return;
+  }
+  
   try {
-    // Get SO with status = proses and pic_checker = user
-    const response = await fetch('/api/v3-opname?status=proses');
+    // Get perintah dengan status claimed atau proses untuk checker ini
+    const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard?.currentFilterBulan || new Date().getMonth() + 1}&tahun=${window.SODashboard?.currentFilterTahun || new Date().getFullYear()}`);
     if (!response.ok) throw new Error('Gagal memuat tugas');
     
     const result = await response.json();
-    let items = result.items || result.data || [];
+    const allItems = result.items || [];
     
-    // Filter by pic_checker
-    if (userNama) {
-      items = items.filter(item => 
-        item.pic_checker === userNama || 
-        item.pic_checker_name === userNama
-      );
-    }
+    // Filter: claimed atau proses, dan checker sesuai user
+    const items = allItems.filter(item => {
+      const isClaimedOrProses = item.status === 'claimed' || item.status === 'proses';
+      const isMyTask = item.checker === authUser.username;
+      return isClaimedOrProses && isMyTask;
+    });
     
     if (items.length === 0) {
       taskList.innerHTML = `
         <div class="checker-task-empty">
           <i data-lucide="clipboard-x"></i>
-          <p>Belum ada tugas Stock Opname yang ditugaskan.</p>
+          <p>Belum ada tugas Stock Opname.</p>
         </div>
       `;
     } else {
       taskList.innerHTML = items.map(item => {
-        const progress = item.progress_count || 0;
-        const targetSku = item.target_sku || item.total_sku || 0;
+        const progress = item.checked_sku || 0;
+        const targetSku = item.target_sku || 0;
         const progressPercent = targetSku > 0 ? Math.round((progress / targetSku) * 100) : 0;
+        
+        // Tombol MULAI untuk status claimed, Lanjutkan untuk status proses
+        const isClaimed = item.status === 'claimed';
+        const btnClass = isClaimed ? 'btn btn--primary' : 'checker-task-btn';
+        const btnText = isClaimed ? '<i data-lucide="play"></i> MULAI' : '<i data-lucide="refresh-cw"></i> Lanjutkan';
         
         return `
           <div class="checker-task-card">
             <div class="checker-task-info">
-              <div class="checker-task-kode">${item.kode_so || item.id}</div>
+              <div class="checker-task-kode">${item.kode_so}</div>
+              <div class="checker-task-status">
+                <span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span>
+              </div>
               <div class="checker-task-detail">
-                <span><i data-lucide="package"></i> Kategori: ${item.kategori || '-'}</span>
+                <span><i data-lucide="package"></i> Kategori: ${item.kategori_nama || '-'}</span>
                 <span><i data-lucide="hash"></i> Target SKU: ${targetSku}</span>
               </div>
+              ${item.status === 'proses' ? `
               <div class="checker-task-progress">
                 <div class="checker-task-progress-bar">
                   <div class="checker-task-progress-fill" style="width: ${progressPercent}%"></div>
                 </div>
                 <div class="checker-task-progress-text">Progress: ${progress} / ${targetSku} (${progressPercent}%)</div>
               </div>
+              ` : ''}
             </div>
-            <button class="checker-task-btn" onclick="startCheckerSo('${item.id}')">
-              <i data-lucide="play"></i> Mulai SO
+            <button class="${btnClass}" onclick="mulaiCheckerSo(${item.id}, '${item.kode_so}')">
+              ${btnText}
             </button>
           </div>
         `;
@@ -516,9 +666,161 @@ async function loadCheckerTasks(userNama) {
   }
 }
 
-// Start SO from checker task
+// Start SO from checker task (deprecated - kept for compatibility)
 function startCheckerSo(perintahId) {
   AppRouter.navigateTo('pelaksanaan-so', { perintah_id: perintahId });
+}
+
+// MULAI SO - Update status to proses, save to localStorage, open pelaksanaan-so.html
+async function mulaiCheckerSo(perintahId, kodeSo) {
+  const authUser = getAuthUser();
+  if (!authUser) {
+    alert('Silakan login terlebih dahulu');
+    return;
+  }
+  
+  try {
+    // UPDATE status='proses', started_at=NOW()
+    const response = await fetch('/api/opname-perintah', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
+      body: JSON.stringify({
+        action: 'mulai',
+        perintah_id: perintahId
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Gagal memulai SO');
+    }
+    
+    // Simpan activePerintahId dan activePerintahKode ke localStorage
+    localStorage.setItem('activePerintahId', String(perintahId));
+    localStorage.setItem('activePerintahKode', kodeSo);
+    
+    // Refresh tasks
+    loadCheckerTasks(authUser.username);
+    loadAvailableTasks();
+    
+    // Buka pelaksanaan-so.html
+    window.location.href = '/pages/pelaksanaan-so.html';
+    
+  } catch (error) {
+    console.error('Error memulai SO:', error);
+    alert(error.message || 'Gagal memulai SO');
+  }
+}
+
+// Load available tasks (status = menunggu) for claim
+async function loadAvailableTasks() {
+  const taskList = document.getElementById('available-task-list');
+  const taskSection = document.getElementById('available-task-section');
+  if (!taskList || !taskSection) return;
+  
+  const authUser = getAuthUser();
+  if (!authUser || authUser.role !== 'checker_opname') {
+    taskSection.style.display = 'none';
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/opname-perintah?bulan=${window.SODashboard?.currentFilterBulan || new Date().getMonth() + 1}&tahun=${window.SODashboard?.currentFilterTahun || new Date().getFullYear()}`);
+    if (!response.ok) throw new Error('Gagal memuat tugas');
+    
+    const result = await response.json();
+    const items = result.items || [];
+    
+    // Filter: hanya status menunggu
+    const availableItems = items.filter(item => item.status === 'menunggu');
+    
+    if (availableItems.length === 0) {
+      taskSection.style.display = 'none';
+      return;
+    }
+    
+    taskSection.style.display = 'block';
+    
+    taskList.innerHTML = availableItems.map(item => `
+      <div class="checker-task-card">
+        <div class="checker-task-info">
+          <div class="checker-task-kode">${item.kode_so}</div>
+          <div class="checker-task-detail">
+            <span><i data-lucide="package"></i> Kategori: ${item.kategori_nama || '-'}</span>
+            <span><i data-lucide="hash"></i> Target SKU: ${item.target_sku || 0}</span>
+            <span><i data-lucide="calendar"></i> ${item.tanggal_perintah || '-'}</span>
+          </div>
+        </div>
+        <button class="btn btn--success" onclick="claimTask(${item.id})">
+          <i data-lucide="check-circle"></i> CLAIM
+        </button>
+      </div>
+    `).join('');
+    
+    if (window.lucide) lucide.createIcons({ nodes: [taskList] });
+    
+  } catch (error) {
+    console.error('Error loading available tasks:', error);
+  }
+}
+
+// Claim task
+async function claimTask(perintahId) {
+  const authUser = getAuthUser();
+  if (!authUser) {
+    alert('Silakan login terlebih dahulu');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/opname-perintah', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
+      body: JSON.stringify({
+        action: 'claim',
+        perintah_id: perintahId
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Gagal claim task');
+    }
+    
+    alert('Task berhasil di-claim!');
+    
+    // Refresh tasks
+    loadCheckerTasks(authUser.nama_lengkap || authUser.username);
+    loadAvailableTasks();
+    
+  } catch (error) {
+    console.error('Error claiming task:', error);
+    alert(error.message || 'Gagal claim task');
+  }
+}
+
+// Get auth user from localStorage
+function getAuthUser() {
+  try {
+    const userStr = localStorage.getItem('auth_user');
+    if (!userStr) return null;
+    return JSON.parse(userStr);
+  } catch {
+    return null;
+  }
+}
+
+// Get access token
+function getAccessToken() {
+  return localStorage.getItem('access_token') || '';
 }
 
 // Auto init on page load - hanya jalankan jika page container ada
@@ -897,6 +1199,151 @@ body.role-staff_gudang [data-role-admin-only] {
     flex: 1;
     min-width: 140px;
     justify-content: center;
+  }
+}
+
+/* Monitoring Section */
+.monitoring-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.monitoring-header {
+  margin-bottom: 24px;
+}
+
+.monitoring-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #FFF;
+  margin-bottom: 4px;
+}
+
+.monitoring-header p {
+  font-size: 14px;
+  color: #64748B;
+}
+
+.monitoring-status-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.monitoring-status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monitoring-status-card__icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 24px;
+}
+
+.monitoring-status-card--pending .monitoring-status-card__icon {
+  background: rgba(255, 193, 7, 0.15);
+  color: #FFC107;
+}
+
+.monitoring-status-card--info .monitoring-status-card__icon {
+  background: rgba(23, 162, 184, 0.15);
+  color: #17A2B8;
+}
+
+.monitoring-status-card--process .monitoring-status-card__icon {
+  background: rgba(255, 107, 107, 0.15);
+  color: #FF6B6B;
+}
+
+.monitoring-status-card--done .monitoring-status-card__icon {
+  background: rgba(40, 167, 69, 0.15);
+  color: #28A745;
+}
+
+.monitoring-status-card__value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #FFF;
+  line-height: 1;
+}
+
+.monitoring-status-card__label {
+  font-size: 13px;
+  color: #94A3B8;
+  margin-top: 4px;
+}
+
+.monitoring-table-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.monitoring-table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monitoring-table-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFF;
+  margin: 0;
+}
+
+.monitoring-table-wrapper {
+  overflow-x: auto;
+}
+
+.monitoring-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monitoring-table th {
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monitoring-table td {
+  padding: 14px 20px;
+  font-size: 14px;
+  color: #FFF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.monitoring-table tr:last-child td {
+  border-bottom: none;
+}
+
+.monitoring-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 768px) {
+  .monitoring-status-cards {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

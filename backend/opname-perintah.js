@@ -54,7 +54,6 @@ export default async function handler(req, res) {
           checked_sku: progress.checked_sku,
           progress_percent: progress.progress_percent,
           status: row.status,
-          pic_checker: row.pic_checker,
           checker: row.checker,
           svp_nama: row.svp_nama,
           lokasi: row.lokasi,
@@ -89,7 +88,6 @@ export default async function handler(req, res) {
           checked_sku: progress.checked_sku,
           progress_percent: progress.progress_percent,
           status: row.status,
-          pic_checker: row.pic_checker,
           checker: row.checker,
           svp_nama: row.svp_nama,
           lokasi: row.lokasi,
@@ -108,6 +106,58 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, items });
     }
 
+    // Monitoring endpoint - aggregated data by user and status
+    if (req.query.action === 'monitoring') {
+      const { bulan, tahun } = req.query;
+      
+      if (!bulan || !tahun) {
+        return res.status(400).json({ error: "bulan & tahun wajib" });
+      }
+
+      // Query status summary
+      const statusResult = await pool.query(`
+        SELECT 
+          status,
+          COUNT(*)::int as count
+        FROM stok_opname_perintah 
+        WHERE bulan = $1 AND tahun = $2 
+        GROUP BY status
+      `, [Number(bulan), Number(tahun)]);
+
+      // Query user summary (claimed/proses/selesai)
+      const userResult = await pool.query(`
+        SELECT 
+          COALESCE(checker, '(belum diambil)') as checker,
+          COUNT(*) FILTER (WHERE status = 'claimed')::int as claimed,
+          COUNT(*) FILTER (WHERE status = 'proses')::int as proses,
+          COUNT(*) FILTER (WHERE status = 'selesai')::int as selesai,
+          COUNT(*)::int as total
+        FROM stok_opname_perintah 
+        WHERE bulan = $1 AND tahun = $2 AND checker IS NOT NULL
+        GROUP BY checker
+        ORDER BY checker
+      `, [Number(bulan), Number(tahun)]);
+
+      const statusSummary = {
+        menunggu: 0,
+        claimed: 0,
+        proses: 0,
+        selesai: 0
+      };
+      
+      statusResult.rows.forEach(row => {
+        if (row.status in statusSummary) {
+          statusSummary[row.status] = row.count;
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        status_summary: statusSummary,
+        user_summary: userResult.rows
+      });
+    }
+
     if (req.method === "POST") {
       const body = req.body || {};
       const action = String(body.action || "create").toLowerCase();
@@ -119,8 +169,8 @@ export default async function handler(req, res) {
         }
 
         const result = await pool.query(
-          `UPDATE stok_opname_perintah SET status = 'proses', checker = COALESCE(NULLIF($2, ''), checker), started_at = COALESCE(started_at, NOW()), updated_at = NOW() WHERE id = $1 AND status IN ('menunggu', 'proses') RETURNING *`,
-          [perintahId, body.pic_checker || body.checker || null]
+          `UPDATE stok_opname_perintah SET status = 'proses', started_at = COALESCE(started_at, NOW()), updated_at = NOW() WHERE id = $1 AND status IN ('menunggu', 'proses') RETURNING *`,
+          [perintahId]
         );
 
         if (!result.rows.length) {
@@ -128,6 +178,69 @@ export default async function handler(req, res) {
         }
 
         return res.status(200).json(result.rows[0]);
+      }
+
+      if (action === "mulai") {
+        // Untuk checker: ubah status dari 'claimed' ke 'proses'
+        const perintahId = Number(body.perintah_id);
+        if (!perintahId) {
+          return res.status(400).json({ error: "perintah_id wajib" });
+        }
+
+        const auth = await import('../services/auth.js');
+        const currentUser = auth.getCurrentUser(req);
+        if (!currentUser || !currentUser.authorized) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const result = await pool.query(
+          `UPDATE stok_opname_perintah 
+           SET status = 'proses', started_at = NOW(), updated_at = NOW() 
+           WHERE id = $1 AND status = 'claimed' 
+           RETURNING *`,
+          [perintahId]
+        );
+
+        if (!result.rows.length) {
+          return res.status(404).json({ error: "Perintah tidak ditemukan atau tidak dapat dimulai" });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: `SO berhasil dimulai`, 
+          perintah: result.rows[0] 
+        });
+      }
+
+      if (action === "claim") {
+        const perintahId = Number(body.perintah_id);
+        if (!perintahId) {
+          return res.status(400).json({ error: "perintah_id wajib" });
+        }
+
+        const auth = await import('../services/auth.js');
+        const currentUser = auth.getCurrentUser(req);
+        if (!currentUser || !currentUser.authorized) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const result = await pool.query(
+          `UPDATE stok_opname_perintah 
+           SET checker_user_id = $1, checker = $2, claimed_at = NOW(), status = 'claimed', updated_at = NOW() 
+           WHERE id = $3 AND status = 'menunggu' 
+           RETURNING *`,
+          [currentUser.user.sub, currentUser.user.username]
+        );
+
+        if (!result.rows.length) {
+          return res.status(404).json({ error: "Perintah tidak ditemukan atau sudah di-claim" });
+        }
+
+        return res.status(200).json({ 
+          success: true, 
+          message: `Task berhasil di-claim`, 
+          perintah: result.rows[0] 
+        });
       }
 
       if (action === "update") {
@@ -138,7 +251,6 @@ export default async function handler(req, res) {
 
         const kodeSo = normalizeKodeSo(body.kode_so);
         const kategoriId = body.kategori_id;
-        const picChecker = body.pic_checker;
         const svpNama = String(body.svp_nama || "").trim();
         const lokasi = String(body.lokasi || "").trim() || null;
         const keterangan = String(body.keterangan || "").trim() || null;
@@ -160,8 +272,8 @@ export default async function handler(req, res) {
         const targetSku = countResult.rows[0].total;
 
         const updateResult = await pool.query(
-          `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, pic_checker = $4, tanggal_perintah = $5, bulan = $6, tahun = $7, svp_nama = $8, lokasi = $9, keterangan = $10, target_sku = $11, checker = COALESCE(NULLIF($12, ''), checker), updated_at = NOW() WHERE id = $13 RETURNING *`,
-          [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, lokasi, keterangan, targetSku, picChecker, perintahId]
+          `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, tanggal_perintah = $4, bulan = $5, tahun = $6, svp_nama = $7, lokasi = $8, keterangan = $9, target_sku = $10, updated_at = NOW() WHERE id = $11 RETURNING *`,
+          [kodeSo, kategoriId, kategoriLabel(kategoriId), tanggal, bulan, tahun, svpNama, lokasi, keterangan, targetSku, perintahId]
         );
 
         if (!updateResult.rows.length) {
@@ -174,7 +286,6 @@ export default async function handler(req, res) {
       // CREATE
       const kodeSo = normalizeKodeSo(body.kode_so);
       const kategoriId = body.kategori_id || 'modul';
-      const picChecker = body.pic_checker;
       const svpNama = String(body.svp_nama || "").trim();
       const lokasi = String(body.lokasi || "").trim() || null;
       const keterangan = String(body.keterangan || "").trim() || null;
@@ -196,8 +307,8 @@ export default async function handler(req, res) {
       const targetSku = countResult.rows[0].total;
 
       const insertResult = await pool.query(
-        `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, pic_checker, tanggal_perintah, bulan, tahun, svp_nama, checker, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'menunggu') RETURNING *`,
-        [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, targetSku]
+        `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, tanggal_perintah, bulan, tahun, svp_nama, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'menunggu') RETURNING *`,
+        [kodeSo, kategoriId, kategoriLabel(kategoriId), tanggal, bulan, tahun, svpNama, lokasi, keterangan, targetSku]
       );
 
       return res.status(201).json({ message: `Perintah ${kodeSo} berhasil dibuat`, perintah: insertResult.rows[0] });
