@@ -11,3 +11,13 @@ OPNAME PERINTAH ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
   address: '127.0.0.1',
   port: 5432
 }
+OPNAME PERINTAH ERROR: Error: connect ECONNREFUSED 127.0.0.1:5432
+    at /workspace/project/inventory-app-new/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async handler (file:///workspace/project/inventory-app-new/backend/opname-perintah.js:75:26) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5432
+}
