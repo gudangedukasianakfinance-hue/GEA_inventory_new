@@ -263,6 +263,8 @@
       data.password = password;
     }
 
+    console.log('[EDIT USER PAYLOAD]', data);
+
     try {
       const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
       const method = editingUserId ? 'PUT' : 'POST';

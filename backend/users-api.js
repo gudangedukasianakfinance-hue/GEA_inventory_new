@@ -284,10 +284,14 @@ async function updateUser(req, res, userId) {
     updates.push(`updated_at = NOW()`);
     params.push(userId);
 
+    console.log('[UPDATE USER] Payload:', { id: userId, role, email, nama, status, updates: updates });
+
     const result = await pool.query(
       `UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex}`,
       params
     );
+
+    console.log('[UPDATE USER] Result:', { id: userId, role, rowCount: result.rowCount });
 
     if (result.rowCount === 0) {
       return send(res, 404, { success: false, message: "User tidak ditemukan" });
