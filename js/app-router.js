@@ -15,6 +15,7 @@ const AppRouter = {
     'perintah-so': 'pages/perintah-so.html',
     'pelaksanaan-so': 'pages/pelaksanaan-so.html',
     'riwayat-so': 'pages/riwayat-so.html',
+    'monitoring-so': 'pages/monitoring-so.html',
     'distribusi-outlet': 'pages/distribusi-outlet.html',
     'monitoring-outlet': 'pages/monitoring-outlet.html',
     'laporan': 'pages/laporan.html',
