@@ -611,8 +611,9 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  // Barcode Scanner Variables
-  let html5QrCode = null;
+  // Barcode Scanner Variables - use namespace to prevent redeclaration
+  window.SOPelaksanaan = window.SOPelaksanaan || {};
+  window.SOPelaksanaan.html5QrCode = window.SOPelaksanaan.html5QrCode || null;
   let isScanning = false;
 
   async function startBarcodeScan() {
@@ -627,7 +628,7 @@
       }
       
       // Initialize scanner
-      html5QrCode = new Html5Qrcode("barcodeScanner");
+      window.SOPelaksanaan.html5QrCode = new Html5Qrcode("barcodeScanner");
       
       const config = {
         fps: 10,
@@ -638,7 +639,7 @@
       // Use back camera if available
       const backCamera = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
       
-      await html5QrCode.start(
+      await window.SOPelaksanaan.html5QrCode.start(
         backCamera.id,
         config,
         onBarcodeScanned,
@@ -662,11 +663,11 @@
   }
 
   async function stopBarcodeScan() {
-    if (!isScanning || !html5QrCode) return;
+    if (!isScanning || !window.SOPelaksanaan.html5QrCode) return;
     
     try {
-      await html5QrCode.stop();
-      html5QrCode = null;
+      await window.SOPelaksanaan.html5QrCode.stop();
+      window.SOPelaksanaan.html5QrCode = null;
       isScanning = false;
       
       document.getElementById('scannerContainer').style.display = 'none';
