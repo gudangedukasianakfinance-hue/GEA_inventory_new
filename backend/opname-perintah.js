@@ -63,7 +63,6 @@ export default async function handler(req, res) {
             checked_sku: progress.checked_sku,
             progress_percent: progress.progress_percent,
             status: row.status,
-            pic_checker: row.pic_checker,
             checker: row.checker,
             svp_nama: row.svp_nama,
             lokasi: row.lokasi,
@@ -99,7 +98,6 @@ export default async function handler(req, res) {
           checked_sku: progress.checked_sku,
           progress_percent: progress.progress_percent,
           status: row.status,
-          pic_checker: row.pic_checker,
           checker: row.checker,
           svp_nama: row.svp_nama,
           lokasi: row.lokasi,
@@ -129,7 +127,7 @@ export default async function handler(req, res) {
 
         const result = await pool.query(
           `UPDATE stok_opname_perintah SET status = 'proses', checker = COALESCE(NULLIF($2, ''), checker), started_at = COALESCE(started_at, NOW()), updated_at = NOW() WHERE id = $1 AND status IN ('menunggu', 'proses') RETURNING *`,
-          [perintahId, body.pic_checker || body.checker || null]
+          [perintahId, body.checker || null]
         );
 
         if (!result.rows.length) {
@@ -154,7 +152,6 @@ export default async function handler(req, res) {
         if (!VALID_KATEGORI.includes(kategoriId)) {
           return res.status(400).json({ error: "kategori tidak valid" });
         }
-        const picChecker = body.pic_checker;
         const svpNama = String(body.svp_nama || "").trim();
         const lokasi = String(body.lokasi || "").trim() || null;
         const keterangan = String(body.keterangan || "").trim() || null;
@@ -176,8 +173,8 @@ export default async function handler(req, res) {
         const targetSku = countResult.rows[0].total;
 
         const updateResult = await pool.query(
-          `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, pic_checker = $4, tanggal_perintah = $5, bulan = $6, tahun = $7, svp_nama = $8, lokasi = $9, keterangan = $10, target_sku = $11, checker = COALESCE(NULLIF($12, ''), checker), updated_at = NOW() WHERE id = $13 RETURNING *`,
-          [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, lokasi, keterangan, targetSku, picChecker, perintahId]
+          `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, tanggal_perintah = $4, bulan = $5, tahun = $6, svp_nama = $7, lokasi = $8, keterangan = $9, target_sku = $10, checker = COALESCE(NULLIF($11, ''), checker), updated_at = NOW() WHERE id = $12 RETURNING *`,
+          [kodeSo, kategoriId, kategoriLabel(kategoriId), tanggal, bulan, tahun, svpNama, lokasi, keterangan, targetSku, body.checker, perintahId]
         );
 
         if (!updateResult.rows.length) {
@@ -197,7 +194,6 @@ export default async function handler(req, res) {
       if (!VALID_KATEGORI.includes(kategoriId)) {
         return res.status(400).json({ error: "kategori tidak valid" });
       }
-      const picChecker = body.pic_checker;
       const svpNama = String(body.svp_nama || "").trim();
       const lokasi = String(body.lokasi || "").trim() || null;
       const keterangan = String(body.keterangan || "").trim() || null;
@@ -219,8 +215,8 @@ export default async function handler(req, res) {
       const targetSku = countResult.rows[0].total;
 
       const insertResult = await pool.query(
-        `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, pic_checker, tanggal_perintah, bulan, tahun, svp_nama, checker, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'menunggu') RETURNING *`,
-        [kodeSo, kategoriId, kategoriLabel(kategoriId), picChecker, tanggal, bulan, tahun, svpNama, picChecker, lokasi, keterangan, targetSku]
+        `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, tanggal_perintah, bulan, tahun, svp_nama, checker, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'menunggu') RETURNING *`,
+        [kodeSo, kategoriId, kategoriLabel(kategoriId), tanggal, bulan, tahun, svpNama, body.checker, lokasi, keterangan, targetSku]
       );
 
       return res.status(201).json({

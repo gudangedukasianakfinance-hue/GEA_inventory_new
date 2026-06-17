@@ -32,7 +32,6 @@
           <th>Kode SO</th>
           <th>Tanggal</th>
           <th>Kategori</th>
-          <th>PIC</th>
           <th>Target</th>
           <th>Dicek</th>
           <th>Progress</th>
@@ -99,10 +98,6 @@
         <input type="text" id="perintahSvp" class="form-input" placeholder="Nama Supervisor" required>
       </div>
       <div class="form-group">
-        <label>PIC Checker</label>
-        <input type="text" id="perintahPicChecker" class="form-input" placeholder="Nama PIC Checker Gudang" required>
-      </div>
-      <div class="form-group">
         <label>Kategori</label>
         <select id="perintahKategori" class="form-input" required>
           <option value="modul">Modul</option>
@@ -155,10 +150,6 @@
         <div class="detail-item">
           <label>SVP / Supervisor</label>
           <span id="detailSvp" class="detail-value"></span>
-        </div>
-        <div class="detail-item">
-          <label>PIC Checker</label>
-          <span id="detailPicChecker" class="detail-value"></span>
         </div>
         <div class="detail-item">
           <label>Kategori</label>
@@ -286,7 +277,6 @@
           <td><code>${item.kode_so || item.kode || ''}</code></td>
           <td>${item.tanggal_perintah ? item.tanggal_perintah.slice(0, 10) : '-'}</td>
           <td>${item.kategori_nama || item.kategori || '-'}</td>
-          <td>${item.pic_checker || '-'}</td>
           <td>${targetSku}</td>
           <td>${checkedSku}</td>
           <td>
@@ -388,7 +378,6 @@
       bulan: parseInt(bulanEl.value) || 1,
       tahun: parseInt(tahunEl.value) || new Date().getFullYear(),
       svp_nama: svpEl?.value || '',
-      pic_checker: document.getElementById('perintahPicChecker')?.value || '',
       lokasi: lokasiEl?.value || 'Gudang Utama',
       keterangan: keteranganEl?.value || '',
       kategori_id: kategoriEl?.value || 'modul',
@@ -452,7 +441,6 @@
     document.getElementById('detailPeriode').textContent = `${bulanNames[item.bulan] || '-'} ${item.tahun || '-'}`;
     
     document.getElementById('detailSvp').textContent = item.svp_nama || item.svp || '-';
-    document.getElementById('detailPicChecker').textContent = item.pic_checker || '-';
     document.getElementById('detailKategori').textContent = item.kategori_nama || item.kategori || '-';
     document.getElementById('detailLokasi').textContent = item.lokasi || 'Gudang Utama';
     document.getElementById('detailKeterangan').textContent = item.keterangan || '-';

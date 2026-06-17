@@ -497,7 +497,7 @@ function getCheckerUser() {
 }
 
 // Load Checker PROGRESS tasks (status = proses)
-async function loadCheckerProgressTasks(userNama) {
+async function loadCheckerProgressTasks() {
   const taskList = document.getElementById('checker-progress-list');
   if (!taskList) return;
   
@@ -518,16 +518,16 @@ async function loadCheckerProgressTasks(userNama) {
     const result = await response.json();
     let items = result.items || result.data || [];
     
-    // Filter by pic_checker using auth_user
+    // Filter by checker_user_id - task yang status=proses dan checker=currentUser
     const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
-    const currentName = authUser?.nama_lengkap || authUser?.username;
+    const currentUserId = authUser?.id;
     
-    if (currentName) {
+    if (currentUserId) {
       items = items.filter(item =>
-        item.pic_checker === currentName ||
-        item.pic_checker_name === currentName ||
-        item.checker === currentName
+        item.status === 'proses' && item.checker_user_id === currentUserId
       );
+    } else {
+      items = [];
     }
     
     if (items.length === 0) {
@@ -581,7 +581,7 @@ async function loadCheckerProgressTasks(userNama) {
 }
 
 // Load Checker DONE tasks (status = selesai)
-async function loadCheckerDoneTasks(userNama) {
+async function loadCheckerDoneTasks() {
   const taskList = document.getElementById('checker-done-list');
   if (!taskList) return;
   
@@ -602,16 +602,16 @@ async function loadCheckerDoneTasks(userNama) {
     const result = await response.json();
     let items = result.items || result.data || [];
     
-    // Filter by pic_checker using auth_user
+    // Filter by checker_user_id - task yang status=selesai dan checker=currentUser
     const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
-    const currentName = authUser?.nama_lengkap || authUser?.username;
+    const currentUserId = authUser?.id;
     
-    if (currentName) {
+    if (currentUserId) {
       items = items.filter(item =>
-        item.pic_checker === currentName ||
-        item.pic_checker_name === currentName ||
-        item.checker === currentName
+        item.status === 'selesai' && item.checker_user_id === currentUserId
       );
+    } else {
+      items = [];
     }
     
     if (items.length === 0) {
