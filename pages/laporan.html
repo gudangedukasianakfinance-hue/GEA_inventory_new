@@ -5,6 +5,35 @@
     <p class="page-subtitle">Generate laporan dan analisis data</p>
   </div>
 
+  <!-- Filter Periode -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Bulan</label>
+      <select id="filterBulan">
+        <option value="1">Januari</option>
+        <option value="2">Februari</option>
+        <option value="3">Maret</option>
+        <option value="4">April</option>
+        <option value="5">Mei</option>
+        <option value="6" selected>Juni</option>
+        <option value="7">Juli</option>
+        <option value="8">Agustus</option>
+        <option value="9">September</option>
+        <option value="10">Oktober</option>
+        <option value="11">November</option>
+        <option value="12">Desember</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Tahun</label>
+      <select id="filterTahun">
+        <option value="2026" selected>2026</option>
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+      </select>
+    </div>
+  </div>
+
   <!-- Report Cards -->
   <div class="report-grid">
     <div class="report-card" onclick="generateReport('stok')">
@@ -213,17 +242,30 @@
     window.Laporan.currentReportType = type;
     window.Laporan.reportData = null;
     
+    const bulan = document.getElementById('filterBulan').value;
+    const tahun = document.getElementById('filterTahun').value;
+    
     const titles = {
-      'stok': 'Laporan Stok Gudang',
-      'penjualan': 'Laporan Penjualan',
-      'opname': 'Laporan Stok Opname',
-      'export': 'Export Data'
+      'stok': `Laporan Stok Gudang - ${getNamaBulan(bulan)} ${tahun}`,
+      'penjualan': `Laporan Penjualan - ${getNamaBulan(bulan)} ${tahun}`,
+      'opname': `Laporan Stok Opname - ${getNamaBulan(bulan)} ${tahun}`,
+      'export': `Export Data - ${getNamaBulan(bulan)} ${tahun}`
     };
     
     document.getElementById('reportTitle').textContent = titles[type];
     document.getElementById('reportPreview').style.display = 'block';
     
+    // Store filter values
+    window.Laporan.filterBulan = bulan;
+    window.Laporan.filterTahun = tahun;
+    
     loadReportContent(type);
+  }
+  
+  function getNamaBulan(bulan) {
+    const nama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return nama[bulan - 1] || bulan;
   }
 
   async function loadReportContent(type) {
@@ -231,23 +273,46 @@
     container.innerHTML = '<div class="loading-state"><i data-lucide="loader-2" class="spin"></i> Memuat laporan...</div>';
     if (window.lucide) lucide.createIcons();
     
+    const bulan = window.Laporan.filterBulan || (new Date().getMonth() + 1);
+    const tahun = window.Laporan.filterTahun || new Date().getFullYear();
+    
     try {
-      // Map type to existing API endpoints
-      const apiEndpoints = {
-        'stok': '/v1/stok/realtime',
-        'penjualan': '/v1/penjualan',
-        'opname': '/opname-history?bulan=' + (new Date().getMonth() + 1) + '&tahun=' + new Date().getFullYear(),
-        'export': '/persediaan'
-      };
+      let rawData;
       
-      const apiUrl = apiEndpoints[type];
-      if (!apiUrl) {
-        throw new Error('Report type not supported');
+      // Fetch all data with pagination
+      if (type === 'stok' || type === 'penjualan') {
+        const allItems = [];
+        let page = 1;
+        const limit = 200; // API max limit
+        let hasMore = true;
+        
+        while (hasMore) {
+          const apiUrl = `/api/v1/${type === 'stok' ? 'stok/realtime' : 'penjualan'}?page=${page}&limit=${limit}&bulan=${bulan}&tahun=${tahun}`;
+          const response = await fetch(apiUrl);
+          if (!response.ok) throw new Error('Failed to load');
+          
+          const result = await response.json();
+          const items = Array.isArray(result) ? result : (result.data || []);
+          allItems.push(...items);
+          
+          // Check if more pages
+          const total = result.pagination?.total || items.length;
+          hasMore = page * limit < total && items.length === limit;
+          page++;
+        }
+        
+        rawData = allItems;
+      } else if (type === 'opname') {
+        const apiUrl = `/api/opname-history?bulan=${bulan}&tahun=${tahun}`;
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Failed to load');
+        rawData = await response.json();
+      } else {
+        const apiUrl = '/api/persediaan';
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Failed to load');
+        rawData = await response.json();
       }
-      
-      const response = await fetch(`/api${apiUrl}`);
-      if (!response.ok) throw new Error('Failed to load');
-      const rawData = await response.json();
       
       // Store data for download
       window.Laporan.reportData = rawData;
