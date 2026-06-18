@@ -65,9 +65,13 @@
     <div class="card__header">
       <h3 id="reportTitle">Preview Laporan</h3>
       <div class="report-actions">
-        <button class="btn btn--secondary" onclick="downloadReport()">
-          <i data-lucide="download"></i>
-          <span>Download</span>
+        <button class="btn btn--secondary" onclick="downloadReport('csv')">
+          <i data-lucide="file-spreadsheet"></i>
+          <span>CSV</span>
+        </button>
+        <button class="btn btn--secondary" onclick="downloadReport('xlsx')">
+          <i data-lucide="file-spreadsheet"></i>
+          <span>Excel</span>
         </button>
         <button class="btn btn--secondary" onclick="printReport()">
           <i data-lucide="printer"></i>
@@ -146,15 +150,60 @@
     justify-content: space-between;
     align-items: center;
   }
+  
+  .loading-state {
+    text-align: center;
+    padding: 48px;
+    color: #94A3B8;
+  }
+  
+  .loading-state i {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 12px;
+    animation: spin 1s linear infinite;
+  }
+  
+  .error-state {
+    text-align: center;
+    padding: 48px;
+    color: #EF4444;
+  }
+  
+  .report-summary {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #94A3B8;
+  }
+  
+  .report-notice {
+    padding: 16px;
+    margin-bottom: 16px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    color: #60A5FA;
+    font-size: 13px;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 </style>
 
 <script>
   // Namespace untuk state (hindari redeclare saat SPA cache reload)
   window.Laporan = window.Laporan || {};
   window.Laporan.currentReportType = window.Laporan.currentReportType || null;
+  window.Laporan.reportData = window.Laporan.reportData || null;
 
   function generateReport(type) {
     window.Laporan.currentReportType = type;
+    window.Laporan.reportData = null;
     
     const titles = {
       'stok': 'Laporan Stok Gudang',
@@ -171,14 +220,15 @@
 
   async function loadReportContent(type) {
     const container = document.getElementById('reportContent');
-    container.innerHTML = '<div class="loading-state">Memuat laporan...</div>';
+    container.innerHTML = '<div class="loading-state"><i data-lucide="loader-2" class="spin"></i> Memuat laporan...</div>';
+    if (window.lucide) lucide.createIcons();
     
     try {
       // Map type to existing API endpoints
       const apiEndpoints = {
         'stok': '/v1/stok/realtime',
         'penjualan': '/v1/penjualan',
-        'opname': '/opname-history',
+        'opname': '/opname-history?bulan=' + (new Date().getMonth() + 1) + '&tahun=' + new Date().getFullYear(),
         'export': '/persediaan'
       };
       
@@ -189,25 +239,297 @@
       
       const response = await fetch(`/api${apiUrl}`);
       if (!response.ok) throw new Error('Failed to load');
-      const data = await response.json();
+      const rawData = await response.json();
       
-      // Generate simple table from data
-      let html = '<div class="report-notice">Fitur laporan lengkap masih dalam pengembangan. Berikut data yang tersedia:</div>';
-      html += '<pre style="white-space: pre-wrap; font-size: 12px; background: #1a1a2e; padding: 16px; border-radius: 8px; overflow-x: auto;">';
-      html += JSON.stringify(data, null, 2);
-      html += '</pre>';
+      // Store data for download
+      window.Laporan.reportData = rawData;
+      
+      // Generate table based on type
+      let html = '';
+      
+      if (type === 'stok') {
+        html = generateStokTable(rawData);
+      } else if (type === 'penjualan') {
+        html = generatePenjualanTable(rawData);
+      } else if (type === 'opname') {
+        html = generateOpnameTable(rawData);
+      } else if (type === 'export') {
+        html = generateExportTable(rawData);
+      }
       
       container.innerHTML = html;
+      if (window.lucide) lucide.createIcons({ nodes: [container] });
+      
     } catch (error) {
       console.error('Error loading report:', error);
       container.innerHTML = `<div class="error-state">Gagal memuat laporan: ${error.message}</div>`;
     }
   }
 
-  function downloadReport() {
-    if (window.Laporan.currentReportType) {
-      showToast('Fitur download dalam pengembangan', false);
+  function generateStokTable(data) {
+    const items = Array.isArray(data) ? data : (data.items || []);
+    
+    if (items.length === 0) {
+      return '<div class="empty-state">Tidak ada data stok</div>';
     }
+    
+    return `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Produk</th>
+            <th>Kategori</th>
+            <th>Stok</th>
+            <th>Harga Beli</th>
+            <th>Harga Jual</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td><code>${item.sku || '-'}</code></td>
+              <td>${item.nama_produk || '-'}</td>
+              <td>${item.kategori || '-'}</td>
+              <td>${formatNumber(item.stok || item.stok_akhir || 0)}</td>
+              <td>${formatCurrency(item.harga_beli)}</td>
+              <td>${formatCurrency(item.harga_jual)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="report-summary">Total: ${items.length} item</div>
+    `;
+  }
+
+  function generatePenjualanTable(data) {
+    const items = Array.isArray(data) ? data : (data.items || data.penjualan || []);
+    
+    if (items.length === 0) {
+      return '<div class="empty-state">Tidak ada data penjualan</div>';
+    }
+    
+    return `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>SKU</th>
+            <th>Produk</th>
+            <th>Outlet</th>
+            <th>Qty</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td>${formatDate(item.tanggal || item.created_at)}</td>
+              <td><code>${item.sku || '-'}</code></td>
+              <td>${item.nama_produk || '-'}</td>
+              <td>${item.nama_outlet || '-'}</td>
+              <td>${formatNumber(item.qty || 0)}</td>
+              <td>${formatCurrency(item.total || (item.qty && item.harga ? item.qty * item.harga : 0))}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="report-summary">Total: ${items.length} transaksi</div>
+    `;
+  }
+
+  function generateOpnameTable(data) {
+    const items = Array.isArray(data) ? data : (data.items || []);
+    
+    if (items.length === 0) {
+      return '<div class="empty-state">Tidak ada data stok opname</div>';
+    }
+    
+    return `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Kode SO</th>
+            <th>Tanggal</th>
+            <th>Lokasi</th>
+            <th>Checker</th>
+            <th>Item</th>
+            <th>Selisih</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => {
+            const selisih = item.total_selisih_net || item.total_selisih || 0;
+            const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
+            return `
+              <tr>
+                <td><code>${item.kode_so || '-'}</code></td>
+                <td>${formatDate(item.tanggal || item.tanggal_pelaksanaan || item.created_at)}</td>
+                <td>${item.lokasi || '-'}</td>
+                <td>${item.pic_pelaksana || item.checker || '-'}</td>
+                <td>${formatNumber(item.total_item || 0)}</td>
+                <td class="${selisihClass}">${selisih > 0 ? '+' : ''}${formatNumber(selisih)}</td>
+                <td><span class="badge ${getStatusClass(item.status)}">${getStatusLabel(item.status)}</span></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="report-summary">Total: ${items.length} stok opname</div>
+    `;
+  }
+
+  function generateExportTable(data) {
+    const items = Array.isArray(data) ? data : (data.items || []);
+    
+    if (items.length === 0) {
+      return '<div class="empty-state">Tidak ada data untuk export</div>';
+    }
+    
+    // Get all unique keys from items
+    const firstItem = items[0];
+    const headers = Object.keys(firstItem).filter(k => !k.startsWith('_') && k !== 'created_at' && k !== 'updated_at');
+    
+    return `
+      <table class="data-table">
+        <thead>
+          <tr>
+            ${headers.map(h => `<th>${formatHeader(h)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              ${headers.map(h => `<td>${item[h] ?? '-'}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="report-summary">Total: ${items.length} data</div>
+    `;
+  }
+
+  function formatNumber(num) {
+    return num ? num.toLocaleString('id-ID') : '0';
+  }
+
+  function formatCurrency(num) {
+    if (!num) return 'Rp 0';
+    return 'Rp ' + Number(num).toLocaleString('id-ID');
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatHeader(key) {
+    return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
+
+  function getStatusClass(status) {
+    const map = {
+      'menunggu': 'badge--pending',
+      'proses': 'badge--process',
+      'selesai': 'badge--done',
+      'ditolak': 'badge--danger'
+    };
+    return map[status] || 'badge--pending';
+  }
+
+  function getStatusLabel(status) {
+    const map = {
+      'menunggu': 'Menunggu',
+      'proses': 'Proses',
+      'selesai': 'Selesai',
+      'ditolak': 'Ditolak'
+    };
+    return map[status] || status;
+  }
+
+  function downloadReport(format) {
+    const type = window.Laporan.currentReportType;
+    const data = window.Laporan.reportData;
+    
+    if (!data) {
+      showToast('Tidak ada data untuk didownload', false);
+      return;
+    }
+    
+    let items = Array.isArray(data) ? data : (data.items || []);
+    let filename = `laporan_${type}_${new Date().toISOString().split('T')[0]}`;
+    
+    if (format === 'csv') {
+      downloadCSV(items, filename);
+    } else if (format === 'xlsx') {
+      downloadExcel(items, filename);
+    }
+    
+    showToast(`Download ${format.toUpperCase()} berhasil`);
+  }
+
+  function downloadCSV(items, filename) {
+    if (items.length === 0) {
+      showToast('Tidak ada data', false);
+      return;
+    }
+    
+    const headers = Object.keys(items[0]).filter(k => !k.startsWith('_') && !['created_at', 'updated_at', 'id'].includes(k));
+    
+    const csvContent = [
+      headers.map(h => formatHeader(h)),
+      ...items.map(item => headers.map(h => {
+        const val = item[h];
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'string' && val.includes(',')) return `"${val}"`;
+        return String(val);
+      }))
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename + '.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadExcel(items, filename) {
+    if (items.length === 0) {
+      showToast('Tidak ada data', false);
+      return;
+    }
+    
+    const headers = Object.keys(items[0]).filter(k => !k.startsWith('_') && !['created_at', 'updated_at', 'id'].includes(k));
+    
+    // Generate HTML table for Excel
+    let html = '<html xmlns:o="urn:schemas-microsoft-com:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+    html += '<head><meta charset="utf-8"></head><body>';
+    html += '<table border="1">';
+    
+    // Headers
+    html += '<thead><tr>' + headers.map(h => `<th>${formatHeader(h)}</th>`).join('') + '</tr></thead>';
+    
+    // Body
+    html += '<tbody>';
+    items.forEach(item => {
+      html += '<tr>' + headers.map(h => {
+        const val = item[h];
+        return `<td>${val !== null && val !== undefined ? val : ''}</td>`;
+      }).join('') + '</tr>';
+    });
+    html += '</tbody></table></body></html>';
+    
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename + '.xls';
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function printReport() {
