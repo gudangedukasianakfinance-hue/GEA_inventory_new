@@ -184,7 +184,7 @@ async function createUser(req, res) {
       `INSERT INTO users (username, email, password_hash, nama_lengkap, role, is_active, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING id, username, email, nama_lengkap as name, role, is_active, created_at`,
-      [username.trim(), finalEmail, passwordHash, finalName, finalRole, status === 'inactive' ? 'FALSE' : 'TRUE']
+      [username.trim(), finalEmail, passwordHash, finalName, finalRole, status !== 'inactive']
     );
 
     return send(res, 201, {
