@@ -189,6 +189,14 @@
     font-size: 13px;
   }
   
+  .text-success {
+    color: #22C55E !important;
+  }
+  
+  .text-danger {
+    color: #EF4444 !important;
+  }
+  
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -268,11 +276,15 @@
 
   function generateStokTable(data) {
     // API returns { success: true, data: [...] } or direct array
+    // API fields: sku, nama_produk, kategori, stok_awal, pembelian, penjualan, penyesuaian, stok_akhir
     const items = Array.isArray(data) ? data : (data.data || data.items || []);
     
     if (items.length === 0) {
       return '<div class="empty-state">Tidak ada data stok</div>';
     }
+    
+    // Calculate totals
+    const totalStok = items.reduce((sum, item) => sum + Number(item.stok_akhir || 0), 0);
     
     return `
       <table class="data-table">
@@ -281,9 +293,11 @@
             <th>SKU</th>
             <th>Produk</th>
             <th>Kategori</th>
-            <th>Stok</th>
-            <th>Harga Beli</th>
-            <th>Harga Jual</th>
+            <th>Stok Awal</th>
+            <th> Masuk</th>
+            <th>Keluar</th>
+            <th>Penyesuaian</th>
+            <th>Stok Akhir</th>
           </tr>
         </thead>
         <tbody>
@@ -292,24 +306,31 @@
               <td><code>${item.sku || '-'}</code></td>
               <td>${item.nama_produk || '-'}</td>
               <td>${item.kategori || '-'}</td>
-              <td>${formatNumber(item.stok || item.stok_akhir || 0)}</td>
-              <td>${formatCurrency(item.harga_beli)}</td>
-              <td>${formatCurrency(item.harga_jual)}</td>
+              <td>${formatNumber(item.stok_awal || 0)}</td>
+              <td class="text-success">+${formatNumber(item.pembelian || 0)}</td>
+              <td class="text-danger">-${formatNumber(item.penjualan || 0)}</td>
+              <td>${item.penyesuaian > 0 ? '+' : ''}${formatNumber(item.penyesuaian || 0)}</td>
+              <td><strong>${formatNumber(item.stok_akhir || 0)}</strong></td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      <div class="report-summary">Total: ${items.length} item</div>
+      <div class="report-summary">Total: ${items.length} item | Total Stok: ${formatNumber(totalStok)}</div>
     `;
   }
 
   function generatePenjualanTable(data) {
     // API returns { success: true, data: [...] } or direct array
+    // API fields: id, tanggal, nama_outlet, sku, qty, nama_produk, harga_jual, nominal, created_at
     const items = Array.isArray(data) ? data : (data.data || data.items || data.penjualan || []);
     
     if (items.length === 0) {
       return '<div class="empty-state">Tidak ada data penjualan</div>';
     }
+    
+    // Calculate totals
+    const totalQty = items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    const totalNominal = items.reduce((sum, item) => sum + Number(item.nominal || 0), 0);
     
     return `
       <table class="data-table">
@@ -319,6 +340,7 @@
             <th>SKU</th>
             <th>Produk</th>
             <th>Outlet</th>
+            <th>Harga</th>
             <th>Qty</th>
             <th>Total</th>
           </tr>
@@ -330,13 +352,14 @@
               <td><code>${item.sku || '-'}</code></td>
               <td>${item.nama_produk || '-'}</td>
               <td>${item.nama_outlet || '-'}</td>
+              <td>${formatCurrency(item.harga_jual)}</td>
               <td>${formatNumber(item.qty || 0)}</td>
-              <td>${formatCurrency(item.total || (item.qty && item.harga ? item.qty * item.harga : 0))}</td>
+              <td><strong>${formatCurrency(item.nominal)}</strong></td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      <div class="report-summary">Total: ${items.length} transaksi</div>
+      <div class="report-summary">Total: ${items.length} transaksi | Qty: ${formatNumber(totalQty)} | Nominal: ${formatCurrency(totalNominal)}</div>
     `;
   }
 
