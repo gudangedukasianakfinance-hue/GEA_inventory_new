@@ -250,12 +250,13 @@
   window.saveUser = async function(event) {
     event.preventDefault();
     
+    const roleValue = document.getElementById('userRole').value;
     const password = document.getElementById('userPassword').value;
     const data = {
       username: document.getElementById('userUsername').value,
       email: document.getElementById('userEmail').value,
       nama: document.getElementById('userNama').value,
-      role: document.getElementById('userRole').value,
+      role: roleValue,
       status: document.getElementById('userActive').checked ? 'active' : 'inactive'
     };
     
@@ -264,7 +265,12 @@
       data.password = password;
     }
 
-    console.log('[EDIT USER PAYLOAD]', data);
+    console.log('[USER PAYLOAD DEBUG]', {
+      roleValue: roleValue,
+      selectElement: document.getElementById('userRole'),
+      selectValue: document.getElementById('userRole').value,
+      data: data
+    });
 
     try {
       const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';

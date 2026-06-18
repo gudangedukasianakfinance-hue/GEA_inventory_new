@@ -147,6 +147,7 @@ async function getUser(req, res, userId) {
 }
 
 async function createUser(req, res) {
+  console.log('[CREATE USER REQUEST]', JSON.stringify(req.body, null, 2));
   const { username, email, name, password, role, status } = req.body || {};
   const nama = req.body.nama || name;
 
