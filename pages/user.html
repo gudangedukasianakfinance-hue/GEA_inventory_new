@@ -263,6 +263,18 @@
       event.preventDefault();
       
       const roleValue = document.getElementById('userRole').value;
+      
+      // DEBUG: Log all select options
+      const roleSelect = document.getElementById('userRole');
+      if (roleSelect) {
+        console.log('[DEBUG] userRole select found');
+        console.log('[DEBUG] selectedIndex:', roleSelect.selectedIndex);
+        console.log('[DEBUG] selectedValue:', roleSelect.value);
+        console.log('[DEBUG] options:', Array.from(roleSelect.options).map(o => ({val: o.value, text: o.text, sel: o.selected})));
+      } else {
+        console.log('[DEBUG] userRole select NOT FOUND!');
+      }
+      
       if (!roleValue) {
         showToast('Role harus dipilih!', false);
         return;
