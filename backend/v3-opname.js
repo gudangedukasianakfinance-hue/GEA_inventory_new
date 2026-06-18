@@ -204,7 +204,7 @@ export async function handlePut(req, res) {
         if (so.opname_id) {
           await pool.query(`
             UPDATE stok_opname 
-            SET tanggal_selesai = NOW(), updated_at = NOW()
+            SET updated_at = NOW()
             WHERE id = $1
           `, [so.opname_id]);
         }
