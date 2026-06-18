@@ -267,7 +267,8 @@
   }
 
   function generateStokTable(data) {
-    const items = Array.isArray(data) ? data : (data.items || []);
+    // API returns { success: true, data: [...] } or direct array
+    const items = Array.isArray(data) ? data : (data.data || data.items || []);
     
     if (items.length === 0) {
       return '<div class="empty-state">Tidak ada data stok</div>';
@@ -303,7 +304,8 @@
   }
 
   function generatePenjualanTable(data) {
-    const items = Array.isArray(data) ? data : (data.items || data.penjualan || []);
+    // API returns { success: true, data: [...] } or direct array
+    const items = Array.isArray(data) ? data : (data.data || data.items || data.penjualan || []);
     
     if (items.length === 0) {
       return '<div class="empty-state">Tidak ada data penjualan</div>';
@@ -339,7 +341,8 @@
   }
 
   function generateOpnameTable(data) {
-    const items = Array.isArray(data) ? data : (data.items || []);
+    // API returns direct array
+    const items = Array.isArray(data) ? data : (data.data || data.items || []);
     
     if (items.length === 0) {
       return '<div class="empty-state">Tidak ada data stok opname</div>';
@@ -381,7 +384,8 @@
   }
 
   function generateExportTable(data) {
-    const items = Array.isArray(data) ? data : (data.items || []);
+    // Handle { success: true, data: [...] } format
+    const items = Array.isArray(data) ? data : (data.data || data.items || []);
     
     if (items.length === 0) {
       return '<div class="empty-state">Tidak ada data untuk export</div>';
@@ -458,7 +462,14 @@
       return;
     }
     
-    let items = Array.isArray(data) ? data : (data.items || []);
+    // Handle { success: true, data: [...] } format
+    let items = Array.isArray(data) ? data : (data.data || data.items || []);
+    
+    if (!Array.isArray(items) || items.length === 0) {
+      showToast('Tidak ada data untuk didownload', false);
+      return;
+    }
+    
     let filename = `laporan_${type}_${new Date().toISOString().split('T')[0]}`;
     
     if (format === 'csv') {
