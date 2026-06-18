@@ -540,15 +540,23 @@
 
   async function loadProdukList() {
     try {
-      // Get kategori from localStorage
+      // Get kategori from localStorage - use default 'modul'
       const kategoriId = localStorage.getItem('activePerintahKategori') || 'modul';
       
-      // Load dari v3-opname-detail endpoint with kategori filter
-      const response = await fetch(`/api/v3-opname-detail?perintah_id=${window.SOPelaksanaan.activePerintahId}&kategori=${kategoriId}`);
+      // Get opname_id from state
+      const opnameId = window.SOPelaksanaan.activeOpnameId;
+      
+      if (!opnameId) {
+        console.log('[loadProdukList] No opname_id, skipping produk load');
+        return;
+      }
+      
+      // Load dari v3-opname-detail endpoint with correct parameters
+      const response = await fetch(`/api/v3-opname-detail?opname_id=${opnameId}&kategori_id=${kategoriId}`);
       if (!response.ok) throw new Error('Failed to load produk');
       
       const data = await response.json();
-      window.SOPelaksanaan.produkList = data.produk || [];
+      window.SOPelaksanaan.produkList = data.items || data.produk || [];
       window.SOPelaksanaan.targetSku = window.SOPelaksanaan.produkList.length;
       
       // Build map untuk quick lookup (ensure sku is string for consistent lookup)
@@ -557,7 +565,7 @@
         window.SOPelaksanaan.produkMap[String(p.sku)] = p;
       });
       
-      console.log('ProdukMap loaded:', Object.keys(window.SOPelaksanaan.produkMap).length, 'items for kategori:', kategoriId);
+      console.log('[loadProdukList] Produk loaded:', Object.keys(window.SOPelaksanaan.produkMap).length, 'items for kategori:', kategoriId);
       
       // Update progress table
       renderProgressTable();
@@ -614,10 +622,10 @@
   // Barcode Scanner Variables - use namespace to prevent redeclaration
   window.SOPelaksanaan = window.SOPelaksanaan || {};
   window.SOPelaksanaan.html5QrCode = window.SOPelaksanaan.html5QrCode || null;
-  let isScanning = false;
+  window.SOPelaksanaan.isScanning = window.SOPelaksanaan.isScanning || false;
 
   async function startBarcodeScan() {
-    if (isScanning) return;
+    if (window.SOPelaksanaan.isScanning) return;
     
     try {
       // Check camera permission
@@ -648,7 +656,7 @@
         }
       );
       
-      isScanning = true;
+      window.SOPelaksanaan.isScanning = true;
       document.getElementById('scannerContainer').style.display = 'block';
       document.getElementById('btnStartScan').style.display = 'none';
       document.getElementById('btnStopScan').style.display = 'inline-flex';
@@ -663,12 +671,12 @@
   }
 
   async function stopBarcodeScan() {
-    if (!isScanning || !window.SOPelaksanaan.html5QrCode) return;
+    if (!window.SOPelaksanaan.isScanning || !window.SOPelaksanaan.html5QrCode) return;
     
     try {
       await window.SOPelaksanaan.html5QrCode.stop();
       window.SOPelaksanaan.html5QrCode = null;
-      isScanning = false;
+      window.SOPelaksanaan.isScanning = false;
       
       document.getElementById('scannerContainer').style.display = 'none';
       document.getElementById('btnStartScan').style.display = 'inline-flex';
