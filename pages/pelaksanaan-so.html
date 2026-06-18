@@ -256,7 +256,7 @@
   .so-header-value {
     font-size: 24px;
     font-weight: 700;
-    color: #FFF;
+    color: #FAFAFA;
   }
   .so-header-stats {
     display: flex;
@@ -269,7 +269,7 @@
     display: block;
     font-size: 28px;
     font-weight: 700;
-    color: #FFF;
+    color: #FAFAFA;
   }
   .so-stat__label {
     font-size: 11px;
@@ -277,7 +277,7 @@
     text-transform: uppercase;
   }
   .scan-container {
-    background: #101827;
+    background: #18181B;
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 18px;
     padding: 24px;
@@ -291,7 +291,7 @@
   }
   .scan-header h3 {
     font-size: 16px;
-    color: #FFF;
+    color: #FAFAFA;
     margin: 0;
   }
   .scan-header-actions {
@@ -320,12 +320,12 @@
     background: rgba(255,255,255,.04);
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 12px;
-    color: #FFF;
+    color: #FAFAFA;
     font-size: 16px;
   }
   .scan-input:focus {
     outline: none;
-    border-color: #FF4D3A;
+    border-color: #DC2626;
   }
   .scan-result {
     background: rgba(34, 197, 94, 0.1);
@@ -364,7 +364,7 @@
   .scan-result__value {
     font-size: 14px;
     font-weight: 500;
-    color: #FFF;
+    color: #FAFAFA;
   }
   .recent-scans h4 {
     color: #94A3B8;
@@ -394,7 +394,7 @@
   }
   .recent-scans-item__nama {
     font-size: 13px;
-    color: #FFF;
+    color: #FAFAFA;
     margin-bottom: 8px;
   }
   .recent-scans-item__stats {
@@ -407,7 +407,7 @@
     color: #22C55E;
   }
   .recent-scans-item__stats .text-danger {
-    color: #FF4D3A;
+    color: #DC2626;
   }
   .so-action-bar {
     display: flex;
@@ -427,7 +427,7 @@
     margin-bottom: 16px;
   }
   .empty-state h3 {
-    color: #FFF;
+    color: #FAFAFA;
     margin-bottom: 8px;
   }
   .empty-state p {
@@ -447,7 +447,7 @@
     border-color: rgba(255, 77, 58, 0.2);
   }
   .so-input-info--compact .so-input-info__value {
-    color: #FF4D3A;
+    color: #DC2626;
     font-size: 16px;
     font-weight: 700;
   }
@@ -467,7 +467,7 @@
   .so-input-info__value {
     font-size: 14px;
     font-weight: 600;
-    color: #FFF;
+    color: #FAFAFA;
   }
 </style>
 
@@ -846,7 +846,7 @@
     const selisihEl = document.getElementById('manualDisplaySelisih');
     const selisihPrefix = selisih > 0 ? '+' : '';
     selisihEl.textContent = selisihPrefix + selisih;
-    selisihEl.style.color = selisih === 0 ? '#22C55E' : selisih > 0 ? '#22C55E' : '#FF4D3A';
+    selisihEl.style.color = selisih === 0 ? '#22C55E' : selisih > 0 ? '#22C55E' : '#DC2626';
   }
 
   function showManualInput() {

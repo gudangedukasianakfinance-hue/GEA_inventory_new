@@ -6,27 +6,27 @@
 /* ===== CSS Variables ===== */
 :root {
   /* Primary Colors */
-  --primary: #ff4d3a;
-  --primary-dark: #d93624;
-  --primary-light: #ff6b5a;
-  --primary-glow: rgba(255, 77, 58, 0.3);
+  --primary: #DC2626;
+  --primary-dark: #B91C1C;
+  --primary-light: #EF4444;
+  --primary-glow: rgba(220, 38, 38, 0.3);
   
   /* Background Colors */
-  --bg: #060b16;
-  --bg-secondary: #0a1628;
-  --surface: #101828;
-  --surface-2: #0f172a;
-  --surface-3: #1a2332;
+  --bg: #09090B;
+  --bg-secondary: #18181B;
+  --surface: #27272A;
+  --surface-2: #3F3F46;
+  --surface-3: #52525B;
   
   /* Text Colors */
-  --text: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --muted: #94a3b8;
-  --muted-2: #64748b;
+  --text: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --muted: #71717A;
+  --muted-2: #52525B;
   
   /* Status Colors */
-  --success: #10b981;
-  --success-light: #34d399;
+  --success: #22C55E;
+  --success-light: #4ADE80;
   --success-bg: rgba(16, 185, 129, 0.1);
   --warning: #f59e0b;
   --warning-light: #fbbf24;
@@ -1255,15 +1255,15 @@ textarea.form-input {
 }
 /* ===== Dark Theme ===== */
 [data-theme="dark"] {
-  --bg: #060b16;
-  --bg-secondary: #0a1628;
-  --surface: #101828;
-  --surface-2: #0f172a;
-  --surface-3: #1a2332;
-  --text: #f8fafc;
-  --text-secondary: #cbd5e1;
+  --bg: #09090B;
+  --bg-secondary: #18181B;
+  --surface: #27272A;
+  --surface-2: #3F3F46;
+  --surface-3: #52525B;
+  --text: #FAFAFA;
+  --text-secondary: #A1A1AA;
   --border: rgba(255, 255, 255, 0.08);
-  --primary: #ff4d3a;
+  --primary: #DC2626;
 }
 
 /* ===== Light Theme ===== */
@@ -1276,5 +1276,5 @@ textarea.form-input {
   --text: #1f2937;
   --text-secondary: #6b7280;
   --border: #e5e7eb;
-  --primary: #ff4d3a;
+  --primary: #DC2626;
 }
