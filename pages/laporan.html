@@ -149,10 +149,12 @@
 </style>
 
 <script>
-  let currentReportType = null;
+  // Namespace untuk state (hindari redeclare saat SPA cache reload)
+  window.Laporan = window.Laporan || {};
+  window.Laporan.currentReportType = window.Laporan.currentReportType || null;
 
   function generateReport(type) {
-    currentReportType = type;
+    window.Laporan.currentReportType = type;
     
     const titles = {
       'stok': 'Laporan Stok Gudang',
@@ -172,35 +174,39 @@
     container.innerHTML = '<div class="loading-state">Memuat laporan...</div>';
     
     try {
-      const response = await fetch(`/api/v1/reports/${type}`);
+      // Map type to existing API endpoints
+      const apiEndpoints = {
+        'stok': '/v1/stok/realtime',
+        'penjualan': '/v1/penjualan',
+        'opname': '/opname-history',
+        'export': '/persediaan'
+      };
+      
+      const apiUrl = apiEndpoints[type];
+      if (!apiUrl) {
+        throw new Error('Report type not supported');
+      }
+      
+      const response = await fetch(`/api${apiUrl}`);
       if (!response.ok) throw new Error('Failed to load');
       const data = await response.json();
       
-      container.innerHTML = `
-        <table class="data-table">
-          <thead>
-            <tr>
-              ${data.headers.map(h => `<th>${h}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${data.rows.map(row => `
-              <tr>
-                ${row.map(cell => `<td>${cell}</td>`).join('')}
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
+      // Generate simple table from data
+      let html = '<div class="report-notice">Fitur laporan lengkap masih dalam pengembangan. Berikut data yang tersedia:</div>';
+      html += '<pre style="white-space: pre-wrap; font-size: 12px; background: #1a1a2e; padding: 16px; border-radius: 8px; overflow-x: auto;">';
+      html += JSON.stringify(data, null, 2);
+      html += '</pre>';
+      
+      container.innerHTML = html;
     } catch (error) {
       console.error('Error loading report:', error);
-      container.innerHTML = '<div class="error-state">Gagal memuat laporan</div>';
+      container.innerHTML = `<div class="error-state">Gagal memuat laporan: ${error.message}</div>`;
     }
   }
 
   function downloadReport() {
-    if (currentReportType) {
-      window.open(`/api/v1/reports/download/${currentReportType}`, '_blank');
+    if (window.Laporan.currentReportType) {
+      showToast('Fitur download dalam pengembangan', false);
     }
   }
 
