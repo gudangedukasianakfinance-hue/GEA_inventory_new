@@ -124,12 +124,13 @@
     font-weight: normal;
   }
 </style>
-
-<script>
+// User Management - Using window namespace to avoid closure issues
 (function() {
-  // State
-  let userList = [];
-  let editingUserId = null;
+  // State stored in window to be accessible by all functions
+  window.UserState = window.UserState || {
+    userList: [],
+    editingUserId: null
+  };
 
   // Load users from server
   async function loadUsers() {
@@ -145,27 +146,29 @@
       if (!response.ok) throw new Error('Failed to load');
       const payload = await response.json();
       
-      userList = payload.items || payload.data || [];
+      window.UserState.userList = payload.items || payload.data || [];
       renderUsersTable();
     } catch (error) {
       console.error('Error loading users:', error);
-      document.getElementById('usersTableBody').innerHTML = 
-        '<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>';
+      const tbody = document.getElementById('usersTableBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Gagal memuat data</td></tr>';
     }
   }
 
   // Render table
   function renderUsersTable() {
     const tbody = document.getElementById('usersTableBody');
-    if (userList.length === 0) {
+    if (!tbody) return;
+    
+    const users = window.UserState.userList;
+    if (users.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Tidak ada user</td></tr>';
       return;
     }
     
-    tbody.innerHTML = userList.map(user => {
+    tbody.innerHTML = users.map(user => {
       const roleClass = user.role === 'admin' ? 'role-admin' : user.role === 'staff_gudang' ? 'role-staff_gudang' : 'role-checker_opname';
-      const statusClass = user.status === 'active' ? 'status-active' : 'status-inactive';
-      const isActive = user.status === 'active';
+      const isActive = user.status === 'active' || user.is_active;
       
       return `
         <tr>
@@ -173,18 +176,18 @@
           <td><code>${user.username}</code></td>
           <td>${user.email || '-'}</td>
           <td><span class="role-badge ${roleClass}">${formatRole(user.role)}</span></td>
-          <td><span class="status-badge ${statusClass}">${isActive ? 'Aktif' : 'Nonaktif'}</span></td>
+          <td><span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">${isActive ? 'Aktif' : 'Nonaktif'}</span></td>
           <td>
-            <button class="action-btn" onclick="window.editUser('${user.id}')">
+            <button class="action-btn" onclick="UserMgmt.showEdit('${user.id}')">
               <i data-lucide="edit-2"></i>
             </button>
-            <button class="action-btn" onclick="window.toggleUserStatus('${user.id}', ${!isActive})" title="${isActive ? 'Nonaktifkan' : 'Aktifkan'}">
+            <button class="action-btn" onclick="UserMgmt.toggleStatus('${user.id}', ${!isActive})" title="${isActive ? 'Nonaktifkan' : 'Aktifkan'}">
               <i data-lucide="${isActive ? 'user-x' : 'user-check'}"></i>
             </button>
-            <button class="action-btn" onclick="window.resetUserPassword('${user.id}')" title="Reset Password">
+            <button class="action-btn" onclick="UserMgmt.resetPassword('${user.id}')" title="Reset Password">
               <i data-lucide="key"></i>
             </button>
-            <button class="action-btn danger" onclick="window.deleteUser('${user.id}')">
+            <button class="action-btn danger" onclick="UserMgmt.deleteUser('${user.id}')">
               <i data-lucide="trash-2"></i>
             </button>
           </td>
@@ -194,7 +197,7 @@
     
     if (window.lucide) lucide.createIcons({ nodes: [tbody] });
   }
-
+	
   // Format role label
   function formatRole(role) {
     const roles = {
@@ -205,160 +208,167 @@
     return roles[role] || role || '-';
   }
 
-  // Show add modal
-  window.showAddUserModal = function() {
-    editingUserId = null;
-    document.getElementById('userModalTitle').textContent = 'Tambah User';
-    document.getElementById('userForm').reset();
-    // Set role explicitly after reset (reset doesn't always work for selects)
-    document.getElementById('userRole').value = '';
-    document.getElementById('userActive').checked = true;
-    document.getElementById('userUsername').disabled = false;
-    document.getElementById('passwordHint').style.display = 'none';
-    document.getElementById('userModal').classList.add('active');
-  };
-
-  // Edit user - fetch dari server
-  window.editUser = async function(id) {
-    try {
-      const response = await fetch(`/api/v1/users/${id}`);
-      if (!response.ok) throw new Error('User tidak ditemukan');
-      const result = await response.json();
-      const user = result.data;
+  // User Management API object
+  window.UserMgmt = {
+    showAdd: function() {
+      window.UserState.editingUserId = null;
       
-      editingUserId = id;
-      document.getElementById('userModalTitle').textContent = 'Edit User';
-      document.getElementById('userUsername').value = user.username || '';
-      document.getElementById('userUsername').disabled = true;
-      document.getElementById('userEmail').value = user.email || '';
-      document.getElementById('userNama').value = user.name || user.nama_lengkap || '';
-      document.getElementById('userRole').value = user.role || 'staff_gudang';
+      document.getElementById('userModalTitle').textContent = 'Tambah User';
+      document.getElementById('userUsername').value = '';
+      document.getElementById('userUsername').disabled = false;
+      document.getElementById('userEmail').value = '';
+      document.getElementById('userNama').value = '';
+      document.getElementById('userRole').value = 'admin'; // Default to admin
       document.getElementById('userPassword').value = '';
-      document.getElementById('userActive').checked = user.is_active === true || user.status === 'active';
-      document.getElementById('passwordHint').style.display = 'inline';
+      document.getElementById('userActive').checked = true;
+      document.getElementById('passwordHint').style.display = 'none';
+      
       document.getElementById('userModal').classList.add('active');
-    } catch (error) {
-      console.error('Error loading user:', error);
-      showToast('Gagal memuat data user', false);
-    }
-  };
+    },
 
-  // Close modal
-  window.closeUserModal = function() {
-    document.getElementById('userModal').classList.remove('active');
-    editingUserId = null;
-  };
+    showEdit: async function(id) {
+      try {
+        const response = await fetch(`/api/v1/users/${id}`);
+        if (!response.ok) throw new Error('User tidak ditemukan');
+        const result = await response.json();
+        const user = result.data;
+        
+        window.UserState.editingUserId = id;
+        
+        document.getElementById('userModalTitle').textContent = 'Edit User';
+        document.getElementById('userUsername').value = user.username || '';
+        document.getElementById('userUsername').disabled = true;
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userNama').value = user.name || user.nama_lengkap || '';
+        document.getElementById('userRole').value = user.role || 'admin';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userActive').checked = user.is_active === true || user.status === 'active';
+        document.getElementById('passwordHint').style.display = 'inline';
+        
+        document.getElementById('userModal').classList.add('active');
+      } catch (error) {
+        console.error('Error loading user:', error);
+        showToast('Gagal memuat data user', false);
+      }
+    },
 
-  // Save user
-  window.saveUser = async function(event) {
-    event.preventDefault();
-    
-    const roleValue = document.getElementById('userRole').value;
-    
-    // VALIDASI: Role harus dipilih
-    if (!roleValue) {
-      showToast('Role harus dipilih!', false);
-      document.getElementById('userRole').focus();
-      return;
-    }
-    
-    const password = document.getElementById('userPassword').value;
-    const data = {
-      username: document.getElementById('userUsername').value,
-      email: document.getElementById('userEmail').value,
-      nama: document.getElementById('userNama').value,
-      role: roleValue,
-      status: document.getElementById('userActive').checked ? 'active' : 'inactive'
-    };
-    
-    // Hanya tambah password jika diisi
-    if (password) {
-      data.password = password;
-    }
+    closeModal: function() {
+      document.getElementById('userModal').classList.remove('active');
+      window.UserState.editingUserId = null;
+    },
 
-    console.log('[USER PAYLOAD]', data);
-
-    try {
-      const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
-      const method = editingUserId ? 'PUT' : 'POST';
+    saveUser: async function(event) {
+      event.preventDefault();
       
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Gagal menyimpan');
+      const roleValue = document.getElementById('userRole').value;
+      if (!roleValue) {
+        showToast('Role harus dipilih!', false);
+        return;
       }
       
-      showToast(editingUserId ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
-      closeUserModal();
-      loadUsers();
-    } catch (error) {
-      console.error('Error saving user:', error);
-      showToast(error.message || 'Gagal menyimpan user', false);
+      const password = document.getElementById('userPassword').value;
+      const data = {
+        username: document.getElementById('userUsername').value,
+        email: document.getElementById('userEmail').value,
+        nama: document.getElementById('userNama').value,
+        role: roleValue,
+        status: document.getElementById('userActive').checked ? 'active' : 'inactive'
+      };
+      
+      if (password) {
+        data.password = password;
+      }
+
+      console.log('[USER SAVE]', data);
+
+      try {
+        const isEdit = window.UserState.editingUserId !== null;
+        const url = isEdit ? `/api/v1/users/${window.UserState.editingUserId}` : '/api/v1/users';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Gagal menyimpan');
+        }
+        
+        showToast(isEdit ? 'User berhasil diupdate' : 'User berhasil ditambahkan');
+        window.UserMgmt.closeModal();
+        loadUsers();
+      } catch (error) {
+        console.error('Error saving user:', error);
+        showToast(error.message || 'Gagal menyimpan user', false);
+      }
+    },
+
+    deleteUser: async function(id) {
+      if (!confirm('Yakin hapus user ini?')) return;
+      
+      try {
+        const response = await fetch(`/api/v1/users/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Gagal menghapus');
+        }
+        
+        showToast('User berhasil dihapus');
+        loadUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        showToast(error.message || 'Gagal menghapus user', false);
+      }
+    },
+
+    toggleStatus: async function(id, enable) {
+      try {
+        const url = enable ? `/api/v1/users/${id}/enable` : `/api/v1/users/${id}/disable`;
+        const response = await fetch(url, { method: 'POST' });
+        
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Gagal update status');
+        }
+        
+        showToast(enable ? 'User berhasil diaktifkan' : 'User berhasil dinonaktifkan');
+        loadUsers();
+      } catch (error) {
+        console.error('Error toggling user status:', error);
+        showToast(error.message || 'Gagal update status', false);
+      }
+    },
+
+    resetPassword: async function(id) {
+      if (!confirm('Reset password user ini?')) return;
+      
+      try {
+        const response = await fetch(`/api/v1/users/${id}/reset-password`, { method: 'POST' });
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.message || 'Gagal reset password');
+        }
+        
+        showToast('Password berhasil direset');
+        loadUsers();
+      } catch (error) {
+        console.error('Error resetting password:', error);
+        showToast(error.message || 'Gagal reset password', false);
+      }
     }
   };
 
-  // Delete user
-  window.deleteUser = async function(id) {
-    if (!confirm('Yakin hapus user ini?')) return;
-    
-    try {
-      const response = await fetch(`/api/v1/users/${id}`, { method: 'DELETE' });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Gagal menghapus');
-      }
-      
-      showToast('User berhasil dihapus');
-      loadUsers();
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      showToast(error.message || 'Gagal menghapus user', false);
-    }
-  };
-
-  // Toggle user status (enable/disable)
-  window.toggleUserStatus = async function(id, enable) {
-    try {
-      const url = enable ? `/api/v1/users/${id}/enable` : `/api/v1/users/${id}/disable`;
-      const response = await fetch(url, { method: 'POST' });
-      
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Gagal update status');
-      }
-      
-      showToast(enable ? 'User berhasil diaktifkan' : 'User berhasil dinonaktifkan');
-      loadUsers();
-    } catch (error) {
-      console.error('Error toggling user status:', error);
-      showToast(error.message || 'Gagal update status', false);
-    }
-  };
-
-  // Reset password
-  window.resetUserPassword = async function(id) {
-    if (!confirm('Reset password user ini?')) return;
-    
-    try {
-      const response = await fetch(`/api/v1/users/${id}/reset-password`, { method: 'POST' });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Gagal reset password');
-      }
-      
-      const result = await response.json();
-      showToast('Password berhasil direset: ' + (result.data?.temp_password || '[Lihat di sistem]'));
-      loadUsers();
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      showToast(error.message || 'Gagal reset password', false);
-    }
-  };
+  // Alias untuk backward compatibility
+  window.showAddUserModal = window.UserMgmt.showAdd;
+  window.editUser = window.UserMgmt.showEdit;
+  window.closeUserModal = window.UserMgmt.closeModal;
+  window.saveUser = window.UserMgmt.saveUser;
+  window.deleteUser = window.UserMgmt.deleteUser;
+  window.toggleUserStatus = window.UserMgmt.toggleStatus;
+  window.resetUserPassword = window.UserMgmt.resetPassword;
 
   // Filter handlers
   document.getElementById('filterRole')?.addEventListener('change', loadUsers);
@@ -371,4 +381,3 @@
     loadUsers();
   }
 })();
-</script>
