@@ -270,7 +270,13 @@
         console.log('[DEBUG] userRole select found');
         console.log('[DEBUG] selectedIndex:', roleSelect.selectedIndex);
         console.log('[DEBUG] selectedValue:', roleSelect.value);
-        console.log('[DEBUG] options:', Array.from(roleSelect.options).map(o => ({val: o.value, text: o.text, sel: o.selected})));
+        const opts = roleSelect.options;
+        if (opts) {
+          console.log('[DEBUG] options:', opts.length, 'options');
+          for (let i = 0; i < opts.length; i++) {
+            console.log(`  [${i}]: value="${opts[i].value}", text="${opts[i].text}", selected=${opts[i].selected}`);
+          }
+        }
       } else {
         console.log('[DEBUG] userRole select NOT FOUND!');
       }
