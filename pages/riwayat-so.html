@@ -192,11 +192,13 @@
     
     try {
       showLoader();
+      // Try opname_id first, fallback to id
       const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
       if (!response.ok) throw new Error('Failed to load detail');
       
-      window.SORiwayat.currentDetailData = await response.json();
-      renderDetailModal(window.SORiwayat.currentDetailData);
+      const data = await response.json();
+      window.SORiwayat.currentDetailData = data;
+      renderDetailModal(data);
       document.getElementById('detailSoModal').style.display = 'flex';
     } catch (error) {
       console.error('Error loading detail:', error);
@@ -207,10 +209,15 @@
   }
 
   function renderDetailModal(data) {
-    const { header, details = [] } = data;
-    document.getElementById('detailSoTitle').textContent = `Detail SO - ${header.kode_so || 'N/A'}`;
+    const { header, details = [] } = data || {};
     
-    const selisih = header.total_selisih_net || 0;
+    // If data is flat array (not proper format), use first item as header
+    const headerData = header || (Array.isArray(data) && data[0]) || {};
+    const detailsData = details || (Array.isArray(data) ? data.slice(1) : []);
+    
+    document.getElementById('detailSoTitle').textContent = `Detail SO - ${headerData.kode_so || headerData.id || 'N/A'}`;
+    
+    const selisih = headerData.total_selisih_net || headerData.total_selisih || 0;
     const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
     
     const html = `
@@ -218,36 +225,36 @@
         <div class="detail-info-grid">
           <div class="detail-info-item">
             <span class="detail-info-label">Kode SO</span>
-            <span class="detail-info-value">${header.kode_so || '-'}</span>
+            <span class="detail-info-value">${headerData.kode_so || '-'}</span>
           </div>
           <div class="detail-info-item">
             <span class="detail-info-label">Tanggal Perintah</span>
-            <span class="detail-info-value">${formatDate(header.tanggal_perintah)}</span>
+            <span class="detail-info-value">${formatDate(headerData.tanggal_perintah || headerData.tanggal)}</span>
           </div>
           <div class="detail-info-item">
             <span class="detail-info-label">Tanggal Pelaksanaan</span>
-            <span class="detail-info-value">${formatDate(header.tanggal_pelaksanaan)}</span>
+            <span class="detail-info-value">${formatDate(headerData.tanggal_pelaksanaan || headerData.created_at)}</span>
           </div>
           <div class="detail-info-item">
             <span class="detail-info-label">Supervisor</span>
-            <span class="detail-info-value">${header.svp_nama || '-'}</span>
+            <span class="detail-info-value">${headerData.svp_nama || '-'}</span>
           </div>
           <div class="detail-info-item">
             <span class="detail-info-label">PIC / Checker</span>
-            <span class="detail-info-value">${header.pic_pelaksana || header.checker || '-'}</span>
+            <span class="detail-info-value">${headerData.pic_pelaksana || headerData.checker || '-'}</span>
           </div>
           <div class="detail-info-item">
             <span class="detail-info-label">Lokasi</span>
-            <span class="detail-info-value">${header.lokasi || '-'}</span>
+            <span class="detail-info-value">${headerData.lokasi || '-'}</span>
           </div>
         </div>
         <div class="detail-summary">
           <div class="detail-summary-item">
-            <span class="detail-summary-value">${details.length}</span>
+            <span class="detail-summary-value">${detailsData.length || headerData.total_item || 0}</span>
             <span class="detail-summary-label">Total Item</span>
           </div>
           <div class="detail-summary-item">
-            <span class="detail-summary-value text-danger">${header.total_item_selisih || 0}</span>
+            <span class="detail-summary-value text-danger">${headerData.total_item_selisih || 0}</span>
             <span class="detail-summary-label">Item Bermasalah</span>
           </div>
           <div class="detail-summary-item">
@@ -255,8 +262,8 @@
             <span class="detail-summary-label">Selisih Net</span>
           </div>
           <div class="detail-summary-item">
-            <span class="badge ${header.stok_disesuaikan ? 'badge--done' : 'badge--pending'}">
-              ${header.stok_disesuaikan ? 'Sudah Disesuaikan' : 'Belum Disesuaikan'}
+            <span class="badge ${headerData.stok_disesuaikan ? 'badge--done' : 'badge--pending'}">
+              ${headerData.stok_disesuaikan ? 'Sudah Disesuaikan' : 'Belum Disesuaikan'}
             </span>
             <span class="detail-summary-label">Status Stok</span>
           </div>
@@ -274,9 +281,9 @@
             </tr>
           </thead>
           <tbody>
-            ${details.length === 0 ? 
+            ${detailsData.length === 0 ? 
               '<tr><td colspan="5" class="text-center text-muted">Tidak ada detail</td></tr>' :
-              details.map(d => {
+              detailsData.map(d => {
                 const dSelisih = Number(d.selisih || 0);
                 const dClass = dSelisih > 0 ? 'text-success' : dSelisih < 0 ? 'text-danger' : '';
                 const dPrefix = dSelisih > 0 ? '+' : '';
@@ -328,9 +335,47 @@
     showToast('CSV berhasil diunduh');
   }
 
-  function downloadCsv(opnameId) {
+  async function downloadCsv(opnameId) {
     if (!opnameId) return;
-    window.open(`/api/opname-export?opname_id=${opnameId}`, '_blank');
+    
+    try {
+      showLoader();
+      
+      // Get detail data from API
+      const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
+      if (!response.ok) throw new Error('Failed to load data');
+      
+      const data = await response.json();
+      const { header, details = [] } = data || {};
+      
+      // Generate CSV content
+      const headerData = header || {};
+      const detailsData = details || [];
+      
+      const csvContent = [
+        ['Kode SO', headerData.kode_so || ''],
+        ['Tanggal', formatDate(headerData.tanggal_perintah || headerData.tanggal)],
+        ['PIC Checker', headerData.pic_pelaksana || headerData.checker || ''],
+        ['Lokasi', headerData.lokasi || ''],
+        [''],
+        ['SKU', 'Nama Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'],
+        ...detailsData.map(d => [
+          d.sku || '',
+          d.nama_produk || '',
+          d.stok_sistem || 0,
+          d.stok_fisik || 0,
+          d.selisih || 0
+        ])
+      ].map(row => row.join(',')).join('\n');
+      
+      downloadBlob(csvContent, `${headerData.kode_so || 'SO'}_${opnameId}.csv`, 'text/csv');
+      showToast('CSV berhasil diunduh');
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      showToast('Gagal mengunduh CSV', false);
+    } finally {
+      hideLoader();
+    }
   }
 
   function downloadBlob(content, filename, mimeType) {
