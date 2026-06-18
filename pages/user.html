@@ -182,7 +182,7 @@
               <i data-lucide="edit-2"></i>
             </button>
             <button class="action-btn" onclick="UserMgmt.toggleStatus('${user.id}', ${!isActive})" title="${isActive ? 'Nonaktifkan' : 'Aktifkan'}">
-              <i data-lucide="${isActive ? 'user-x' : 'user-check'}"></i>
+              <i data-lucide="${isActive ? 'user-minus' : 'user-plus'}"></i>
             </button>
             <button class="action-btn" onclick="UserMgmt.resetPassword('${user.id}')" title="Reset Password">
               <i data-lucide="key"></i>
