@@ -524,6 +524,7 @@ function startCheckerSo(perintahId) {
     localStorage.setItem('activePerintahId', task.id);
     localStorage.setItem('activePerintahKode', task.kode_so);
     localStorage.setItem('activeOpnameId', task.opname_id || '');
+    localStorage.setItem('activePerintahKategori', task.kategori_id || 'modul');
   }
   AppRouter.navigateTo('pelaksanaan-so');
 }

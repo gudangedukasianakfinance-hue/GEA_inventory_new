@@ -374,30 +374,35 @@
     try {
       showLoader();
       
-      // Call API to claim/start task
-      const response = await fetch('/api/opname-perintah', {
-        method: 'POST',
+      const task = window.TaskSaya.currentTask;
+      
+      // Call API v3-opname to start SO (creates stok_opname header and returns opname_id)
+      const response = await fetch('/api/v3-opname', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: taskId,
           action: 'start',
-          perintah_id: taskId,
-          pic_checker: getCurrentUserName()
+          checker: getCurrentUserName(),
+          lokasi: task?.lokasi || null
         })
       });
       
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Failed to claim task');
+        throw new Error(err.error || 'Failed to start task');
       }
+      
+      const result = await response.json();
       
       showToast('Task berhasil di-claim. Membuka halaman Pelaksanaan SO...');
       
       // Save active perintah to localStorage for pelaksanaan-so page
-      const task = window.TaskSaya.currentTask;
       if (task) {
         localStorage.setItem('activePerintahId', task.id);
         localStorage.setItem('activePerintahKode', task.kode_so);
-        localStorage.setItem('activeOpnameId', response.ok ? (await response.clone().json()).opname_id : '');
+        localStorage.setItem('activeOpnameId', result.opname_id || '');
+        localStorage.setItem('activePerintahKategori', task.kategori_id || 'modul');
       }
       
       closeTaskDetail();
@@ -426,6 +431,7 @@
     localStorage.setItem('activePerintahId', task.id);
     localStorage.setItem('activePerintahKode', task.kode_so);
     localStorage.setItem('activeOpnameId', task.opname_id || '');
+    localStorage.setItem('activePerintahKategori', task.kategori_id || 'modul');
     
     closeTaskDetail();
     AppRouter.navigateTo('pelaksanaan-so');

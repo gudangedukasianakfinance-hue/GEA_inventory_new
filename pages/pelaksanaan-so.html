@@ -519,6 +519,10 @@
       window.SOPelaksanaan.activeStatus = data.status || 'menunggu';
       window.SOPelaksanaan.activeOpnameId = data.opname_id;
       
+      // Store kategori_id from response (use existing or from state)
+      const kategoriId = data.kategori_id || localStorage.getItem('activePerintahKategori') || 'modul';
+      localStorage.setItem('activePerintahKategori', kategoriId);
+      
       // Store target_sku as snapshot (not recalculated)
       window.SOPelaksanaan.targetSku = Number(data.target_sku) || 0;
       
@@ -1062,13 +1066,15 @@
     
     localStorage.removeItem('activePerintahId');
     localStorage.removeItem('activePerintahKode');
+    localStorage.removeItem('activeOpnameId');
+    localStorage.removeItem('activePerintahKategori');
     window.SOPelaksanaan.activePerintahId = null;
     window.SOPelaksanaan.activePerintahKode = null;
     window.SOPelaksanaan.activeOpnameId = null;
     window.SOPelaksanaan.activeStatus = 'menunggu';
     window.SOPelaksanaan.scanHistory = [];
     
-    AppRouter.navigateTo('perintah-so');
+    AppRouter.navigateTo('task-saya');
   }
 
   // Tab switching
