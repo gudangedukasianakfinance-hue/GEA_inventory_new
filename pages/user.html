@@ -210,6 +210,9 @@
     editingUserId = null;
     document.getElementById('userModalTitle').textContent = 'Tambah User';
     document.getElementById('userForm').reset();
+    // Set role explicitly after reset (reset doesn't always work for selects)
+    document.getElementById('userRole').value = '';
+    document.getElementById('userActive').checked = true;
     document.getElementById('userUsername').disabled = false;
     document.getElementById('passwordHint').style.display = 'none';
     document.getElementById('userModal').classList.add('active');
@@ -251,6 +254,14 @@
     event.preventDefault();
     
     const roleValue = document.getElementById('userRole').value;
+    
+    // VALIDASI: Role harus dipilih
+    if (!roleValue) {
+      showToast('Role harus dipilih!', false);
+      document.getElementById('userRole').focus();
+      return;
+    }
+    
     const password = document.getElementById('userPassword').value;
     const data = {
       username: document.getElementById('userUsername').value,
@@ -265,12 +276,7 @@
       data.password = password;
     }
 
-    console.log('[USER PAYLOAD DEBUG]', {
-      roleValue: roleValue,
-      selectElement: document.getElementById('userRole'),
-      selectValue: document.getElementById('userRole').value,
-      data: data
-    });
+    console.log('[USER PAYLOAD]', data);
 
     try {
       const url = editingUserId ? `/api/v1/users/${editingUserId}` : '/api/v1/users';
