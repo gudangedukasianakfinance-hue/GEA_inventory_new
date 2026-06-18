@@ -23,18 +23,37 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: "kategori_id required" });
       }
       
+      // Calculate stok_sistem from available tables (stok_awal, pembelian, penjualan, penyesuaian)
       const produkList = await pool.query(`
         SELECT
           p.sku,
           p.nama_produk,
           p.kategori,
-          COALESCE(s.stok_akhir, 0)::int AS stok_sistem,
           sod.stok_fisik,
           sod.selisih,
-          sod.input_at
+          sod.input_at,
+          COALESCE(sa.qty_awal, 0) + 
+          COALESCE(pb.total_masuk, 0) - 
+          COALESCE(pj.total_keluar, 0) +
+          COALESCE(sp.total_adjust, 0) as stok_sistem
         FROM produk p
-        LEFT JOIN stok s ON s.sku = p.sku
         LEFT JOIN stok_opname_detail sod ON sod.sku = p.sku AND sod.opname_id = $1
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(SUM(qty_awal), 0) as qty_awal 
+          FROM stok_awal WHERE sku = p.sku
+        ) sa ON true
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(SUM(qty), 0) as total_masuk 
+          FROM pembelian WHERE sku = p.sku
+        ) pb ON true
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(SUM(qty), 0) as total_keluar 
+          FROM penjualan WHERE sku = p.sku
+        ) pj ON true
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(SUM(qty), 0) as total_adjust 
+          FROM stok_penyesuaian WHERE sku = p.sku
+        ) sp ON true
         WHERE p.kategori = $2
         ORDER BY p.nama_produk
       `, [Number(opname_id), kategori_id]);
@@ -61,8 +80,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: "opname_id, sku, dan stok_fisik wajib diisi" });
       }
       
-      const stokSistem = await pool.query(`SELECT COALESCE(stok_akhir, 0)::int AS stok FROM stok WHERE sku = $1`, [sku]);
-      const stokSistemVal = Number(stokSistem.rows[0]?.stok || 0);
+      // Calculate stok_sistem from available tables
+      const stokCalc = await pool.query(`
+        SELECT 
+          COALESCE((SELECT SUM(qty_awal) FROM stok_awal WHERE sku = $1), 0) +
+          COALESCE((SELECT SUM(qty) FROM pembelian WHERE sku = $1), 0) -
+          COALESCE((SELECT SUM(qty) FROM penjualan WHERE sku = $1), 0) +
+          COALESCE((SELECT SUM(qty) FROM stok_penyesuaian WHERE sku = $1), 0) as stok_sistem
+      `, [sku]);
+      const stokSistemVal = Number(stokCalc.rows[0]?.stok_sistem || 0);
       const selisih = Number(stok_fisik) - stokSistemVal;
       
       let result;
