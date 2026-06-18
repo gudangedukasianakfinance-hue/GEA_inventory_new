@@ -14,7 +14,9 @@ const AppRouter = {
     'dashboard-so': 'pages/dashboard-so.html',
     'perintah-so': 'pages/perintah-so.html',
     'pelaksanaan-so': 'pages/pelaksanaan-so.html',
+    'task-saya': 'pages/task-saya.html',
     'riwayat-so': 'pages/riwayat-so.html',
+    'penyesuaian-stok': 'pages/penyesuaian-stok.html',
     'distribusi-outlet': 'pages/distribusi-outlet.html',
     'monitoring-outlet': 'pages/monitoring-outlet.html',
     'laporan': 'pages/laporan.html',
@@ -88,7 +90,9 @@ const AppRouter = {
       'dashboard-so': 'Dashboard SO',
       'perintah-so': 'Perintah SO',
       'pelaksanaan-so': 'Pelaksanaan SO',
+      'task-saya': 'Task Saya',
       'riwayat-so': 'Riwayat SO',
+      'penyesuaian-stok': 'Penyesuaian Stok',
       'distribusi-outlet': 'Distribusi Outlet',
       'monitoring-outlet': 'Monitoring Outlet',
       'laporan': 'Laporan',
@@ -166,7 +170,9 @@ const AppRouter = {
     if (page === 'dashboard-so' && typeof loadDashboardSO === 'function') loadDashboardSO();
     if (page === 'perintah-so' && typeof loadPerintah === 'function') loadPerintah();
     if (page === 'pelaksanaan-so' && typeof SOPelaksanaanInit === 'function') SOPelaksanaanInit();
+    if (page === 'task-saya' && typeof loadTaskList === 'function') loadTaskList();
     if (page === 'riwayat-so' && typeof loadHistory === 'function') loadHistory();
+    if (page === 'penyesuaian-stok' && typeof loadAdjustmentList === 'function') loadAdjustmentList();
     
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },

@@ -40,9 +40,9 @@
       <i data-lucide="plus-circle"></i>
       <span>Buat Perintah SO</span>
     </button>
-    <button class="quick-action-btn" onclick="AppRouter.navigateTo('pelaksanaan-so')">
-      <i data-lucide="clipboard-check"></i>
-      <span>Pelaksanaan SO</span>
+    <button class="quick-action-btn" onclick="AppRouter.navigateTo('penyesuaian-stok')">
+      <i data-lucide="sliders"></i>
+      <span>Penyesuaian Stok</span>
     </button>
     <button class="quick-action-btn" onclick="AppRouter.navigateTo('riwayat-so')">
       <i data-lucide="history"></i>
@@ -518,7 +518,14 @@ async function loadCheckerTasks(userNama) {
 
 // Start SO from checker task
 function startCheckerSo(perintahId) {
-  AppRouter.navigateTo('pelaksanaan-so', { perintah_id: perintahId });
+  // Save active perintah to localStorage for execution page
+  const task = window.SODashboard?.checkerTasks?.find(t => t.id == perintahId || t.id == perintahId);
+  if (task) {
+    localStorage.setItem('activePerintahId', task.id);
+    localStorage.setItem('activePerintahKode', task.kode_so);
+    localStorage.setItem('activeOpnameId', task.opname_id || '');
+  }
+  AppRouter.navigateTo('pelaksanaan-so');
 }
 
 // Auto init on page load - hanya jalankan jika page container ada
