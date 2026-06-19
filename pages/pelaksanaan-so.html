@@ -85,7 +85,12 @@
 
         <!-- Barcode Scanner Container -->
         <div id="scannerContainer" style="display:none; margin-bottom: 20px; text-align: center;">
-          <div id="barcodeScanner" style="width: 100%; max-width: 400px; height: 300px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #1a1a2e;"></div>
+          <div id="barcodeScanner" style="width: 100%; max-width: 400px; height: 300px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #1a1a2e; position: relative;">
+            <div id="scannerLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #94A3B8; z-index: 10;">
+              <i data-lucide="loader-2" style="animation: spin 1s linear infinite;"></i>
+              <p>Memuat kamera...</p>
+            </div>
+          </div>
           <p style="text-align:center; color:#94A3B8; font-size:12px; margin-top:8px;">Arahkan kamera ke barcode</p>
         </div>
 
@@ -469,6 +474,27 @@
     font-weight: 600;
     color: #FAFAFA;
   }
+  
+  /* Scanner video styling */
+  #barcodeScanner video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 12px;
+  }
+  #barcodeScanner > div {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  #barcodeScanner img {
+    display: none !important;
+  }
+  
+  /* Loading spinner animation */
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 </style>
 
 <!-- Html5Qrcode for barcode scanning -->
@@ -718,8 +744,7 @@
       
       const config = {
         fps: 10,
-        qrbox: { width: 250, height: 150 },
-        aspectRatio: 1.777778
+        qrbox: { width: 250, height: 150 }
       };
       
       console.log('[BarcodeScan] Starting with camera ID:', selectedCamera.id);
@@ -741,6 +766,20 @@
       document.getElementById('scannerContainer').style.display = 'block';
       document.getElementById('btnStartScan').style.display = 'none';
       document.getElementById('btnStopScan').style.display = 'inline-flex';
+      
+      // Hide loading indicator and style video after camera starts
+      setTimeout(() => {
+        const loading = document.getElementById('scannerLoading');
+        if (loading) loading.style.display = 'none';
+        
+        const video = document.querySelector('#barcodeScanner video');
+        if (video) {
+          video.style.width = '100%';
+          video.style.height = '100%';
+          video.style.objectFit = 'cover';
+          video.style.borderRadius = '12px';
+        }
+      }, 200);
       
       if (window.lucide) lucide.createIcons();
       console.log('[BarcodeScan] Camera started successfully');
@@ -780,7 +819,15 @@
       const scannerContainer = document.getElementById('scannerContainer');
       const barcodeScanner = document.getElementById('barcodeScanner');
       if (scannerContainer) scannerContainer.style.display = 'none';
-      if (barcodeScanner) barcodeScanner.innerHTML = ''; // Clear scanner content
+      if (barcodeScanner) {
+        // Restore loading indicator for next time
+        barcodeScanner.innerHTML = `
+          <div id="scannerLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #94A3B8; z-index: 10;">
+            <i data-lucide="loader-2" style="animation: spin 1s linear infinite;"></i>
+            <p>Memuat kamera...</p>
+          </div>
+        `;
+      }
       
       const btnStartScan = document.getElementById('btnStartScan');
       const btnStopScan = document.getElementById('btnStopScan');
