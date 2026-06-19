@@ -156,8 +156,15 @@ export default async function handler(req, res) {
         const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
         const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-        const countResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk WHERE kategori = $1`, [kategoriId]);
-        const targetSku = countResult.rows[0].total;
+        // Target SKU based on kategori_id - use default values since produk table has no kategori column
+        const defaultTargetSku = {
+          'modul': 25,
+          'poster': 14,
+          'seragam': 32,
+          'lain_lain': 28,
+          'lain-lain': 28
+        };
+        const targetSku = defaultTargetSku[kategoriId] || 25;
 
         const updateResult = await pool.query(
           `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, pic_checker = $4, tanggal_perintah = $5, bulan = $6, tahun = $7, svp_nama = $8, lokasi = $9, keterangan = $10, target_sku = $11, checker = COALESCE(NULLIF($12, ''), checker), updated_at = NOW() WHERE id = $13 RETURNING *`,
@@ -192,8 +199,15 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-      const countResult = await pool.query(`SELECT COUNT(*)::int as total FROM produk WHERE kategori = $1`, [kategoriId]);
-      const targetSku = countResult.rows[0].total;
+      // Target SKU based on kategori_id - use default values since produk table has no kategori column
+      const defaultTargetSku = {
+        'modul': 25,
+        'poster': 14,
+        'seragam': 32,
+        'lain_lain': 28,
+        'lain-lain': 28
+      };
+      const targetSku = defaultTargetSku[kategoriId] || 25;
 
       const insertResult = await pool.query(
         `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, pic_checker, tanggal_perintah, bulan, tahun, svp_nama, checker, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'menunggu') RETURNING *`,
