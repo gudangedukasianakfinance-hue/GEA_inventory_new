@@ -79,12 +79,12 @@ export default async function handler(req, res) {
       const details = detailResult.rows
         .filter((row) => row.sku)
         .map((row) => ({
-          sku: row.sku,
-          nama_produk: row.nama_produk,
-          stok_sistem: row.stok_sistem,
-          stok_fisik: row.stok_fisik,
-          selisih: row.selisih,
-          input_at: row.input_at
+          sku: row.sku || '',
+          nama_produk: row.nama_produk || '-',
+          stok_sistem: Number(row.stok_sistem || 0),
+          stok_fisik: Number(row.stok_fisik || 0),
+          selisih: Number(row.selisih || 0),
+          input_at: row.input_at || null
         }));
 
       return res.status(200).json({
