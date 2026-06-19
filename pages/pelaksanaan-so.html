@@ -84,8 +84,8 @@
         </div>
 
         <!-- Barcode Scanner Container -->
-        <div id="scannerContainer" style="display:none; margin-bottom: 20px;">
-          <div id="barcodeScanner" style="width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden;"></div>
+        <div id="scannerContainer" style="display:none; margin-bottom: 20px; text-align: center;">
+          <div id="barcodeScanner" style="width: 100%; max-width: 400px; height: 300px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: #1a1a2e;"></div>
           <p style="text-align:center; color:#94A3B8; font-size:12px; margin-top:8px;">Arahkan kamera ke barcode</p>
         </div>
 
@@ -663,17 +663,34 @@
     if (window.SOPelaksanaan.isScanning) return;
     
     try {
+      // Check if Html5Qrcode library is loaded
+      if (typeof Html5Qrcode === 'undefined') {
+        showToast('Library scanner belum loaded. Refresh halaman.', false);
+        console.error('[BarcodeScan] Html5Qrcode not defined');
+        return;
+      }
+      
       // Check camera permission first
-      const devices = await Html5Qrcode.getCameras();
+      let devices;
+      try {
+        devices = await Html5Qrcode.getCameras();
+      } catch (camErr) {
+        console.error('[BarcodeScan] getCameras error:', camErr);
+        showToast('Tidak bisa akses daftar kamera: ' + camErr.message, false);
+        return;
+      }
+      
       if (!devices || devices.length === 0) {
         showToast('Kamera tidak ditemukan. Izinkan akses kamera terlebih dahulu.', false);
         return;
       }
       
+      console.log('[BarcodeScan] Found cameras:', devices);
+      
       // Find back camera
       let selectedCamera = devices[0];
       for (const device of devices) {
-        const label = device.label.toLowerCase();
+        const label = device.label?.toLowerCase() || '';
         if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
           selectedCamera = device;
           break;
@@ -687,30 +704,36 @@
         try {
           await window.SOPelaksanaan.html5QrCode.stop();
         } catch (e) {
-          // Ignore if already stopped
+          console.log('[BarcodeScan] Previous scanner stop error (ignored):', e.message);
         }
         window.SOPelaksanaan.html5QrCode = null;
       }
+      
+      // Clear previous scanner content
+      const barcodeScanner = document.getElementById('barcodeScanner');
+      if (barcodeScanner) barcodeScanner.innerHTML = '';
       
       // Initialize scanner
       window.SOPelaksanaan.html5QrCode = new Html5Qrcode("barcodeScanner");
       
       const config = {
         fps: 10,
-        qrbox: { width: 280, height: 150 },
-        aspectRatio: 1.777778,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        }
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.777778
       };
+      
+      console.log('[BarcodeScan] Starting with camera ID:', selectedCamera.id);
       
       await window.SOPelaksanaan.html5QrCode.start(
         selectedCamera.id,
         config,
         onBarcodeScanned,
         (errorMessage) => {
-          // Scan error - ignore, this is normal when no barcode visible
-          console.log('[BarcodeScan] Scanning...', errorMessage);
+          // Scan error - this is normal when no barcode visible
+          // Only log occasionally to avoid console spam
+          if (Math.random() < 0.01) {
+            console.log('[BarcodeScan] Scanning... no barcode');
+          }
         }
       );
       
@@ -727,10 +750,12 @@
       window.SOPelaksanaan.isScanning = false;
       
       // Show specific error message
-      if (err.message?.includes('Permission')) {
-        showToast('Izin kamera ditolak. Mohon izinkan akses kamera.', false);
-      } else if (err.message?.includes('NotFound')) {
-        showToast('Kamera tidak ditemukan', false);
+      if (err.message?.includes('Permission') || err.message?.includes('NotAllowed')) {
+        showToast('Izin kamera ditolak. Mohon izinkan akses kamera di browser.', false);
+      } else if (err.message?.includes('NotFound') || err.message?.includes('not found')) {
+        showToast('Kamera tidak ditemukan di perangkat ini.', false);
+      } else if (err.message?.includes('NotReadable') || err.message?.includes('in use')) {
+        showToast('Kamera sedang digunakan aplikasi lain.', false);
       } else {
         showToast('Gagal mengakses kamera: ' + (err.message || 'Unknown error'), false);
       }
