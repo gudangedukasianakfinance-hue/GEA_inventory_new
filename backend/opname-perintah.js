@@ -5,7 +5,56 @@ function normalizeKodeSo(value) {
   return String(value || "").trim().toUpperCase();
 }
 
-async function calculateProgress(opnameId, targetSku) {
+// Count target SKU based on kategori_id using the same pattern as api-stok.js
+async function countTargetSkuByKategori(kategoriId) {
+  try {
+    let whereClause = "";
+    
+    switch(kategoriId) {
+      case 'modul':
+        whereClause = "WHERE UPPER(nama_produk) LIKE '%MODUL%'";
+        break;
+      case 'poster':
+        whereClause = "WHERE UPPER(nama_produk) LIKE '%POSTER%' OR UPPER(nama_produk) LIKE '%FLASHCARD%' OR UPPER(nama_produk) LIKE '%FLASH CARD%'";
+        break;
+      case 'panduan':
+        whereClause = "WHERE UPPER(nama_produk) LIKE '%PANDUAN%'";
+        break;
+      case 'tas':
+        whereClause = "WHERE UPPER(nama_produk) LIKE '%TAS%'";
+        break;
+      case 'seragam':
+        whereClause = "WHERE UPPER(nama_produk) LIKE '%BIRU%' OR UPPER(nama_produk) LIKE '%KUNING%' OR UPPER(nama_produk) LIKE '%MERAH%' OR UPPER(nama_produk) LIKE '%MY%'";
+        break;
+      case 'lain_lain':
+      case 'lain-lain':
+        whereClause = `WHERE UPPER(nama_produk) NOT LIKE '%MODUL%' 
+          AND UPPER(nama_produk) NOT LIKE '%POSTER%' 
+          AND UPPER(nama_produk) NOT LIKE '%FLASHCARD%' 
+          AND UPPER(nama_produk) NOT LIKE '%FLASH CARD%' 
+          AND UPPER(nama_produk) NOT LIKE '%PANDUAN%' 
+          AND UPPER(nama_produk) NOT LIKE '%TAS%' 
+          AND UPPER(nama_produk) NOT LIKE '%BIRU%' 
+          AND UPPER(nama_produk) NOT LIKE '%KUNING%' 
+          AND UPPER(nama_produk) NOT LIKE '%MERAH%' 
+          AND UPPER(nama_produk) NOT LIKE '%MY%'`;
+        break;
+      default:
+        whereClause = "";
+    }
+    
+    const result = await pool.query(`SELECT COUNT(*)::int as total FROM produk ${whereClause}`);
+    return Number(result.rows[0]?.total || 0);
+  } catch (error) {
+    console.error('Error counting target SKU:', error);
+    return 0;
+  }
+}
+
+async function calculateProgress(opnameId, kategoriId, storedTargetSku) {
+  // Get dynamic target SKU based on kategori
+  const targetSku = storedTargetSku > 0 ? storedTargetSku : await countTargetSkuByKategori(kategoriId);
+  
   if (!opnameId) {
     return { target_sku: targetSku, checked_sku: 0, progress_percent: 0 };
   }
@@ -43,7 +92,7 @@ export default async function handler(req, res) {
         }
 
         const row = result.rows[0];
-        const progress = await calculateProgress(row.opname_id, row.target_sku);
+        const progress = await calculateProgress(row.opname_id, row.kategori_id, row.target_sku);
         
         return res.status(200).json({
           id: row.id,
@@ -79,7 +128,7 @@ export default async function handler(req, res) {
       );
 
       const items = await Promise.all(listResult.rows.map(async (row) => {
-        const progress = await calculateProgress(row.opname_id, row.target_sku);
+        const progress = await calculateProgress(row.opname_id, row.kategori_id, row.target_sku);
         return {
           id: row.id,
           kode_so: row.kode_so,
@@ -156,15 +205,8 @@ export default async function handler(req, res) {
         const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
         const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-        // Target SKU based on kategori_id - use default values since produk table has no kategori column
-        const defaultTargetSku = {
-          'modul': 25,
-          'poster': 14,
-          'seragam': 32,
-          'lain_lain': 28,
-          'lain-lain': 28
-        };
-        const targetSku = defaultTargetSku[kategoriId] || 25;
+        // Get dynamic target SKU based on produk table pattern
+        const targetSku = await countTargetSkuByKategori(kategoriId);
 
         const updateResult = await pool.query(
           `UPDATE stok_opname_perintah SET kode_so = $1, kategori_id = $2, kategori_nama = $3, pic_checker = $4, tanggal_perintah = $5, bulan = $6, tahun = $7, svp_nama = $8, lokasi = $9, keterangan = $10, target_sku = $11, checker = COALESCE(NULLIF($12, ''), checker), updated_at = NOW() WHERE id = $13 RETURNING *`,
@@ -199,15 +241,8 @@ export default async function handler(req, res) {
       const bulan = Number(body.bulan) || dateObj.getMonth() + 1;
       const tahun = Number(body.tahun) || dateObj.getFullYear();
 
-      // Target SKU based on kategori_id - use default values since produk table has no kategori column
-      const defaultTargetSku = {
-        'modul': 25,
-        'poster': 14,
-        'seragam': 32,
-        'lain_lain': 28,
-        'lain-lain': 28
-      };
-      const targetSku = defaultTargetSku[kategoriId] || 25;
+      // Get dynamic target SKU based on produk table pattern
+      const targetSku = await countTargetSkuByKategori(kategoriId);
 
       const insertResult = await pool.query(
         `INSERT INTO stok_opname_perintah (kode_so, kategori_id, kategori_nama, pic_checker, tanggal_perintah, bulan, tahun, svp_nama, checker, lokasi, keterangan, target_sku, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'menunggu') RETURNING *`,
