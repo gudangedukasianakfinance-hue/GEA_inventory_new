@@ -433,60 +433,87 @@
       
       // Get details for each SO
       const allDetails = [];
+      let processedCount = 0;
       
       for (const item of items) {
         const opnameId = item.opname_id || item.id;
-        const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
-        if (!response.ok) continue;
         
-        const data = await response.json();
-        const header = data.header || item;
-        const details = data.details || [];
-        
-        // If no details, add placeholder row
-        if (details.length === 0) {
-          allDetails.push({
-            kode_so: header.kode_so || '-',
-            kategori: header.kategori_nama || header.kategori || '-',
-            status: getStatusLabel(header.status) || '-',
-            tanggal_perintah: formatDate(header.tanggal_perintah),
-            tanggal_pelaksanaan: formatDate(header.tanggal_pelaksanaan),
-            svp: header.svp_nama || '-',
-            pic: header.pic_pelaksana || header.checker || '-',
-            lokasi: header.lokasi || '-',
-            keterangan: header.keterangan || '-',
-            total_item: header.total_item || 0,
-            item_bermasalah: header.total_item_selisih || 0,
-            selisih_net: header.total_selisih_net || 0,
-            sku: '-',
-            nama_produk: '-',
-            stok_sistem: '-',
-            stok_fisik: '-',
-            selisih: '-'
-          });
-        } else {
-          for (const d of details) {
-            allDetails.push({
-              kode_so: header.kode_so || '-',
-              kategori: header.kategori_nama || header.kategori || '-',
-              status: getStatusLabel(header.status) || '-',
-              tanggal_perintah: formatDate(header.tanggal_perintah),
-              tanggal_pelaksanaan: formatDate(header.tanggal_pelaksanaan),
-              svp: header.svp_nama || '-',
-              pic: header.pic_pelaksana || header.checker || '-',
-              lokasi: header.lokasi || '-',
-              keterangan: header.keterangan || '-',
-              total_item: header.total_item || 0,
-              item_bermasalah: header.total_item_selisih || 0,
-              selisih_net: header.total_selisih_net || 0,
-              sku: d.sku || '-',
-              nama_produk: d.nama_produk || '-',
-              stok_sistem: d.stok_sistem,
-              stok_fisik: d.stok_fisik,
-              selisih: d.selisih
-            });
+        try {
+          const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
+          if (!response.ok) {
+            console.warn(`Failed to fetch details for opname_id ${opnameId}`);
+            continue;
           }
+          
+          const data = await response.json();
+          
+          // Handle both formats: { header, details } or direct array
+          let header, details;
+          if (data.header) {
+            header = data.header;
+            details = data.details || [];
+          } else if (Array.isArray(data) && data.length > 0) {
+            header = data[0];
+            details = data.slice(1);
+          } else {
+            header = item;
+            details = [];
+          }
+          
+          // If no details, add placeholder row
+          if (details.length === 0) {
+            allDetails.push([
+              escapeCsv(header.kode_so || '-'),
+              escapeCsv(header.kategori_nama || header.kategori || '-'),
+              escapeCsv(getStatusLabel(header.status) || '-'),
+              escapeCsv(formatDate(header.tanggal_perintah)),
+              escapeCsv(formatDate(header.tanggal_pelaksanaan)),
+              escapeCsv(header.svp_nama || '-'),
+              escapeCsv(header.pic_pelaksana || header.checker || '-'),
+              escapeCsv(header.lokasi || '-'),
+              escapeCsv(header.keterangan || '-'),
+              header.total_item || 0,
+              header.total_item_selisih || 0,
+              header.total_selisih_net || 0,
+              '-',
+              '-',
+              '-',
+              '-',
+              '-'
+            ]);
+          } else {
+            for (const d of details) {
+              allDetails.push([
+                escapeCsv(header.kode_so || '-'),
+                escapeCsv(header.kategori_nama || header.kategori || '-'),
+                escapeCsv(getStatusLabel(header.status) || '-'),
+                escapeCsv(formatDate(header.tanggal_perintah)),
+                escapeCsv(formatDate(header.tanggal_pelaksanaan)),
+                escapeCsv(header.svp_nama || '-'),
+                escapeCsv(header.pic_pelaksana || header.checker || '-'),
+                escapeCsv(header.lokasi || '-'),
+                escapeCsv(header.keterangan || '-'),
+                header.total_item || 0,
+                header.total_item_selisih || 0,
+                header.total_selisih_net || 0,
+                escapeCsv(d.sku || '-'),
+                escapeCsv(d.nama_produk || '-'),
+                d.stok_sistem || 0,
+                d.stok_fisik || 0,
+                d.selisih || 0
+              ]);
+            }
+          }
+          processedCount++;
+        } catch (err) {
+          console.warn(`Error processing opname_id ${opnameId}:`, err);
         }
+      }
+      
+      if (allDetails.length === 0) {
+        showToast('Tidak ada detail untuk di-export', false);
+        hideLoader();
+        return;
       }
       
       // Generate CSV
@@ -496,39 +523,32 @@
         'Item Bermasalah', 'Selisih Net', 'SKU', 'Nama Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'
       ];
       
-      const csvContent = [
-        headers.join(','),
-        ...allDetails.map(row => [
-          `"${(row.kode_so || '').replace(/"/g, '""')}"`,
-          `"${(row.kategori || '').replace(/"/g, '""')}"`,
-          `"${(row.status || '').replace(/"/g, '""')}"`,
-          `"${row.tanggal_perintah}"`,
-          `"${row.tanggal_pelaksanaan}"`,
-          `"${(row.svp || '').replace(/"/g, '""')}"`,
-          `"${(row.pic || '').replace(/"/g, '""')}"`,
-          `"${(row.lokasi || '').replace(/"/g, '""')}"`,
-          `"${(row.keterangan || '').replace(/"/g, '""')}"`,
-          row.total_item,
-          row.item_bermasalah,
-          row.selisih_net,
-          `"${(row.sku || '').replace(/"/g, '""')}"`,
-          `"${(row.nama_produk || '').replace(/"/g, '""')}"`,
-          row.stok_sistem,
-          row.stok_fisik,
-          row.selisih
-        ].join(','))
-      ].join('\n');
+      const csvLines = [headers.join(',')];
+      for (const row of allDetails) {
+        csvLines.push(row.join(','));
+      }
       
+      const csvContent = csvLines.join('\n');
       const bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
                          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][bulan - 1];
+      
       downloadBlob(csvContent, `Riwayat_SO_${bulanNama}_${tahun}.csv`, 'text/csv');
-      showToast('Export CSV berhasil');
+      showToast(`Export berhasil (${allDetails.length} baris)`);
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      showToast('Gagal export CSV', false);
+      showToast('Gagal export CSV: ' + error.message, false);
     } finally {
       hideLoader();
     }
+  }
+  
+  function escapeCsv(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
   }
 
   function downloadBlob(content, filename, mimeType) {
