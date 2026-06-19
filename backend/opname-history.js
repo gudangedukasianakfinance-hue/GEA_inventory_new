@@ -15,22 +15,34 @@ export default async function handler(req, res) {
   try {
     const { bulan, tahun, detail, opname_id } = req.query;
     const includeDetails = String(detail).toLowerCase() === "true";
-    const columns = await getStokOpnameColumns();
-    const hasPerintah = await hasPerintahTable();
+    
+    let columns = new Set();
+    try {
+      columns = await getStokOpnameColumns();
+    } catch (e) {
+      console.error("getStokOpnameColumns error:", e);
+    }
+    
+    let hasPerintah = false;
+    try {
+      hasPerintah = await hasPerintahTable();
+    } catch (e) {
+      console.error("hasPerintahTable error:", e);
+    }
 
     const createdAtCol = columns.has("created_at") ? "h.created_at" : "h.tanggal";
     const itemSelisihCol = columns.has("total_item_selisih") ? "h.total_item_selisih" : "0 AS total_item_selisih";
     const selisihNetCol = columns.has("total_selisih_net") ? "h.total_selisih_net" : "0 AS total_selisih_net";
-    const disesuaikanCol = columns.has("disesuaikan_at") ? "h.disesuaikan_at" : "NULL::timestamp AS disesuaikan_at";
+    const disesuaikanCol = columns.has("disesuaikan_at") ? "h.disesuaikan_at" : "null as disesuaikan_at";
 
     const perintahJoin = hasPerintah
       ? "LEFT JOIN stok_opname_perintah p ON p.opname_id = h.id"
       : "";
-    const kodeSoSelect = hasPerintah ? "p.kode_so" : "NULL::varchar AS kode_so";
-    const perintahIdSelect = hasPerintah ? "p.id AS perintah_id" : "NULL::integer AS perintah_id";
-    const svpSelect = hasPerintah ? "p.svp_nama" : "NULL::varchar AS svp_nama";
-    const kategoriIdSelect = hasPerintah ? "p.kategori_id" : "NULL::varchar AS kategori_id";
-    const kategoriNamaSelect = hasPerintah ? "p.kategori_nama" : "NULL::varchar AS kategori_nama";
+    const kodeSoSelect = hasPerintah ? "p.kode_so" : "null as kode_so";
+    const perintahIdSelect = hasPerintah ? "p.id AS perintah_id" : "null as perintah_id";
+    const svpSelect = hasPerintah ? "p.svp_nama" : "null as svp_nama";
+    const kategoriIdSelect = hasPerintah ? "p.kategori_id" : "null as kategori_id";
+    const kategoriNamaSelect = hasPerintah ? "p.kategori_nama" : "null as kategori_nama";
     const statusSelect = hasPerintah ? "p.status" : "h.status";
     const tanggalPerintahSelect = hasPerintah
       ? "p.tanggal_perintah"
