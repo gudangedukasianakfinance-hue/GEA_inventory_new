@@ -1,99 +1,36 @@
 import pool from "../services/db.js";
-import { getStokOpnameColumns } from "./opname-db-utils.js";
-
-async function hasPerintahTable() {
-  const result = await pool.query(`
-    SELECT 1
-    FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'stok_opname_perintah'
-    LIMIT 1
-  `);
-  return result.rows.length > 0;
-}
 
 export default async function handler(req, res) {
   try {
     const { bulan, tahun, detail, opname_id } = req.query;
     const includeDetails = String(detail).toLowerCase() === "true";
     
-    let columns = new Set();
-    try {
-      columns = await getStokOpnameColumns();
-    } catch (e) {
-      console.error("getStokOpnameColumns error:", e);
-    }
-    
-    let hasPerintah = false;
-    try {
-      hasPerintah = await hasPerintahTable();
-    } catch (e) {
-      console.error("hasPerintahTable error:", e);
-    }
-
-    const createdAtCol = columns.has("created_at") ? "h.created_at" : "h.tanggal";
-    const itemSelisihCol = columns.has("total_item_selisih") ? "h.total_item_selisih" : "0 AS total_item_selisih";
-    const selisihNetCol = columns.has("total_selisih_net") ? "h.total_selisih_net" : "0 AS total_selisih_net";
-    const disesuaikanCol = columns.has("disesuaikan_at") ? "h.disesuaikan_at" : "null as disesuaikan_at";
-
-    const perintahJoin = hasPerintah
-      ? "LEFT JOIN stok_opname_perintah p ON p.opname_id = h.id"
-      : "";
-    const kodeSoSelect = hasPerintah ? "p.kode_so" : "null as kode_so";
-    const perintahIdSelect = hasPerintah ? "p.id AS perintah_id" : "null as perintah_id";
-    const svpSelect = hasPerintah ? "p.svp_nama" : "null as svp_nama";
-    const kategoriIdSelect = hasPerintah ? "p.kategori_id" : "null as kategori_id";
-    const kategoriNamaSelect = hasPerintah ? "p.kategori_nama" : "null as kategori_nama";
-    const statusSelect = hasPerintah ? "p.status" : "h.status";
-    const tanggalPerintahSelect = hasPerintah
-      ? "p.tanggal_perintah"
-      : "h.tanggal AS tanggal_perintah";
-    const tanggalPelaksanaanSelect = hasPerintah
-      ? `COALESCE(p.completed_at, ${createdAtCol}, h.tanggal)`
-      : `COALESCE(${createdAtCol}, h.tanggal)`;
-
+    // Get header info for single opname
     if (opname_id) {
-      const detailResult = await pool.query(
-        `
-        SELECT
-          h.id AS opname_id,
-          h.status,
-          ${perintahIdSelect},
-          ${kodeSoSelect},
-          ${kategoriIdSelect},
-          ${kategoriNamaSelect},
-          ${tanggalPerintahSelect},
-          ${tanggalPelaksanaanSelect} AS tanggal_pelaksanaan,
-          ${svpSelect},
-          h.checker AS pic_pelaksana,
-          h.lokasi,
-          h.keterangan,
-          h.total_item,
-          h.total_selisih,
-          ${itemSelisihCol},
-          ${selisihNetCol},
-          ${disesuaikanCol},
-          ${createdAtCol} AS created_at,
-          d.sku,
-          p2.nama_produk,
-          d.stok_sistem,
-          d.stok_fisik,
-          d.selisih,
-          d.input_at
-        FROM stok_opname h
-        ${perintahJoin}
-        LEFT JOIN stok_opname_detail d ON d.opname_id = h.id
-        LEFT JOIN produk p2 ON p2.sku = d.sku
-        WHERE h.id = $1
-        ORDER BY d.input_at ASC NULLS LAST, d.id ASC
-        `,
-        [Number(opname_id)]
+      const opnameIdNum = Number(opname_id);
+      
+      const headerResult = await pool.query(
+        "SELECT h.* FROM stok_opname h WHERE h.id = $1",
+        [opnameIdNum]
       );
-
-      if (!detailResult.rows.length) {
+      
+      if (!headerResult.rows.length) {
         return res.status(404).json({ error: "History SO tidak ditemukan" });
       }
-
-      const header = detailResult.rows[0];
+      
+      const h = headerResult.rows[0];
+      
+      const detailResult = await pool.query(
+        "SELECT d.*, p.nama_produk FROM stok_opname_detail d LEFT JOIN produk p ON p.sku = d.sku WHERE d.opname_id = $1 ORDER BY d.input_at ASC NULLS LAST, d.id ASC",
+        [opnameIdNum]
+      );
+      
+      let perintah = null;
+      try {
+        const pr = await pool.query("SELECT * FROM stok_opname_perintah WHERE opname_id = $1 LIMIT 1", [opnameIdNum]);
+        if (pr.rows.length > 0) perintah = pr.rows[0];
+      } catch (e) {}
+      
       const details = detailResult.rows
         .filter((row) => row.sku)
         .map((row) => ({
@@ -107,25 +44,25 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         header: {
-          opname_id: header.opname_id,
-          status: header.status,
-          perintah_id: header.perintah_id,
-          kode_so: header.kode_so,
-          kategori_id: header.kategori_id,
-          kategori_nama: header.kategori_nama,
-          tanggal_perintah: header.tanggal_perintah,
-          tanggal_pelaksanaan: header.tanggal_pelaksanaan,
-          svp_nama: header.svp_nama,
-          pic_pelaksana: header.pic_pelaksana,
-          lokasi: header.lokasi,
-          keterangan: header.keterangan,
-          total_item: header.total_item,
-          total_selisih: header.total_selisih,
-          total_item_selisih: header.total_item_selisih,
-          total_selisih_net: header.total_selisih_net,
-          created_at: header.created_at,
-          disesuaikan_at: header.disesuaikan_at,
-          stok_disesuaikan: Boolean(header.disesuaikan_at)
+          opname_id: h.id,
+          status: perintah?.status || h.status,
+          perintah_id: perintah?.id || null,
+          kode_so: perintah?.kode_so || null,
+          kategori_id: perintah?.kategori_id || null,
+          kategori_nama: perintah?.kategori_nama || null,
+          tanggal_perintah: perintah?.tanggal_perintah || h.tanggal,
+          tanggal_pelaksanaan: perintah?.completed_at || h.created_at || h.tanggal,
+          svp_nama: perintah?.svp_nama || null,
+          pic_pelaksana: h.checker || null,
+          lokasi: h.lokasi || null,
+          keterangan: h.keterangan || null,
+          total_item: h.total_item || 0,
+          total_selisih: h.total_selisih || 0,
+          total_item_selisih: h.total_item_selisih || 0,
+          total_selisih_net: h.total_selisih_net || 0,
+          created_at: h.created_at || h.tanggal,
+          disesuaikan_at: h.disesuaikan_at || null,
+          stok_disesuaikan: Boolean(h.disesuaikan_at)
         },
         details
       });
@@ -135,80 +72,52 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "bulan & tahun wajib" });
     }
 
-    const periodFilter = hasPerintah
-      ? `(
-          (p.id IS NOT NULL AND p.bulan = $1 AND p.tahun = $2)
-          OR (p.id IS NULL AND EXTRACT(MONTH FROM h.tanggal) = $1 AND EXTRACT(YEAR FROM h.tanggal) = $2)
-        )`
-      : `EXTRACT(MONTH FROM h.tanggal) = $1 AND EXTRACT(YEAR FROM h.tanggal) = $2`;
-
-    const summaryResult = await pool.query(
-      `
-      SELECT
-        h.id AS opname_id,
-        ${statusSelect} AS status,
-        ${perintahIdSelect},
-        ${kodeSoSelect},
-        ${kategoriIdSelect} AS kategori_id,
-        ${kategoriNamaSelect} AS kategori_nama,
-        ${tanggalPerintahSelect},
-        ${tanggalPelaksanaanSelect} AS tanggal_pelaksanaan,
-        ${svpSelect},
-        h.checker AS pic_pelaksana,
-        h.lokasi,
-        h.keterangan,
-        h.total_item,
-        h.total_selisih,
-        ${itemSelisihCol},
-        ${selisihNetCol},
-        ${disesuaikanCol},
-        ${createdAtCol} AS created_at
-      FROM stok_opname h
-      ${perintahJoin}
-      WHERE ${periodFilter}
-      ORDER BY tanggal_pelaksanaan DESC NULLS LAST, h.id DESC
-      `,
-      [Number(bulan), Number(tahun)]
+    const bulanNum = Number(bulan);
+    const tahunNum = Number(tahun);
+    
+    const historyResult = await pool.query(
+      "SELECT h.*, p.id as perintah_id, p.kode_so, p.kategori_id, p.kategori_nama, p.svp_nama, p.status as perintah_status, p.tanggal_perintah, p.completed_at FROM stok_opname h LEFT JOIN stok_opname_perintah p ON p.opname_id = h.id WHERE (p.bulan = $1 AND p.tahun = $2) OR (p.id IS NULL AND EXTRACT(MONTH FROM h.tanggal) = $1 AND EXTRACT(YEAR FROM h.tanggal) = $2) ORDER BY COALESCE(p.completed_at, h.created_at, h.tanggal) DESC NULLS LAST, h.id DESC",
+      [bulanNum, tahunNum]
     );
 
-    if (includeDetails) {
-      const detailsResult = await pool.query(
-        `
-        SELECT
-          h.id AS opname_id,
-          ${statusSelect} AS status,
-          ${perintahIdSelect},
-          ${kodeSoSelect},
-          ${kategoriIdSelect} AS kategori_id,
-          ${kategoriNamaSelect} AS kategori_nama,
-          ${tanggalPerintahSelect},
-          ${tanggalPelaksanaanSelect} AS tanggal_pelaksanaan,
-          ${svpSelect},
-          h.checker AS pic_pelaksana,
-          h.lokasi,
-          d.sku,
-          p2.nama_produk,
-          d.stok_sistem,
-          d.stok_fisik,
-          d.selisih,
-          d.input_at
-        FROM stok_opname h
-        ${perintahJoin}
-        JOIN stok_opname_detail d ON d.opname_id = h.id
-        LEFT JOIN produk p2 ON p2.sku = d.sku
-        WHERE ${periodFilter}
-        ORDER BY tanggal_pelaksanaan DESC NULLS LAST, h.id DESC, d.input_at ASC NULLS LAST, d.id ASC
-        `,
-        [Number(bulan), Number(tahun)]
-      );
+    const rows = historyResult.rows.map(h => ({
+      opname_id: h.id,
+      status: h.perintah_status || h.status,
+      perintah_id: h.perintah_id || null,
+      kode_so: h.kode_so || null,
+      kategori_id: h.kategori_id || null,
+      kategori_nama: h.kategori_nama || null,
+      tanggal_perintah: h.tanggal_perintah || h.tanggal,
+      tanggal_pelaksanaan: h.completed_at || h.created_at || h.tanggal,
+      svp_nama: h.svp_nama || null,
+      pic_pelaksana: h.checker || null,
+      lokasi: h.lokasi || null,
+      keterangan: h.keterangan || null,
+      total_item: h.total_item || 0,
+      total_selisih: h.total_selisih || 0,
+      total_item_selisih: h.total_item_selisih || 0,
+      total_selisih_net: h.total_selisih_net || 0,
+      created_at: h.created_at || h.tanggal,
+      disesuaikan_at: h.disesuaikan_at || null,
+      stok_disesuaikan: Boolean(h.disesuaikan_at)
+    }));
 
-      return res.status(200).json({
-        summary: summaryResult.rows,
-        details: detailsResult.rows
-      });
+    if (includeDetails) {
+      const opnameIds = rows.map(r => r.opname_id);
+      let details = [];
+      
+      if (opnameIds.length > 0) {
+        const dr = await pool.query(
+          "SELECT d.opname_id, d.sku, p.nama_produk, d.stok_sistem, d.stok_fisik, d.selisih, d.input_at FROM stok_opname_detail d LEFT JOIN produk p ON p.sku = d.sku WHERE d.opname_id = ANY($1) ORDER BY d.opname_id DESC, d.input_at ASC NULLS LAST, d.id ASC",
+          [opnameIds]
+        );
+        details = dr.rows;
+      }
+
+      return res.status(200).json({ summary: rows, details });
     }
 
-    res.status(200).json(summaryResult.rows);
+    res.status(200).json(rows);
   } catch (err) {
     console.error("ERROR HISTORY:", err);
     res.status(500).json({ error: err.message });
