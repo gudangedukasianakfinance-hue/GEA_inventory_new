@@ -1,5 +1,35 @@
 import pool from "../services/db.js";
 
+// Build WHERE clause based on kategori_id pattern (same as api-stok.js)
+function getKategoriWhereClause(kategoriId) {
+  switch(kategoriId) {
+    case 'modul':
+      return `UPPER(p.nama_produk) LIKE '%MODUL%'`;
+    case 'poster':
+      return `(UPPER(p.nama_produk) LIKE '%POSTER%' OR UPPER(p.nama_produk) LIKE '%FLASHCARD%' OR UPPER(p.nama_produk) LIKE '%FLASH CARD%')`;
+    case 'panduan':
+      return `UPPER(p.nama_produk) LIKE '%PANDUAN%'`;
+    case 'tas':
+      return `UPPER(p.nama_produk) LIKE '%TAS%'`;
+    case 'seragam':
+      return `(UPPER(p.nama_produk) LIKE '%BIRU%' OR UPPER(p.nama_produk) LIKE '%KUNING%' OR UPPER(p.nama_produk) LIKE '%MERAH%' OR UPPER(p.nama_produk) LIKE '%MY%')`;
+    case 'lain_lain':
+    case 'lain-lain':
+      return `(UPPER(p.nama_produk) NOT LIKE '%MODUL%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%POSTER%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%FLASHCARD%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%FLASH CARD%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%PANDUAN%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%TAS%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%BIRU%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%KUNING%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%MERAH%' 
+        AND UPPER(p.nama_produk) NOT LIKE '%MY%')`;
+    default:
+      return '1=1';
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
@@ -23,12 +53,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: "kategori_id required" });
       }
       
+      const kategoriWhere = getKategoriWhereClause(kategori_id);
+      
       // Calculate stok_sistem from available tables (stok_awal, pembelian, penjualan, penyesuaian)
       const produkList = await pool.query(`
         SELECT
           p.sku,
           p.nama_produk,
-          p.kategori,
           sod.stok_fisik,
           sod.selisih,
           sod.input_at,
@@ -54,16 +85,15 @@ export default async function handler(req, res) {
           SELECT COALESCE(SUM(qty), 0) as total_adjust 
           FROM stok_penyesuaian WHERE sku = p.sku
         ) sp ON true
-        WHERE p.kategori = $2
+        WHERE ${kategoriWhere}
         ORDER BY p.nama_produk
-      `, [Number(opname_id), kategori_id]);
+      `, [Number(opname_id)]);
       
       res.status(200).json({
         success: true,
         items: produkList.rows.map(r => ({
           sku: r.sku,
           nama_produk: r.nama_produk,
-          kategori: r.kategori,
           stok_sistem: Number(r.stok_sistem || 0),
           stok_fisik: r.stok_fisik,
           selisih: r.selisih,
