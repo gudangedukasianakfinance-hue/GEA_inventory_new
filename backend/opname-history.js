@@ -29,6 +29,9 @@ export default async function handler(req, res) {
     const kodeSoSelect = hasPerintah ? "p.kode_so" : "NULL::varchar AS kode_so";
     const perintahIdSelect = hasPerintah ? "p.id AS perintah_id" : "NULL::integer AS perintah_id";
     const svpSelect = hasPerintah ? "p.svp_nama" : "NULL::varchar AS svp_nama";
+    const kategoriIdSelect = hasPerintah ? "p.kategori_id" : "NULL::varchar AS kategori_id";
+    const kategoriNamaSelect = hasPerintah ? "p.kategori_nama" : "NULL::varchar AS kategori_nama";
+    const statusSelect = hasPerintah ? "p.status" : "h.status";
     const tanggalPerintahSelect = hasPerintah
       ? "p.tanggal_perintah"
       : "h.tanggal AS tanggal_perintah";
@@ -41,8 +44,11 @@ export default async function handler(req, res) {
         `
         SELECT
           h.id AS opname_id,
+          h.status,
           ${perintahIdSelect},
           ${kodeSoSelect},
+          ${kategoriIdSelect},
+          ${kategoriNamaSelect},
           ${tanggalPerintahSelect},
           ${tanggalPelaksanaanSelect} AS tanggal_pelaksanaan,
           ${svpSelect},
@@ -90,8 +96,11 @@ export default async function handler(req, res) {
       return res.status(200).json({
         header: {
           opname_id: header.opname_id,
+          status: header.status,
           perintah_id: header.perintah_id,
           kode_so: header.kode_so,
+          kategori_id: header.kategori_id,
+          kategori_nama: header.kategori_nama,
           tanggal_perintah: header.tanggal_perintah,
           tanggal_pelaksanaan: header.tanggal_pelaksanaan,
           svp_nama: header.svp_nama,
@@ -125,8 +134,11 @@ export default async function handler(req, res) {
       `
       SELECT
         h.id AS opname_id,
+        ${statusSelect} AS status,
         ${perintahIdSelect},
         ${kodeSoSelect},
+        ${kategoriIdSelect} AS kategori_id,
+        ${kategoriNamaSelect} AS kategori_nama,
         ${tanggalPerintahSelect},
         ${tanggalPelaksanaanSelect} AS tanggal_pelaksanaan,
         ${svpSelect},
@@ -152,8 +164,11 @@ export default async function handler(req, res) {
         `
         SELECT
           h.id AS opname_id,
+          ${statusSelect} AS status,
           ${perintahIdSelect},
           ${kodeSoSelect},
+          ${kategoriIdSelect} AS kategori_id,
+          ${kategoriNamaSelect} AS kategori_nama,
           ${tanggalPerintahSelect},
           ${tanggalPelaksanaanSelect} AS tanggal_pelaksanaan,
           ${svpSelect},

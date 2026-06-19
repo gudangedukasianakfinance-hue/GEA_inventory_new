@@ -48,6 +48,7 @@
       <thead>
         <tr>
           <th>Kode SO</th>
+          <th>Kategori</th>
           <th>Tanggal</th>
           <th>SVP</th>
           <th>Lokasi</th>
@@ -59,7 +60,7 @@
       </thead>
       <tbody id="historyTableBody">
         <tr>
-          <td colspan="8" class="text-center text-muted">Memuat data...</td>
+          <td colspan="9" class="text-center text-muted">Memuat data...</td>
         </tr>
       </tbody>
     </table>
@@ -154,7 +155,7 @@
   function renderHistoryTable(items) {
     const tbody = document.getElementById('historyTableBody');
     if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Tidak ada riwayat SO periode ini</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Tidak ada riwayat SO periode ini</td></tr>';
       return;
     }
     
@@ -166,6 +167,7 @@
       return `
         <tr>
           <td><code>${item.kode_so || '-'}</code></td>
+          <td>${item.kategori_nama || item.kategori || '-'}</td>
           <td>${formatDate(item.tanggal_pelaksanaan || item.tanggal_perintah || item.created_at)}</td>
           <td>${item.svp_nama || item.svp || '-'}</td>
           <td>${item.lokasi || '-'}</td>
@@ -237,6 +239,14 @@
             <span class="detail-info-value">${headerData.kode_so || '-'}</span>
           </div>
           <div class="detail-info-item">
+            <span class="detail-info-label">Kategori</span>
+            <span class="detail-info-value">${headerData.kategori_nama || headerData.kategori || '-'}</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="detail-info-label">Status</span>
+            <span class="badge ${getStatusClass(headerData.status)}">${getStatusLabel(headerData.status)}</span>
+          </div>
+          <div class="detail-info-item">
             <span class="detail-info-label">Tanggal Perintah</span>
             <span class="detail-info-value">${formatDate(headerData.tanggal_perintah || headerData.tanggal)}</span>
           </div>
@@ -255,6 +265,10 @@
           <div class="detail-info-item">
             <span class="detail-info-label">Lokasi</span>
             <span class="detail-info-value">${headerData.lokasi || '-'}</span>
+          </div>
+          <div class="detail-info-item detail-info-item--full">
+            <span class="detail-info-label">Keterangan</span>
+            <span class="detail-info-value">${headerData.keterangan || '-'}</span>
           </div>
         </div>
         <div class="detail-summary">
@@ -367,9 +381,18 @@
       
       const csvContent = [
         ['Kode SO', headerData.kode_so || ''],
-        ['Tanggal', formatDate(headerData.tanggal_perintah || headerData.tanggal)],
+        ['Kategori', headerData.kategori_nama || headerData.kategori || ''],
+        ['Status', getStatusLabel(headerData.status) || ''],
+        ['Tanggal Perintah', formatDate(headerData.tanggal_perintah)],
+        ['Tanggal Pelaksanaan', formatDate(headerData.tanggal_pelaksanaan)],
+        ['Supervisor', headerData.svp_nama || ''],
         ['PIC Checker', headerData.pic_pelaksana || headerData.checker || ''],
         ['Lokasi', headerData.lokasi || ''],
+        ['Keterangan', headerData.keterangan || ''],
+        [''],
+        ['Total Item', headerData.total_item || 0],
+        ['Item Bermasalah', headerData.total_item_selisih || 0],
+        ['Selisih Net', headerData.total_selisih_net || 0],
         [''],
         ['SKU', 'Nama Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'],
         ...detailsData.map(d => [
@@ -477,6 +500,9 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     margin-bottom: 20px;
+  }
+  .detail-info-item--full {
+    grid-column: 1 / -1;
   }
   .detail-info-item {
     display: flex;
