@@ -284,6 +284,12 @@
           <code>2026-06-14 | PT Maju Bersama | 100001 | 10</code>
         </div>
         <div class="form-group mt-lg">
+          <button class="btn btn--secondary" onclick="downloadImportTemplate()">
+            <i data-lucide="download"></i>
+            <span>Download Template</span>
+          </button>
+        </div>
+        <div class="form-group mt-md">
           <label>Pilih File</label>
           <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="form-input">
         </div>
@@ -884,6 +890,26 @@
     document.getElementById('btnProcessImport').innerHTML = '<i data-lucide="upload"></i><span>Upload & Validasi</span>';
     document.getElementById('btnProcessImport').disabled = false;
     openModal('importModal');
+  }
+
+  // Download import template
+  function downloadImportTemplate() {
+    const template = [
+      'Tanggal,Nama Supplier,SKU,Qty',
+      '2026-06-14,PT Maju Bersama,100001,10',
+      '2026-06-15,CV Sumber Rejeki,100002,25',
+      '2026-06-16,Toko Elektronik ABC,100003,5'
+    ].join('\n');
+    
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'template_import_pembelian.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('Template berhasil didownload');
   }
 
   // Close import modal
