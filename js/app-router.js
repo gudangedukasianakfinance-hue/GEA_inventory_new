@@ -103,14 +103,18 @@ const AppRouter = {
     document.title = 'CV EPIC Warehouse - ' + (titles[page] || 'Dashboard');
   },
   
-  async loadPage(page) {
+  async loadPage(page, forceReload = false) {
     const container = document.getElementById('pageContainer');
     if (!container) {
       console.error('Page container not found');
       return;
     }
     
-    if (this.loadedPages[page]) {
+    // Always reload SO pages to ensure data consistency
+    const soPages = ['perintah-so', 'riwayat-so', 'pelaksanaan-so', 'task-saya', 'dashboard-so', 'penyesuaian-stok'];
+    const shouldReload = forceReload || soPages.includes(page);
+    
+    if (this.loadedPages[page] && !shouldReload) {
       // Clone the cached content to avoid mutating the cache
       container.innerHTML = '';
       container.appendChild(this.loadedPages[page].cloneNode(true));
@@ -122,7 +126,7 @@ const AppRouter = {
     container.innerHTML = '<div class="page-loading"><div class="page-loading__spinner"></div><p>Memuat halaman...</p></div>';
     
     try {
-      const response = await fetch(this.routes[page]);
+      const response = await fetch(this.routes[page] + '?t=' + Date.now());
       if (!response.ok) throw new Error('Failed to load page: ' + response.status);
       
       const html = await response.text();

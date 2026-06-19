@@ -133,11 +133,14 @@
         '<tr><td colspan="8" class="text-center text-muted"><i data-lucide="loader-2" class="spin"></i> Memuat...</td></tr>';
       if (window.lucide) lucide.createIcons();
       
-      const response = await fetch(`/api/opname-history?bulan=${bulan}&tahun=${tahun}`);
+      // Cache busting with timestamp
+      const timestamp = Date.now();
+      const response = await fetch(`/api/opname-history?bulan=${bulan}&tahun=${tahun}&_=${timestamp}`);
       if (!response.ok) throw new Error('Failed to load');
       
-      window.SORiwayat.historyData = await response.json();
-      if (!Array.isArray(window.SORiwayat.historyData)) window.SORiwayat.historyData = [];
+      const json = await response.json();
+      // Ensure data is always array
+      window.SORiwayat.historyData = Array.isArray(json) ? json : (json.items || []);
       
       document.getElementById('historyCount').textContent = `${window.SORiwayat.historyData.length} hasil`;
       renderHistoryTable(window.SORiwayat.historyData);

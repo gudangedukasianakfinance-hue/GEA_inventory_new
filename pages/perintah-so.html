@@ -251,7 +251,9 @@
       const bulan = now.getMonth() + 1;
       const tahun = now.getFullYear();
       
-      const response = await fetch(`/api/opname-perintah?bulan=${bulan}&tahun=${tahun}`);
+      // Cache busting with timestamp
+      const timestamp = Date.now();
+      const response = await fetch(`/api/opname-perintah?bulan=${bulan}&tahun=${tahun}&_=${timestamp}`);
       if (!response.ok) throw new Error('Failed to load');
       
       const data = await response.json();
