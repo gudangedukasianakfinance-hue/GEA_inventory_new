@@ -675,15 +675,21 @@
       
       const config = {
         fps: 10,
-        qrbox: { width: 250, height: 150 },
-        aspectRatio: 1.777778
+        qrbox: { width: 280, height: 160 },
+        aspectRatio: 1.777778,
+        disableFlip: false,
+        preferredCamera: 'environment'
       };
       
       // Use back camera if available
-      const backCamera = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
+      const backCamera = devices.find(d => 
+        d.label.toLowerCase().includes('back') || 
+        d.label.toLowerCase().includes('rear') ||
+        d.label.toLowerCase().includes('environment')
+      ) || devices[0];
       
       await window.SOPelaksanaan.html5QrCode.start(
-        backCamera.id,
+        { deviceId: { exact: backCamera.id } },
         config,
         onBarcodeScanned,
         (errorMessage) => {
@@ -695,6 +701,9 @@
       document.getElementById('scannerContainer').style.display = 'block';
       document.getElementById('btnStartScan').style.display = 'none';
       document.getElementById('btnStopScan').style.display = 'inline-flex';
+      
+      // Focus on scanner container for better UX
+      document.getElementById('scannerContainer').focus();
       
       if (window.lucide) lucide.createIcons();
       console.log('[BarcodeScan] Started scanning with camera:', backCamera.label);
