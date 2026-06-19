@@ -85,7 +85,7 @@
 
         <!-- Barcode Scanner Container -->
         <div id="scannerContainer" style="display:none; margin-bottom: 20px;">
-          <div id="barcodeScanner"></div>
+          <div id="barcodeScanner" style="width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden;"></div>
           <p style="text-align:center; color:#94A3B8; font-size:12px; margin-top:8px;">Arahkan kamera ke barcode</p>
         </div>
 
@@ -663,11 +663,33 @@
     if (window.SOPelaksanaan.isScanning) return;
     
     try {
-      // Check camera permission
+      // Check camera permission first
       const devices = await Html5Qrcode.getCameras();
       if (!devices || devices.length === 0) {
-        showToast('Kamera tidak ditemukan', false);
+        showToast('Kamera tidak ditemukan. Izinkan akses kamera terlebih dahulu.', false);
         return;
+      }
+      
+      // Find back camera
+      let selectedCamera = devices[0];
+      for (const device of devices) {
+        const label = device.label.toLowerCase();
+        if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+          selectedCamera = device;
+          break;
+        }
+      }
+      
+      console.log('[BarcodeScan] Using camera:', selectedCamera.label || selectedCamera.id);
+      
+      // Stop any existing scanner first
+      if (window.SOPelaksanaan.html5QrCode) {
+        try {
+          await window.SOPelaksanaan.html5QrCode.stop();
+        } catch (e) {
+          // Ignore if already stopped
+        }
+        window.SOPelaksanaan.html5QrCode = null;
       }
       
       // Initialize scanner
@@ -675,25 +697,20 @@
       
       const config = {
         fps: 10,
-        qrbox: { width: 280, height: 160 },
+        qrbox: { width: 280, height: 150 },
         aspectRatio: 1.777778,
-        disableFlip: false,
-        preferredCamera: 'environment'
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        }
       };
       
-      // Use back camera if available
-      const backCamera = devices.find(d => 
-        d.label.toLowerCase().includes('back') || 
-        d.label.toLowerCase().includes('rear') ||
-        d.label.toLowerCase().includes('environment')
-      ) || devices[0];
-      
       await window.SOPelaksanaan.html5QrCode.start(
-        { deviceId: { exact: backCamera.id } },
+        selectedCamera.id,
         config,
         onBarcodeScanned,
         (errorMessage) => {
-          // Ignore scan errors (normal when no barcode visible)
+          // Scan error - ignore, this is normal when no barcode visible
+          console.log('[BarcodeScan] Scanning...', errorMessage);
         }
       );
       
@@ -702,35 +719,50 @@
       document.getElementById('btnStartScan').style.display = 'none';
       document.getElementById('btnStopScan').style.display = 'inline-flex';
       
-      // Focus on scanner container for better UX
-      document.getElementById('scannerContainer').focus();
-      
       if (window.lucide) lucide.createIcons();
-      console.log('[BarcodeScan] Started scanning with camera:', backCamera.label);
+      console.log('[BarcodeScan] Camera started successfully');
       
     } catch (err) {
       console.error('[BarcodeScan] Error:', err);
-      showToast('Gagal mengakses kamera: ' + err.message, false);
+      window.SOPelaksanaan.isScanning = false;
+      
+      // Show specific error message
+      if (err.message?.includes('Permission')) {
+        showToast('Izin kamera ditolak. Mohon izinkan akses kamera.', false);
+      } else if (err.message?.includes('NotFound')) {
+        showToast('Kamera tidak ditemukan', false);
+      } else {
+        showToast('Gagal mengakses kamera: ' + (err.message || 'Unknown error'), false);
+      }
     }
   }
 
   async function stopBarcodeScan() {
-    if (!window.SOPelaksanaan.isScanning || !window.SOPelaksanaan.html5QrCode) return;
+    if (!window.SOPelaksanaan.html5QrCode) {
+      window.SOPelaksanaan.isScanning = false;
+      return;
+    }
     
     try {
       await window.SOPelaksanaan.html5QrCode.stop();
+      console.log('[BarcodeScan] Stopped successfully');
+    } catch (err) {
+      console.error('[BarcodeScan] Stop error:', err);
+    } finally {
       window.SOPelaksanaan.html5QrCode = null;
       window.SOPelaksanaan.isScanning = false;
       
-      document.getElementById('scannerContainer').style.display = 'none';
-      document.getElementById('btnStartScan').style.display = 'inline-flex';
-      document.getElementById('btnStopScan').style.display = 'none';
+      const scannerContainer = document.getElementById('scannerContainer');
+      const barcodeScanner = document.getElementById('barcodeScanner');
+      if (scannerContainer) scannerContainer.style.display = 'none';
+      if (barcodeScanner) barcodeScanner.innerHTML = ''; // Clear scanner content
+      
+      const btnStartScan = document.getElementById('btnStartScan');
+      const btnStopScan = document.getElementById('btnStopScan');
+      if (btnStartScan) btnStartScan.style.display = 'inline-flex';
+      if (btnStopScan) btnStopScan.style.display = 'none';
       
       if (window.lucide) lucide.createIcons();
-      console.log('[BarcodeScan] Stopped');
-      
-    } catch (err) {
-      console.error('[BarcodeScan] Stop error:', err);
     }
   }
 
