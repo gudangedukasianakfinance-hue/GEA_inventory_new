@@ -115,6 +115,7 @@ const routes = {
   "GET /template-stok_awal": templateStokAwalHandler,
   "GET /stok-sistem": stokSistemHandler,
   "GET /opname-history": opnameHistoryHandler,
+  "GET /v1/opname/history": opnameHistoryHandler,
   "GET /opname-perintah": opnamePerintahHandler,
   "POST /opname-perintah": opnamePerintahHandler,
   "DELETE /opname-perintah/:id": opnamePerintahHandler,
