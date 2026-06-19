@@ -36,6 +36,10 @@
       <i data-lucide="search"></i>
       <span>Cari</span>
     </button>
+    <button class="btn btn--primary btn--sm" onclick="exportAllHistoryCsv()">
+      <i data-lucide="download"></i>
+      <span>Export CSV</span>
+    </button>
   </div>
 
   <!-- History Table -->
@@ -409,6 +413,119 @@
     } catch (error) {
       console.error('Error downloading CSV:', error);
       showToast('Gagal mengunduh CSV', false);
+    } finally {
+      hideLoader();
+    }
+  }
+
+  async function exportAllHistoryCsv() {
+    const bulan = document.getElementById('filterBulan').value;
+    const tahun = document.getElementById('filterTahun').value;
+    const items = window.SORiwayat.historyData || [];
+    
+    if (items.length === 0) {
+      showToast('Tidak ada data untuk di-export', false);
+      return;
+    }
+    
+    try {
+      showLoader();
+      
+      // Get details for each SO
+      const allDetails = [];
+      
+      for (const item of items) {
+        const opnameId = item.opname_id || item.id;
+        const response = await fetch(`/api/opname-history?opname_id=${opnameId}&detail=true`);
+        if (!response.ok) continue;
+        
+        const data = await response.json();
+        const header = data.header || item;
+        const details = data.details || [];
+        
+        // If no details, add placeholder row
+        if (details.length === 0) {
+          allDetails.push({
+            kode_so: header.kode_so || '-',
+            kategori: header.kategori_nama || header.kategori || '-',
+            status: getStatusLabel(header.status) || '-',
+            tanggal_perintah: formatDate(header.tanggal_perintah),
+            tanggal_pelaksanaan: formatDate(header.tanggal_pelaksanaan),
+            svp: header.svp_nama || '-',
+            pic: header.pic_pelaksana || header.checker || '-',
+            lokasi: header.lokasi || '-',
+            keterangan: header.keterangan || '-',
+            total_item: header.total_item || 0,
+            item_bermasalah: header.total_item_selisih || 0,
+            selisih_net: header.total_selisih_net || 0,
+            sku: '-',
+            nama_produk: '-',
+            stok_sistem: '-',
+            stok_fisik: '-',
+            selisih: '-'
+          });
+        } else {
+          for (const d of details) {
+            allDetails.push({
+              kode_so: header.kode_so || '-',
+              kategori: header.kategori_nama || header.kategori || '-',
+              status: getStatusLabel(header.status) || '-',
+              tanggal_perintah: formatDate(header.tanggal_perintah),
+              tanggal_pelaksanaan: formatDate(header.tanggal_pelaksanaan),
+              svp: header.svp_nama || '-',
+              pic: header.pic_pelaksana || header.checker || '-',
+              lokasi: header.lokasi || '-',
+              keterangan: header.keterangan || '-',
+              total_item: header.total_item || 0,
+              item_bermasalah: header.total_item_selisih || 0,
+              selisih_net: header.total_selisih_net || 0,
+              sku: d.sku || '-',
+              nama_produk: d.nama_produk || '-',
+              stok_sistem: d.stok_sistem,
+              stok_fisik: d.stok_fisik,
+              selisih: d.selisih
+            });
+          }
+        }
+      }
+      
+      // Generate CSV
+      const headers = [
+        'Kode SO', 'Kategori', 'Status', 'Tanggal Perintah', 'Tanggal Pelaksanaan',
+        'Supervisor', 'PIC', 'Lokasi', 'Keterangan', 'Total Item', 
+        'Item Bermasalah', 'Selisih Net', 'SKU', 'Nama Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...allDetails.map(row => [
+          `"${(row.kode_so || '').replace(/"/g, '""')}"`,
+          `"${(row.kategori || '').replace(/"/g, '""')}"`,
+          `"${(row.status || '').replace(/"/g, '""')}"`,
+          `"${row.tanggal_perintah}"`,
+          `"${row.tanggal_pelaksanaan}"`,
+          `"${(row.svp || '').replace(/"/g, '""')}"`,
+          `"${(row.pic || '').replace(/"/g, '""')}"`,
+          `"${(row.lokasi || '').replace(/"/g, '""')}"`,
+          `"${(row.keterangan || '').replace(/"/g, '""')}"`,
+          row.total_item,
+          row.item_bermasalah,
+          row.selisih_net,
+          `"${(row.sku || '').replace(/"/g, '""')}"`,
+          `"${(row.nama_produk || '').replace(/"/g, '""')}"`,
+          row.stok_sistem,
+          row.stok_fisik,
+          row.selisih
+        ].join(','))
+      ].join('\n');
+      
+      const bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][bulan - 1];
+      downloadBlob(csvContent, `Riwayat_SO_${bulanNama}_${tahun}.csv`, 'text/csv');
+      showToast('Export CSV berhasil');
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      showToast('Gagal export CSV', false);
     } finally {
       hideLoader();
     }
