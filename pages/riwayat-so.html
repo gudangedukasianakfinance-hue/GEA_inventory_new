@@ -209,15 +209,21 @@
   }
 
   function renderDetailModal(data) {
-    const { header, details = [] } = data || {};
+    if (!data) {
+      document.getElementById('detailSoBody').innerHTML = '<p class="text-danger">Data tidak tersedia</p>';
+      return;
+    }
+    
+    const { header, details = [] } = data;
     
     // If data is flat array (not proper format), use first item as header
     const headerData = header || (Array.isArray(data) && data[0]) || {};
     const detailsData = details || (Array.isArray(data) ? data.slice(1) : []);
     
-    document.getElementById('detailSoTitle').textContent = `Detail SO - ${headerData.kode_so || headerData.id || 'N/A'}`;
+    const kodeSo = headerData?.kode_so || headerData?.id || 'N/A';
+    document.getElementById('detailSoTitle').textContent = `Detail SO - ${kodeSo}`;
     
-    const selisih = headerData.total_selisih_net || headerData.total_selisih || 0;
+    const selisih = Number(headerData?.total_selisih_net || headerData?.total_selisih || 0);
     const selisihClass = selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : '';
     
     const html = `
@@ -313,25 +319,29 @@
   }
 
   function downloadDetailCsv() {
-    if (!window.SORiwayat.currentDetailData || !window.SORiwayat.currentDetailData.details) {
+    const data = window.SORiwayat.currentDetailData;
+    if (!data || !data.details || data.details.length === 0) {
       showToast('Tidak ada data untuk diunduh', false);
       return;
     }
     
-    const { header, details } = window.SORiwayat.currentDetailData;
+    const header = data.header || {};
+    const details = data.details || [];
+    const kodeSo = header.kode_so || 'SO';
+    
     const csvContent = [
       ['Kode SO', 'SKU', 'Produk', 'Stok Sistem', 'Stok Fisik', 'Selisih'],
       ...details.map(d => [
-        header.kode_so || '',
+        kodeSo,
         d.sku || '',
-        d.nama_produk || '',
+        (d.nama_produk || '').replace(/,/g, ';'),
         d.stok_sistem || 0,
         d.stok_fisik || 0,
         d.selisih || 0
       ])
     ].map(row => row.join(',')).join('\n');
     
-    downloadBlob(csvContent, `${header.kode_so || 'SO'}_detail.csv`, 'text/csv');
+    downloadBlob(csvContent, `${kodeSo}_detail.csv`, 'text/csv');
     showToast('CSV berhasil diunduh');
   }
 
@@ -388,21 +398,40 @@
     URL.revokeObjectURL(url);
   }
 
-  // Filters
-  document.getElementById('filterBulan')?.addEventListener('change', loadHistory);
-  document.getElementById('filterTahun')?.addEventListener('change', loadHistory);
-
-  // Set current month (wrapped in function to avoid re-declaration in SPA)
-  (function initFilters() {
+  // Filters - single load trigger
+  let filterInitialized = false;
+  
+  function initFilters() {
+    if (filterInitialized) return;
+    filterInitialized = true;
+    
     const now = new Date();
-    document.getElementById('filterBulan').value = now.getMonth() + 1;
-    document.getElementById('filterTahun').value = now.getFullYear();
-  })();
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadHistory);
-  } else {
+    const bulanEl = document.getElementById('filterBulan');
+    const tahunEl = document.getElementById('filterTahun');
+    
+    if (bulanEl) bulanEl.value = now.getMonth() + 1;
+    if (tahunEl) tahunEl.value = now.getFullYear();
+    
+    // Only load if called directly, not during page load
+    if (document.readyState === 'complete') {
+      loadHistory();
+    }
+  }
+  
+  document.getElementById('filterBulan')?.addEventListener('change', () => {
+    initFilters();
     loadHistory();
+  });
+  document.getElementById('filterTahun')?.addEventListener('change', () => {
+    initFilters();
+    loadHistory();
+  });
+
+  // Load on page ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFilters);
+  } else {
+    initFilters();
   }
 </script>
 
