@@ -13,8 +13,8 @@
   if (window.DistributionDashboardInitialized) return;
   window.DistributionDashboardInitialized = true;
 
-  // Google Apps Script URL
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb3nDU0ul_XHAkkLWo8Gc5LbUDxNn5k3L34qOZIze2TVJxE4mZuMkq-mGdI36iZlLG/exec';
+  // Use Vercel API proxy to avoid CORS issues
+  const API_PROXY_URL = '/api/shipment';
 
   // Cache configuration
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -77,16 +77,17 @@
         if (cached) return { success: true, data: cached, fromCache: true };
       }
 
-      // If no URL configured, use sample data
-      if (!GOOGLE_SCRIPT_URL) {
-        return { success: false, error: 'Google Apps Script URL not configured', useSample: true };
-      }
-
       try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'GET', mode: 'cors' });
+        const response = await fetch(API_PROXY_URL);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         
         const rawData = await response.json();
+        
+        // Check if API returned error
+        if (rawData.error) {
+          throw new Error(rawData.message || rawData.error);
+        }
+        
         const data = self.transformData(rawData);
         self.setCache(data);
         return { success: true, data: data, fromCache: false };

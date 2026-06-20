@@ -1,9 +1,11 @@
 /**
  * Shipment Service
- * Handles data fetching from Google Apps Script API with 5-minute caching
+ * Handles data fetching from Google Apps Script API via Vercel proxy
+ * with 5-minute caching
  */
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb3nDU0ul_XHAkkLWo8Gc5LbUDxNn5k3L34qOZIze2TVJxE4mZuMkq-mGdI36iZlLG/exec';
+// Use Vercel API proxy to avoid CORS issues
+const API_PROXY_URL = '/api/shipment';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -104,13 +106,7 @@ class ShipmentService {
     }
 
     try {
-      const response = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
+      const response = await fetch(API_PROXY_URL);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
