@@ -13,8 +13,19 @@
   if (window.DistributionDashboardInitialized) return;
   window.DistributionDashboardInitialized = true;
 
-  // Google Apps Script URL
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycb3nDU0ul_XHAkkLWo8Gc5LbUDxNn5k3L34qOZIze2TVJxE4mZuMkq-mGdI36iZlLG/exec';
+  // Google Apps Script URL - Replace with your deployed Google Apps Script URL
+  // To create your own:
+  // 1. Go to script.google.com
+  // 2. Create new project
+  // 3. Deploy as Web App
+  // 4. Set "Who has access" to "Anyone"
+  // 5. Copy the deployment URL here
+  // 
+  // Example URL format:
+  // const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+  
+  // For now, we use sample data only since the provided URL returns CORS/404 errors
+  const GOOGLE_SCRIPT_URL = null;
 
   // Cache configuration
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -75,6 +86,11 @@
       if (!forceRefresh && self.isCacheValid()) {
         const cached = self.getCachedData();
         if (cached) return { success: true, data: cached, fromCache: true };
+      }
+
+      // If no URL configured, use sample data
+      if (!GOOGLE_SCRIPT_URL) {
+        return { success: false, error: 'Google Apps Script URL not configured', useSample: true };
       }
 
       try {
