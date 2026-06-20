@@ -1,0 +1,46 @@
+<!-- Dashboard Distribution Page -->
+<section class="distribution-dashboard">
+  
+  <!-- Welcome Section -->
+  <div class="welcome">
+    <div class="welcome__content">
+      <h1 class="welcome__title" id="distTitle">Dashboard Pengiriman</h1>
+      <p class="welcome__subtitle">Monitoring distribusi barang ke outlet</p>
+    </div>
+    <div class="welcome__filter">
+      <div class="cache-status" id="cacheStatus" style="display: none;">
+        <i data-lucide="clock"></i>
+        <span>Cache: <span id="cacheRemaining">5:00</span></span>
+      </div>
+      <button class="btn btn--primary" onclick="if(window.DistributionDashboard) DistributionDashboard.refreshData()">
+        <i data-lucide="refresh-cw"></i>
+        <span>Refresh Data</span>
+      </button>
+      <button class="btn btn--success" onclick="if(window.DistributionDashboard) DistributionDashboard.exportExcel()">
+        <i data-lucide="download"></i>
+        <span>Export Excel</span>
+      </button>
+    </div>
+    <div class="welcome__datetime">
+      <div class="welcome__date" id="distDate">-</div>
+      <div class="welcome__time" id="distTime">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="distribution-loading-overlay" id="distributionLoadingOverlay" style="display:none;">
+    <div class="distribution-loading-spinner"></div>
+    <div class="distribution-loading-text">Memuat data...</div>
+  </div>
+
+  <!-- React Root -->
+  <div id="distribution-root"></div>
+
+</section>
+
+<!-- React & Libraries -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.min.js" crossorigin></script>
+<script src="https://unpkg.com/@tanstack/react-table@8.11.0/build/umd/index.development.js" crossorigin></script>
+<script src="/js/pages/distribution.js"></script>
