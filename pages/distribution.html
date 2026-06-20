@@ -33,21 +33,11 @@
     <div class="distribution-loading-text">Memuat data...</div>
   </div>
 
-  <!-- React Root -->
-  <div id="distribution-root">
-    <!-- Loading State -->
-    <div class="distribution-loading">
-      <div class="distribution-loading__spinner"></div>
-      <p>Memuat komponen...</p>
-    </div>
-  </div>
+  <!-- Root -->
+  <div id="distribution-root"></div>
 
 </section>
 
-<!-- React & Libraries - Load synchronously in correct order -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/@tanstack/react-table/8.11.0/react-table.production.min.js" defer></script>
-<script src="/js/pages/distribution.js" defer></script>
+<!-- Libraries - Recharts only -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.min.js"></script>
+<script src="/js/pages/distribution.js"></script>
