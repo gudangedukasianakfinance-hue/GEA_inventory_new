@@ -12,11 +12,11 @@
         <i data-lucide="clock"></i>
         <span>Cache: <span id="cacheRemaining">5:00</span></span>
       </div>
-      <button class="btn btn--primary" onclick="if(window.DistributionDashboard) DistributionDashboard.refreshData()">
+      <button class="btn btn--primary" id="refreshBtn">
         <i data-lucide="refresh-cw"></i>
         <span>Refresh Data</span>
       </button>
-      <button class="btn btn--success" onclick="if(window.DistributionDashboard) DistributionDashboard.exportExcel()">
+      <button class="btn btn--success" id="exportBtn">
         <i data-lucide="download"></i>
         <span>Export Excel</span>
       </button>
@@ -34,13 +34,20 @@
   </div>
 
   <!-- React Root -->
-  <div id="distribution-root"></div>
+  <div id="distribution-root">
+    <!-- Loading State -->
+    <div class="distribution-loading">
+      <div class="distribution-loading__spinner"></div>
+      <p>Memuat komponen...</p>
+    </div>
+  </div>
 
 </section>
 
-<!-- React & Libraries -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.min.js" crossorigin></script>
-<script src="https://unpkg.com/@tanstack/react-table@8.11.0/build/umd/index.development.js" crossorigin></script>
-<script src="/js/pages/distribution.js"></script>
+<!-- React & Libraries - Load synchronously in correct order -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/@tanstack/react-table/8.11.0/react-table.production.min.js" defer></script>
+<script src="/js/pages/distribution.js" defer></script>

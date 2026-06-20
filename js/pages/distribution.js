@@ -1,14 +1,11 @@
 /***********************************************
  * CV EPIC Warehouse - Distribution Dashboard
- * React + Tailwind + Recharts + TanStack Table
+ * Vanilla JS + Recharts + Custom Table
  * Data Source: Google Apps Script JSON Endpoint
  * 
  * Service: src/modules/shipment-dashboard/services/shipmentService.ts
  * Cache: 5 minutes
  ***********************************************/
-
-const { useState, useEffect, useMemo, useCallback } = React;
-const { useTable, usePagination, useSortBy, useFilters, useGlobalFilter } = ReactTable;
 
 // Google Apps Script URL
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb3nDU0ul_XHAkkLWo8Gc5LbUDxNn5k3L34qOZIze2TVJxE4mZuMkq-mGdI36iZlLG/exec';
@@ -36,7 +33,7 @@ const SAMPLE_DATA = [
 ];
 
 // ============================================
-// SHIPMENT SERVICE (Inline - mirrors TypeScript service)
+// SHIPMENT SERVICE
 // ============================================
 
 const ShipmentService = {
@@ -84,7 +81,6 @@ const ShipmentService = {
   },
 
   async fetchShipmentData(forceRefresh = false) {
-    // Return cached data if valid
     if (!forceRefresh && this.isCacheValid()) {
       const cachedData = this.getCachedData();
       if (cachedData) {
@@ -115,7 +111,6 @@ const ShipmentService = {
   },
 
   transformData(rawData) {
-    // Handle direct array format
     if (Array.isArray(rawData)) {
       return rawData;
     }
@@ -123,12 +118,10 @@ const ShipmentService = {
     if (rawData && typeof rawData === 'object') {
       const obj = rawData;
       
-      // Check for data property
       if (Array.isArray(obj.data)) {
         return obj.data;
       }
       
-      // Check for values property (Google Sheets format)
       if (Array.isArray(obj.values)) {
         const values = obj.values;
         if (values.length > 1) {
@@ -143,7 +136,6 @@ const ShipmentService = {
         }
       }
 
-      // Check for table property
       if (Array.isArray(obj.table)) {
         return obj.table;
       }
@@ -158,10 +150,12 @@ const ShipmentService = {
 // ============================================
 
 function formatCurrency(num) {
+  if (!num) return 'Rp 0';
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 }
 
 function formatNumber(num) {
+  if (!num) return '0';
   return new Intl.NumberFormat('id-ID').format(num);
 }
 
@@ -172,36 +166,18 @@ function formatDate(dateStr) {
 }
 
 // ============================================
-// REACT COMPONENTS
+// DASHBOARD STATE
 // ============================================
 
-// 1. KPI Card Component
-function KPICard({ icon, label, value, trend, trendDirection, color }) {
-  const colorClasses = {
-    primary: 'kpi-card__icon--primary',
-    success: 'kpi-card__icon--success',
-    warning: 'kpi-card__icon--warning',
-    info: 'kpi-card__icon--info',
-    danger: 'kpi-card__icon--danger'
-  };
-  
-  return React.createElement('div', { className: 'kpi-card' },
-    React.createElement('div', { className: `kpi-card__icon ${colorClasses[color]}` },
-      React.createElement('i', { 'data-lucide': icon })
-    ),
-    React.createElement('div', { className: 'kpi-card__content' },
-      React.createElement('div', { className: 'kpi-card__label' }, label),
-      React.createElement('div', { className: 'kpi-card__value' }, value),
-      trend && React.createElement('div', { className: `kpi-card__trend kpi-card__trend--${trendDirection}` },
-        React.createElement('i', { 'data-lucide': trendDirection === 'up' ? 'trending-up' : 'trending-down' }),
-        React.createElement('span', null, trend)
-      )
-    )
-  );
-}
+let dashboardData = [];
+let currentPage = 1;
+const pageSize = 10;
 
-// 2. KPI Dashboard Section
-function KPISection({ data }) {
+// ============================================
+// UI COMPONENTS (Vanilla JS)
+// ============================================
+
+function renderKPISection(data) {
   const totalShipments = data.length;
   const totalOTR = data.reduce((sum, item) => sum + (item.total_otr || 0), 0);
   const totalQty = data.reduce((sum, item) => sum + (item.qty || 0), 0);
@@ -213,267 +189,342 @@ function KPISection({ data }) {
     return acc;
   }, {});
   
-  return React.createElement('div', { className: 'kpi-grid' },
-    React.createElement(KPICard, { icon: 'package', label: 'Total Pengiriman', value: formatNumber(totalShipments), color: 'primary' }),
-    React.createElement(KPICard, { icon: 'truck', label: 'Total Qty', value: formatNumber(totalQty), color: 'info' }),
-    React.createElement(KPICard, { icon: 'wallet', label: 'Total OTR', value: formatCurrency(totalOTR), color: 'success' }),
-    React.createElement(KPICard, { icon: 'calculator', label: 'Rata-rata OTR', value: formatCurrency(avgOTR), color: 'warning' }),
-    React.createElement(KPICard, { icon: 'check-circle', label: 'Terkirim', value: formatNumber(statusCounts['Terkirim'] || 0), color: 'success' }),
-    React.createElement(KPICard, { icon: 'clock', label: 'Proses', value: formatNumber(statusCounts['Proses'] || 0), color: 'warning' }),
-    React.createElement(KPICard, { icon: 'alert-circle', label: 'Pending', value: formatNumber(statusCounts['Pending'] || 0), color: 'danger' }),
-    React.createElement(KPICard, { icon: 'store', label: 'Jumlah Outlet', value: formatNumber(new Set(data.map(d => d.kode_outlet)).size), color: 'info' })
-  );
+  const kpis = [
+    { icon: 'package', label: 'Total Pengiriman', value: formatNumber(totalShipments), color: 'primary' },
+    { icon: 'truck', label: 'Total Qty', value: formatNumber(totalQty), color: 'info' },
+    { icon: 'wallet', label: 'Total OTR', value: formatCurrency(totalOTR), color: 'success' },
+    { icon: 'calculator', label: 'Rata-rata OTR', value: formatCurrency(avgOTR), color: 'warning' },
+    { icon: 'check-circle', label: 'Terkirim', value: formatNumber(statusCounts['Terkirim'] || 0), color: 'success' },
+    { icon: 'clock', label: 'Proses', value: formatNumber(statusCounts['Proses'] || 0), color: 'warning' },
+    { icon: 'alert-circle', label: 'Pending', value: formatNumber(statusCounts['Pending'] || 0), color: 'danger' },
+    { icon: 'store', label: 'Jumlah Outlet', value: formatNumber(new Set(data.map(d => d.kode_outlet)).size), color: 'info' },
+  ];
+  
+  const colorClasses = {
+    primary: 'kpi-card__icon--primary',
+    success: 'kpi-card__icon--success',
+    warning: 'kpi-card__icon--warning',
+    info: 'kpi-card__icon--info',
+    danger: 'kpi-card__icon--danger'
+  };
+  
+  return `
+    <div class="kpi-grid">
+      ${kpis.map(kpi => `
+        <div class="kpi-card">
+          <div class="kpi-card__icon ${colorClasses[kpi.color]}">
+            <i data-lucide="${kpi.icon}"></i>
+          </div>
+          <div class="kpi-card__content">
+            <div class="kpi-card__label">${kpi.label}</div>
+            <div class="kpi-card__value">${kpi.value}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
-// 3. OTR Dashboard Section
-function OTRDashboard({ data }) {
-  const outletOTR = useMemo(() => {
-    const grouped = data.reduce((acc, item) => {
-      const outlet = item.nama_outlet || 'Unknown';
-      if (!acc[outlet]) {
-        acc[outlet] = { outlet, totalOTR: 0, count: 0 };
-      }
-      acc[outlet].totalOTR += item.total_otr || 0;
-      acc[outlet].count += 1;
-      return acc;
-    }, {});
-    
-    return Object.values(grouped)
-      .sort((a, b) => b.totalOTR - a.totalOTR)
-      .slice(0, 5);
-  }, [data]);
-  
-  const maxOTR = Math.max(...outletOTR.map(o => o.totalOTR), 1);
-  
-  return React.createElement('div', { className: 'otr-dashboard' },
-    React.createElement('div', { className: 'chart-card' },
-      React.createElement('div', { className: 'chart-card__header' },
-        React.createElement('h3', { className: 'chart-card__title' },
-          React.createElement('i', { 'data-lucide': 'wallet' }),
-          'Top 5 Outlet by OTR'
-        )
-      ),
-      React.createElement('div', { className: 'chart-card__body' },
-        outletOTR.map((item, idx) =>
-          React.createElement('div', { className: 'otr-item', key: idx },
-            React.createElement('div', { className: 'otr-item__info' },
-              React.createElement('span', { className: 'otr-item__rank' }, idx + 1),
-              React.createElement('span', { className: 'otr-item__name' }, item.outlet)
-            ),
-            React.createElement('div', { className: 'otr-item__bar-container' },
-              React.createElement('div', { 
-                className: 'otr-item__bar',
-                style: { width: `${(item.totalOTR / maxOTR) * 100}%` }
-              })
-            ),
-            React.createElement('div', { className: 'otr-item__value' }, formatCurrency(item.totalOTR))
-          )
-        )
-      )
-    )
-  );
+function renderCharts(data) {
+  return `
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card__header">
+          <h3 class="chart-card__title">
+            <i data-lucide="trending-up"></i>
+            Trend Pengiriman
+          </h3>
+        </div>
+        <div class="chart-card__body">
+          <div id="trendChart" style="width: 100%; height: 250px;"></div>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-card__header">
+          <h3 class="chart-card__title">
+            <i data-lucide="pie-chart"></i>
+            Status Pengiriman
+          </h3>
+        </div>
+        <div class="chart-card__body">
+          <div id="statusChart" style="width: 100%; height: 250px;"></div>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-card__header">
+          <h3 class="chart-card__title">
+            <i data-lucide="store"></i>
+            Pengiriman per Outlet
+          </h3>
+        </div>
+        <div class="chart-card__body">
+          <div id="outletChart" style="width: 100%; height: 250px;"></div>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <div class="chart-card__header">
+          <h3 class="chart-card__title">
+            <i data-lucide="truck"></i>
+            Pengiriman per Ekspedisi
+          </h3>
+        </div>
+        <div class="chart-card__body">
+          <div id="ekspedisiChart" style="width: 100%; height: 250px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-// 4. Shipment Trend Chart
-function ShipmentTrendChart({ data }) {
-  const trendData = useMemo(() => {
-    const grouped = data.reduce((acc, item) => {
-      const date = item.tanggal || 'Unknown';
-      if (!acc[date]) {
-        acc[date] = { date: formatDate(date), shipments: 0, qty: 0, otr: 0 };
-      }
-      acc[date].shipments += 1;
-      acc[date].qty += item.qty || 0;
-      acc[date].otr += item.total_otr || 0;
-      return acc;
-    }, {});
-    
-    return Object.values(grouped).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [data]);
+function renderOTRDashboard(data) {
+  const outletOTR = data.reduce((acc, item) => {
+    const outlet = item.nama_outlet || 'Unknown';
+    if (!acc[outlet]) {
+      acc[outlet] = { outlet, totalOTR: 0, count: 0 };
+    }
+    acc[outlet].totalOTR += item.total_otr || 0;
+    acc[outlet].count += 1;
+    return acc;
+  }, {});
   
-  if (trendData.length === 0) {
-    return React.createElement('div', { className: 'chart-card' },
-      React.createElement('div', { className: 'chart-card__header' },
-        React.createElement('h3', { className: 'chart-card__title' },
-          React.createElement('i', { 'data-lucide': 'trending-up' }),
-          'Trend Pengiriman'
-        )
+  const sortedOutlets = Object.values(outletOTR)
+    .sort((a, b) => b.totalOTR - a.totalOTR)
+    .slice(0, 5);
+  
+  const maxOTR = Math.max(...sortedOutlets.map(o => o.totalOTR), 1);
+  
+  return `
+    <div class="chart-card otr-dashboard">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">
+          <i data-lucide="wallet"></i>
+          Top 5 Outlet by OTR
+        </h3>
+      </div>
+      <div class="chart-card__body">
+        ${sortedOutlets.map((item, idx) => `
+          <div class="otr-item">
+            <div class="otr-item__info">
+              <span class="otr-item__rank">${idx + 1}</span>
+              <span class="otr-item__name">${item.outlet}</span>
+            </div>
+            <div class="otr-item__bar-container">
+              <div class="otr-item__bar" style="width: ${(item.totalOTR / maxOTR) * 100}%"></div>
+            </div>
+            <div class="otr-item__value">${formatCurrency(item.totalOTR)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderTable(data) {
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  const pageData = data.slice(start, end);
+  const totalPages = Math.ceil(data.length / pageSize);
+  
+  return `
+    <div class="table-card distribution-table">
+      <div class="table-card__header">
+        <h3 class="table-card__title">
+          <i data-lucide="table"></i>
+          Monitoring Pengiriman
+        </h3>
+        <span class="table-card__count">${data.length} data</span>
+      </div>
+      <div class="table-card__body">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>No. Surat Jalan</th>
+                <th>Outlet</th>
+                <th>Ekspedisi</th>
+                <th>No. Resi</th>
+                <th>Produk</th>
+                <th>Qty</th>
+                <th>Harga OTR</th>
+                <th>Total OTR</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pageData.map(item => `
+                <tr>
+                  <td>${item.no || '-'}</td>
+                  <td>${formatDate(item.tanggal)}</td>
+                  <td>${item.no_surat_jalan || '-'}</td>
+                  <td>${item.nama_outlet || '-'}</td>
+                  <td>${item.ekspedisi || '-'}</td>
+                  <td>${item.no_resi || '-'}</td>
+                  <td>${item.nama_produk || '-'}</td>
+                  <td>${formatNumber(item.qty)}</td>
+                  <td>${formatCurrency(item.harga_otr)}</td>
+                  <td>${formatCurrency(item.total_otr)}</td>
+                  <td><span class="status-badge status--${item.status === 'Terkirim' ? 'success' : item.status === 'Proses' ? 'warning' : 'danger'}">${item.status || '-'}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-pagination">
+        <div class="table-pagination__info">
+          Showing ${start + 1} to ${Math.min(end, data.length)} of ${data.length} entries
+        </div>
+        <div class="table-pagination__controls">
+          <select class="table-pagination__select" onchange="DistributionDashboard.changePageSize(this.value)">
+            <option value="10" ${pageSize === 10 ? 'selected' : ''}>10 per page</option>
+            <option value="25" ${pageSize === 25 ? 'selected' : ''}>25 per page</option>
+            <option value="50" ${pageSize === 50 ? 'selected' : ''}>50 per page</option>
+            <option value="100" ${pageSize === 100 ? 'selected' : ''}>100 per page</option>
+          </select>
+          <button class="pagination-btn" onclick="DistributionDashboard.goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>«</button>
+          <button class="pagination-btn" onclick="DistributionDashboard.goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>
+          <span class="pagination-info">Page ${currentPage} of ${totalPages}</span>
+          <button class="pagination-btn" onclick="DistributionDashboard.goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>
+          <button class="pagination-btn" onclick="DistributionDashboard.goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>»</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderError(message) {
+  return `
+    <div class="distribution-error">
+      <div class="error-icon">
+        <i data-lucide="alert-circle"></i>
+      </div>
+      <p>${message}</p>
+      <button class="btn btn--primary" onclick="DistributionDashboard.refreshData()">Coba Lagi</button>
+    </div>
+  `;
+}
+
+function renderEmpty() {
+  return `
+    <div class="distribution-error">
+      <div class="error-icon">
+        <i data-lucide="package"></i>
+      </div>
+      <p>Tidak ada data pengiriman</p>
+    </div>
+  `;
+}
+
+// ============================================
+// DATA PROCESSING
+// ============================================
+
+function processTrendData(data) {
+  const grouped = data.reduce((acc, item) => {
+    const date = item.tanggal || 'Unknown';
+    if (!acc[date]) {
+      acc[date] = { date: formatDate(date), shipments: 0, qty: 0 };
+    }
+    acc[date].shipments += 1;
+    acc[date].qty += item.qty || 0;
+    return acc;
+  }, {});
+  
+  return Object.values(grouped).sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function processOutletData(data) {
+  const grouped = data.reduce((acc, item) => {
+    const outlet = item.nama_outlet || 'Unknown';
+    if (!acc[outlet]) {
+      acc[outlet] = { outlet, shipments: 0, qty: 0 };
+    }
+    acc[outlet].shipments += 1;
+    acc[outlet].qty += item.qty || 0;
+    return acc;
+  }, {});
+  
+  return Object.values(grouped).sort((a, b) => b.shipments - a.shipments);
+}
+
+function processEkspedisiData(data) {
+  const grouped = data.reduce((acc, item) => {
+    const ekspedisi = item.ekspedisi || 'Unknown';
+    if (!acc[ekspedisi]) {
+      acc[ekspedisi] = { ekspedisi, shipments: 0, qty: 0 };
+    }
+    acc[ekspedisi].shipments += 1;
+    acc[ekspedisi].qty += item.qty || 0;
+    return acc;
+  }, {});
+  
+  return Object.values(grouped).sort((a, b) => b.shipments - a.shipments);
+}
+
+function processStatusData(data) {
+  const grouped = data.reduce((acc, item) => {
+    const status = item.status || 'Unknown';
+    if (!acc[status]) {
+      acc[status] = { status, count: 0, qty: 0 };
+    }
+    acc[status].count += 1;
+    acc[status].qty += item.qty || 0;
+    return acc;
+  }, {});
+  
+  return Object.values(grouped);
+}
+
+// ============================================
+// CHART RENDERING
+// ============================================
+
+function renderChartsWithData() {
+  setTimeout(() => {
+    renderTrendChart();
+    renderStatusChart();
+    renderOutletChart();
+    renderEkspedisiChart();
+  }, 200);
+}
+
+function renderTrendChart() {
+  const chartEl = document.getElementById('trendChart');
+  if (!chartEl || typeof Recharts === 'undefined') return;
+  
+  const trendData = processTrendData(dashboardData);
+  if (trendData.length === 0) return;
+  
+  try {
+    Recharts.unmount();
+    Recharts.render(
+      Recharts.createElement(Recharts.LineChart, { width: chartEl.offsetWidth, height: 250, data: trendData },
+        Recharts.createElement(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
+        Recharts.createElement(Recharts.XAxis, { dataKey: 'date', stroke: '#64748b', fontSize: 11 }),
+        Recharts.createElement(Recharts.YAxis, { stroke: '#64748b', fontSize: 11 }),
+        Recharts.createElement(Recharts.Tooltip, { contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' } }),
+        Recharts.createElement(Recharts.Legend, { wrapperStyle: { fontSize: '12px' } }),
+        Recharts.createElement(Recharts.Line, { type: 'monotone', dataKey: 'shipments', stroke: '#3b82f6', strokeWidth: 2, name: 'Pengiriman', dot: { fill: '#3b82f6' } }),
+        Recharts.createElement(Recharts.Line, { type: 'monotone', dataKey: 'qty', stroke: '#10b981', strokeWidth: 2, name: 'Qty', dot: { fill: '#10b981' } })
       ),
-      React.createElement('div', { className: 'chart-card__body chart-card__empty' },
-        React.createElement('i', { 'data-lucide': 'trending-up' }),
-        React.createElement('p', { className: 'chart-card__empty-text' }, 'Tidak ada data')
-      )
+      chartEl
     );
+  } catch (e) {
+    console.error('Error rendering trend chart:', e);
   }
-  
-  return React.createElement('div', { className: 'chart-card' },
-    React.createElement('div', { className: 'chart-card__header' },
-      React.createElement('h3', { className: 'chart-card__title' },
-        React.createElement('i', { 'data-lucide': 'trending-up' }),
-        'Trend Pengiriman'
-      )
-    ),
-    React.createElement('div', { className: 'chart-card__body' },
-      React.createElement(Recharts.LineChart, { width: '100%', height: 250, data: trendData },
-        React.createElement(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
-        React.createElement(Recharts.XAxis, { dataKey: 'date', stroke: '#64748b', fontSize: 11 }),
-        React.createElement(Recharts.YAxis, { stroke: '#64748b', fontSize: 11 }),
-        React.createElement(Recharts.Tooltip, { 
-          contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' },
-          labelStyle: { color: '#e2e8f0' }
-        }),
-        React.createElement(Recharts.Legend, { wrapperStyle: { fontSize: '12px' } }),
-        React.createElement(Recharts.Line, { type: 'monotone', dataKey: 'shipments', stroke: '#3b82f6', strokeWidth: 2, name: 'Pengiriman', dot: { fill: '#3b82f6' } }),
-        React.createElement(Recharts.Line, { type: 'monotone', dataKey: 'qty', stroke: '#10b981', strokeWidth: 2, name: 'Qty', dot: { fill: '#10b981' } })
-      )
-    )
-  );
 }
 
-// 5. Shipment by Outlet Chart
-function ShipmentByOutletChart({ data }) {
-  const outletData = useMemo(() => {
-    const grouped = data.reduce((acc, item) => {
-      const outlet = item.nama_outlet || 'Unknown';
-      if (!acc[outlet]) {
-        acc[outlet] = { outlet, shipments: 0, qty: 0 };
-      }
-      acc[outlet].shipments += 1;
-      acc[outlet].qty += item.qty || 0;
-      return acc;
-    }, {});
-    
-    return Object.values(grouped).sort((a, b) => b.shipments - a.shipments);
-  }, [data]);
+function renderStatusChart() {
+  const chartEl = document.getElementById('statusChart');
+  if (!chartEl || typeof Recharts === 'undefined') return;
   
-  if (outletData.length === 0) {
-    return React.createElement('div', { className: 'chart-card' },
-      React.createElement('div', { className: 'chart-card__header' },
-        React.createElement('h3', { className: 'chart-card__title' },
-          React.createElement('i', { 'data-lucide': 'store' }),
-          'Pengiriman per Outlet'
-        )
-      ),
-      React.createElement('div', { className: 'chart-card__body chart-card__empty' },
-        React.createElement('i', { 'data-lucide': 'store' }),
-        React.createElement('p', { className: 'chart-card__empty-text' }, 'Tidak ada data')
-      )
-    );
-  }
-  
-  return React.createElement('div', { className: 'chart-card' },
-    React.createElement('div', { className: 'chart-card__header' },
-      React.createElement('h3', { className: 'chart-card__title' },
-        React.createElement('i', { 'data-lucide': 'store' }),
-        'Pengiriman per Outlet'
-      )
-    ),
-    React.createElement('div', { className: 'chart-card__body' },
-      React.createElement(Recharts.BarChart, { width: '100%', height: 250, data: outletData.slice(0, 10) },
-        React.createElement(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
-        React.createElement(Recharts.XAxis, { dataKey: 'outlet', stroke: '#64748b', fontSize: 10, angle: -45, textAnchor: 'end', height: 80 }),
-        React.createElement(Recharts.YAxis, { stroke: '#64748b', fontSize: 11 }),
-        React.createElement(Recharts.Tooltip, { 
-          contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' },
-          labelStyle: { color: '#e2e8f0' }
-        }),
-        React.createElement(Recharts.Bar, { dataKey: 'shipments', fill: '#3b82f6', name: 'Pengiriman', radius: [4, 4, 0, 0] }),
-        React.createElement(Recharts.Bar, { dataKey: 'qty', fill: '#10b981', name: 'Qty', radius: [4, 4, 0, 0] })
-      )
-    )
-  );
-}
-
-// 6. Shipment by Ekspedisi Chart
-function ShipmentByEkspedisiChart({ data }) {
-  const ekspedisiData = useMemo(() => {
-    const grouped = data.reduce((acc, item) => {
-      const ekspedisi = item.ekspedisi || 'Unknown';
-      if (!acc[ekspedisi]) {
-        acc[ekspedisi] = { ekspedisi, shipments: 0, qty: 0, totalOTR: 0 };
-      }
-      acc[ekspedisi].shipments += 1;
-      acc[ekspedisi].qty += item.qty || 0;
-      acc[ekspedisi].totalOTR += item.total_otr || 0;
-      return acc;
-    }, {});
-    
-    return Object.values(grouped).sort((a, b) => b.shipments - a.shipments);
-  }, [data]);
-  
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-  
-  if (ekspedisiData.length === 0) {
-    return React.createElement('div', { className: 'chart-card' },
-      React.createElement('div', { className: 'chart-card__header' },
-        React.createElement('h3', { className: 'chart-card__title' },
-          React.createElement('i', { 'data-lucide': 'truck' }),
-          'Pengiriman per Ekspedisi'
-        )
-      ),
-      React.createElement('div', { className: 'chart-card__body chart-card__empty' },
-        React.createElement('i', { 'data-lucide': 'truck' }),
-        React.createElement('p', { className: 'chart-card__empty-text' }, 'Tidak ada data')
-      )
-    );
-  }
-  
-  return React.createElement('div', { className: 'chart-card' },
-    React.createElement('div', { className: 'chart-card__header' },
-      React.createElement('h3', { className: 'chart-card__title' },
-        React.createElement('i', { 'data-lucide': 'truck' }),
-        'Pengiriman per Ekspedisi'
-      )
-    ),
-    React.createElement('div', { className: 'chart-card__body ekspedisi-chart-body' },
-      React.createElement(Recharts.PieChart, { width: '50%', height: 250 },
-        React.createElement(Recharts.Pie, { 
-          data: ekspedisiData, 
-          dataKey: 'shipments', 
-          nameKey: 'ekspedisi', 
-          cx: '50%', 
-          cy: '50%', 
-          outerRadius: 80,
-          label: ({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`,
-          labelLine: false
-        },
-          ekspedisiData.map((entry, index) => 
-            React.createElement(Recharts.Cell, { key: `cell-${index}`, fill: COLORS[index % COLORS.length] })
-          )
-        ),
-        React.createElement(Recharts.Tooltip, { 
-          contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' },
-          labelStyle: { color: '#e2e8f0' }
-        })
-      ),
-      React.createElement('div', { className: 'ekspedisi-legend' },
-        ekspedisiData.map((item, idx) =>
-          React.createElement('div', { className: 'ekspedisi-legend-item', key: idx },
-            React.createElement('span', { className: 'ekspedisi-legend-color', style: { background: COLORS[idx % COLORS.length] } }),
-            React.createElement('span', { className: 'ekspedisi-legend-name' }, item.ekspedisi),
-            React.createElement('span', { className: 'ekspedisi-legend-value' }, `${item.shipments} shipments`)
-          )
-        )
-      )
-    )
-  );
-}
-
-// 7. Status Pie Chart
-function StatusPieChart({ data }) {
-  const statusData = useMemo(() => {
-    const grouped = data.reduce((acc, item) => {
-      const status = item.status || 'Unknown';
-      if (!acc[status]) {
-        acc[status] = { status, count: 0, qty: 0 };
-      }
-      acc[status].count += 1;
-      acc[status].qty += item.qty || 0;
-      return acc;
-    }, {});
-    
-    return Object.values(grouped);
-  }, [data]);
+  const statusData = processStatusData(dashboardData);
+  if (statusData.length === 0) return;
   
   const COLORS = {
     'Terkirim': '#10b981',
@@ -481,31 +532,11 @@ function StatusPieChart({ data }) {
     'Pending': '#ef4444'
   };
   
-  if (statusData.length === 0) {
-    return React.createElement('div', { className: 'chart-card' },
-      React.createElement('div', { className: 'chart-card__header' },
-        React.createElement('h3', { className: 'chart-card__title' },
-          React.createElement('i', { 'data-lucide': 'pie-chart' }),
-          'Status Pengiriman'
-        )
-      ),
-      React.createElement('div', { className: 'chart-card__body chart-card__empty' },
-        React.createElement('i', { 'data-lucide': 'pie-chart' }),
-        React.createElement('p', { className: 'chart-card__empty-text' }, 'Tidak ada data')
-      )
-    );
-  }
-  
-  return React.createElement('div', { className: 'chart-card' },
-    React.createElement('div', { className: 'chart-card__header' },
-      React.createElement('h3', { className: 'chart-card__title' },
-        React.createElement('i', { 'data-lucide': 'pie-chart' }),
-        'Status Pengiriman'
-      )
-    ),
-    React.createElement('div', { className: 'chart-card__body' },
-      React.createElement(Recharts.PieChart, { width: '100%', height: 250 },
-        React.createElement(Recharts.Pie, { 
+  try {
+    Recharts.unmount();
+    Recharts.render(
+      Recharts.createElement(Recharts.PieChart, { width: chartEl.offsetWidth, height: 250 },
+        Recharts.createElement(Recharts.Pie, { 
           data: statusData, 
           dataKey: 'count', 
           nameKey: 'status', 
@@ -515,320 +546,305 @@ function StatusPieChart({ data }) {
           label: ({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`
         },
           statusData.map((entry, index) => 
-            React.createElement(Recharts.Cell, { key: `cell-${index}`, fill: COLORS[entry.status] || '#64748b' })
+            Recharts.createElement(Recharts.Cell, { key: `cell-${index}`, fill: COLORS[entry.status] || '#64748b' })
           )
         ),
-        React.createElement(Recharts.Tooltip, { 
-          contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' },
-          labelStyle: { color: '#e2e8f0' }
-        }),
-        React.createElement(Recharts.Legend, { wrapperStyle: { fontSize: '12px' } })
-      )
-    )
-  );
+        Recharts.createElement(Recharts.Tooltip, { contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' } }),
+        Recharts.createElement(Recharts.Legend, { wrapperStyle: { fontSize: '12px' } })
+      ),
+      chartEl
+    );
+  } catch (e) {
+    console.error('Error rendering status chart:', e);
+  }
 }
 
-// 8. Monitoring Table
-function MonitoringTable({ data }) {
-  const columns = useMemo(() => [
-    { Header: 'No', accessor: 'no', width: 50 },
-    { Header: 'Tanggal', accessor: 'tanggal', Cell: ({ value }) => formatDate(value), width: 100 },
-    { Header: 'No. Surat Jalan', accessor: 'no_surat_jalan', width: 130 },
-    { Header: 'Outlet', accessor: 'nama_outlet', width: 150 },
-    { Header: 'Ekspedisi', accessor: 'ekspedisi', width: 100 },
-    { Header: 'No. Resi', accessor: 'no_resi', width: 130 },
-    { Header: 'Produk', accessor: 'nama_produk', width: 150 },
-    { Header: 'Qty', accessor: 'qty', Cell: ({ value }) => formatNumber(value), width: 80 },
-    { Header: 'Harga OTR', accessor: 'harga_otr', Cell: ({ value }) => formatCurrency(value), width: 120 },
-    { Header: 'Total OTR', accessor: 'total_otr', Cell: ({ value }) => formatCurrency(value), width: 130 },
-    { 
-      Header: 'Status', 
-      accessor: 'status',
-      width: 100,
-      Cell: ({ value }) => {
-        const statusClass = value === 'Terkirim' ? 'status--success' : value === 'Proses' ? 'status--warning' : 'status--danger';
-        return React.createElement('span', { className: `status-badge ${statusClass}` }, value);
-      }
-    }
-  ], []);
+function renderOutletChart() {
+  const chartEl = document.getElementById('outletChart');
+  if (!chartEl || typeof Recharts === 'undefined') return;
   
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-    page,
-    canPreviousPage,
-    canNextPage,
-    pageOptions,
-    pageCount,
-    gotoPage,
-    nextPage,
-    previousPage,
-    setPageSize,
-    state: { pageIndex, pageSize }
-  } = useTable(
-    { columns, data, initialState: { pageIndex: 0, pageSize: 10 } },
-    usePagination
-  );
+  const outletData = processOutletData(dashboardData).slice(0, 10);
+  if (outletData.length === 0) return;
   
-  return React.createElement('div', { className: 'table-card distribution-table' },
-    React.createElement('div', { className: 'table-card__header' },
-      React.createElement('h3', { className: 'table-card__title' },
-        React.createElement('i', { 'data-lucide': 'table' }),
-        'Monitoring Pengiriman'
+  try {
+    Recharts.unmount();
+    Recharts.render(
+      Recharts.createElement(Recharts.BarChart, { width: chartEl.offsetWidth, height: 250, data: outletData },
+        Recharts.createElement(Recharts.CartesianGrid, { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }),
+        Recharts.createElement(Recharts.XAxis, { dataKey: 'outlet', stroke: '#64748b', fontSize: 10, angle: -45, textAnchor: 'end', height: 80 }),
+        Recharts.createElement(Recharts.YAxis, { stroke: '#64748b', fontSize: 11 }),
+        Recharts.createElement(Recharts.Tooltip, { contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' } }),
+        Recharts.createElement(Recharts.Bar, { dataKey: 'shipments', fill: '#3b82f6', name: 'Pengiriman', radius: [4, 4, 0, 0] }),
+        Recharts.createElement(Recharts.Bar, { dataKey: 'qty', fill: '#10b981', name: 'Qty', radius: [4, 4, 0, 0] })
       ),
-      React.createElement('span', { className: 'table-card__count' }, `${data.length} data`)
-    ),
-    React.createElement('div', { className: 'table-card__body' },
-      React.createElement('div', { className: 'table-responsive' },
-        React.createElement('table', { ...getTableProps(), className: 'data-table' },
-          React.createElement('thead', null,
-            headerGroups.map(headerGroup => 
-              React.createElement('tr', { ...headerGroup.getHeaderGroupProps(), key: headerGroup.id },
-                headerGroup.headers.map(column => 
-                  React.createElement('th', { ...column.getHeaderProps(), key: column.id, style: { width: column.width } },
-                    column.render('Header')
-                  )
-                )
-              )
-            )
-          ),
-          React.createElement('tbody', { ...getTableBodyProps() },
-            page.map(row => {
-              prepareRow(row);
-              return React.createElement('tr', { ...row.getRowProps(), key: row.id },
-                row.cells.map(cell => 
-                  React.createElement('td', { ...cell.getCellProps(), key: cell.column.id },
-                    cell.render('Cell')
-                  )
-                )
-              );
-            })
-          )
-        )
-      )
-    ),
-    React.createElement('div', { className: 'table-pagination' },
-      React.createElement('div', { className: 'table-pagination__info' },
-        `Showing ${pageIndex * pageSize + 1} to ${Math.min((pageIndex + 1) * pageSize, data.length)} of ${data.length} entries`
-      ),
-      React.createElement('div', { className: 'table-pagination__controls' },
-        React.createElement('select', { 
-          value: pageSize, 
-          onChange: e => setPageSize(Number(e.target.value)), 
-          className: 'table-pagination__select'
+      chartEl
+    );
+  } catch (e) {
+    console.error('Error rendering outlet chart:', e);
+  }
+}
+
+function renderEkspedisiChart() {
+  const chartEl = document.getElementById('ekspedisiChart');
+  if (!chartEl || typeof Recharts === 'undefined') return;
+  
+  const ekspedisiData = processEkspedisiData(dashboardData);
+  if (ekspedisiData.length === 0) return;
+  
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+  
+  try {
+    Recharts.unmount();
+    Recharts.render(
+      Recharts.createElement(Recharts.PieChart, { width: chartEl.offsetWidth, height: 250 },
+        Recharts.createElement(Recharts.Pie, { 
+          data: ekspedisiData, 
+          dataKey: 'shipments', 
+          nameKey: 'ekspedisi', 
+          cx: '50%', 
+          cy: '50%', 
+          outerRadius: 80,
+          label: ({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`
         },
-          [10, 25, 50, 100].map(size => 
-            React.createElement('option', { key: size, value: size }, `${size} per page`)
+          ekspedisiData.map((entry, index) => 
+            Recharts.createElement(Recharts.Cell, { key: `cell-${index}`, fill: COLORS[index % COLORS.length] })
           )
         ),
-        React.createElement('button', { 
-          onClick: () => gotoPage(0), 
-          disabled: !canPreviousPage,
-          className: 'pagination-btn'
-        }, '«'),
-        React.createElement('button', { 
-          onClick: () => previousPage(), 
-          disabled: !canPreviousPage,
-          className: 'pagination-btn'
-        }, '‹'),
-        React.createElement('span', { className: 'pagination-info' },
-          `Page ${pageIndex + 1} of ${pageOptions.length}`
-        ),
-        React.createElement('button', { 
-          onClick: () => nextPage(), 
-          disabled: !canNextPage,
-          className: 'pagination-btn'
-        }, '›'),
-        React.createElement('button', { 
-          onClick: () => gotoPage(pageCount - 1), 
-          disabled: !canNextPage,
-          className: 'pagination-btn'
-        }, '»')
-      )
-    )
-  );
+        Recharts.createElement(Recharts.Tooltip, { contentStyle: { background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' } })
+      ),
+      chartEl
+    );
+  } catch (e) {
+    console.error('Error rendering ekspedisi chart:', e);
+  }
 }
 
-// 9. Main Dashboard Component
-function DistributionDashboard() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [fromCache, setFromCache] = useState(false);
-  
-  useEffect(() => {
-    // Update datetime
-    const updateDateTime = () => {
-      const now = new Date();
-      const dateEl = document.getElementById('distDate');
-      const timeEl = document.getElementById('distTime');
-      if (dateEl) dateEl.textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-      if (timeEl) timeEl.textContent = now.toLocaleTimeString('id-ID');
-    };
-    
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 1000);
-    
-    // Load initial data
-    loadData();
-    
-    // Initialize Lucide icons
-    if (window.lucide) lucide.createIcons();
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  const loadData = useCallback(async (forceRefresh = false) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Use ShipmentService with caching
-      const result = await ShipmentService.fetchShipmentData(forceRefresh);
-      
-      if (result.success) {
-        setData(result.data || []);
-        setFromCache(result.fromCache || false);
-        setLastUpdated(new Date().toLocaleTimeString('id-ID'));
-        updateCacheStatus();
-      } else {
-        setError(result.error || 'Gagal memuat data');
-        // Fallback to sample data
-        setData(SAMPLE_DATA);
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError(err.message);
-      // Fallback to sample data
-      setData(SAMPLE_DATA);
-    } finally {
-      setLoading(false);
-      if (window.lucide) setTimeout(() => lucide.createIcons(), 100);
-    }
-  }, []);
-  
-  // Update cache status display
-  const updateCacheStatus = useCallback(() => {
-    const status = ShipmentService.getCacheStatus();
-    const cacheStatusEl = document.getElementById('cacheStatus');
-    const cacheRemainingEl = document.getElementById('cacheRemaining');
-    
-    if (status.isValid && status.remainingTime) {
-      if (cacheStatusEl) cacheStatusEl.style.display = 'flex';
-      if (cacheRemainingEl) {
-        const minutes = Math.floor(status.remainingTime / 60);
-        const seconds = status.remainingTime % 60;
-        cacheRemainingEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      }
-    } else {
-      if (cacheStatusEl) cacheStatusEl.style.display = 'none';
-    }
-  }, []);
-  
-  // Start cache timer
-  useEffect(() => {
-    const timer = setInterval(updateCacheStatus, 1000);
-    return () => clearInterval(timer);
-  }, [updateCacheStatus]);
-  
-  window.DistributionDashboard = {
-    refreshData: () => loadData(true), // Force refresh to bypass cache
-    getCacheStatus: () => ShipmentService.getCacheStatus(),
-    exportExcel: () => {
-      if (data.length === 0) {
-        if (window.showToast) showToast('Tidak ada data untuk di-export', 'error');
-        return;
-      }
-      
-      // Create CSV content
-      const headers = ['No', 'Tanggal', 'No. Surat Jalan', 'Kode Outlet', 'Nama Outlet', 'Ekspedisi', 'No. Resi', 'Nama Produk', 'Qty', 'Harga OTR', 'Total OTR', 'Status'];
-      const rows = data.map(item => [
-        item.no || '',
-        item.tanggal || '',
-        item.no_surat_jalan || '',
-        item.kode_outlet || '',
-        item.nama_outlet || '',
-        item.ekspedisi || '',
-        item.no_resi || '',
-        item.nama_produk || '',
-        item.qty || 0,
-        item.harga_otr || 0,
-        item.total_otr || 0,
-        item.status || ''
-      ]);
-      
-      const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `distribution_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      if (window.showToast) showToast('Data berhasil di-export', 'success');
-    }
-  };
-  
-  // Show/hide loading overlay
-  useEffect(() => {
-    const overlay = document.getElementById('distributionLoadingOverlay');
-    if (overlay) {
-      overlay.style.display = loading ? 'flex' : 'none';
-    }
-  }, [loading]);
+// ============================================
+// MAIN RENDER FUNCTION
+// ============================================
+
+function render(data, error = null) {
+  const root = document.getElementById('distribution-root');
+  if (!root) return;
   
   if (error) {
-    return React.createElement('div', { className: 'distribution-error' },
-      React.createElement('div', { className: 'error-icon' },
-        React.createElement('i', { 'data-lucide': 'alert-circle' })
-      ),
-      React.createElement('p', null, error),
-      React.createElement('button', { className: 'btn btn--primary', onClick: loadData }, 'Coba Lagi')
-    );
+    root.innerHTML = renderError(error);
+    lucide.createIcons();
+    return;
   }
   
-  return React.createElement(React.Fragment, null,
-    React.createElement(KPISection, { data }),
-    React.createElement('div', { className: 'charts-grid' },
-      React.createElement(ShipmentTrendChart, { data }),
-      React.createElement(StatusPieChart, { data })
-    ),
-    React.createElement('div', { className: 'charts-grid' },
-      React.createElement(ShipmentByOutletChart, { data }),
-      React.createElement(ShipmentByEkspedisiChart, { data })
-    ),
-    React.createElement(OTRDashboard, { data }),
-    React.createElement(MonitoringTable, { data })
-  );
+  if (data.length === 0) {
+    root.innerHTML = renderEmpty();
+    lucide.createIcons();
+    return;
+  }
+  
+  root.innerHTML = `
+    ${renderKPISection(data)}
+    ${renderCharts(data)}
+    ${renderOTRDashboard(data)}
+    ${renderTable(data)}
+  `;
+  
+  lucide.createIcons();
+  renderChartsWithData();
+}
+
+// ============================================
+// DATA LOADING
+// ============================================
+
+async function loadData(forceRefresh = false) {
+  showLoading(true);
+  
+  try {
+    const result = await ShipmentService.fetchShipmentData(forceRefresh);
+    
+    if (result.success) {
+      dashboardData = result.data || [];
+      render(dashboardData);
+      updateCacheStatus();
+    } else {
+      // Fallback to sample data
+      dashboardData = SAMPLE_DATA;
+      render(dashboardData, result.error);
+      if (window.showToast) showToast('Gagal mengambil data. Menggunakan data contoh.', 'error');
+    }
+  } catch (err) {
+    console.error('Error loading data:', err);
+    dashboardData = SAMPLE_DATA;
+    render(dashboardData, err.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ============================================
+// UI HELPERS
+// ============================================
+
+function showLoading(show) {
+  const overlay = document.getElementById('distributionLoadingOverlay');
+  if (overlay) {
+    overlay.style.display = show ? 'flex' : 'none';
+  }
+}
+
+function updateCacheStatus() {
+  const status = ShipmentService.getCacheStatus();
+  const cacheStatusEl = document.getElementById('cacheStatus');
+  const cacheRemainingEl = document.getElementById('cacheRemaining');
+  
+  if (status.isValid && status.remainingTime) {
+    if (cacheStatusEl) cacheStatusEl.style.display = 'flex';
+    if (cacheRemainingEl) {
+      const minutes = Math.floor(status.remainingTime / 60);
+      const seconds = status.remainingTime % 60;
+      cacheRemainingEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  } else {
+    if (cacheStatusEl) cacheStatusEl.style.display = 'none';
+  }
+}
+
+// ============================================
+// PAGINATION
+// ============================================
+
+function goToPage(page) {
+  const totalPages = Math.ceil(dashboardData.length / pageSize);
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  render(dashboardData);
+}
+
+function changePageSize(size) {
+  window.pageSize = parseInt(size);
+  currentPage = 1;
+  render(dashboardData);
+}
+
+// ============================================
+// EXPORT
+// ============================================
+
+function exportExcel() {
+  if (dashboardData.length === 0) {
+    if (window.showToast) showToast('Tidak ada data untuk di-export', 'error');
+    return;
+  }
+  
+  const headers = ['No', 'Tanggal', 'No. Surat Jalan', 'Kode Outlet', 'Nama Outlet', 'Ekspedisi', 'No. Resi', 'Nama Produk', 'Qty', 'Harga OTR', 'Total OTR', 'Status'];
+  const rows = dashboardData.map(item => [
+    item.no || '',
+    item.tanggal || '',
+    item.no_surat_jalan || '',
+    item.kode_outlet || '',
+    item.nama_outlet || '',
+    item.ekspedisi || '',
+    item.no_resi || '',
+    item.nama_produk || '',
+    item.qty || 0,
+    item.harga_otr || 0,
+    item.total_otr || 0,
+    item.status || ''
+  ]);
+  
+  const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `distribution_export_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  
+  if (window.showToast) showToast('Data berhasil di-export', 'success');
+}
+
+// ============================================
+// GLOBAL API
+// ============================================
+
+window.DistributionDashboard = {
+  refreshData: () => loadData(true),
+  exportExcel: exportExcel,
+  goToPage: goToPage,
+  changePageSize: changePageSize,
+  getCacheStatus: () => ShipmentService.getCacheStatus()
+};
+
+// ============================================
+// DATETIME UPDATE
+// ============================================
+
+function updateDateTime() {
+  const now = new Date();
+  const dateEl = document.getElementById('distDate');
+  const timeEl = document.getElementById('distTime');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  if (timeEl) timeEl.textContent = now.toLocaleTimeString('id-ID');
 }
 
 // ============================================
 // INITIALIZATION
 // ============================================
 
+let cacheTimer = null;
+let datetimeTimer = null;
+
 function initDistributionDashboard() {
-  const root = document.getElementById('distribution-root');
-  if (root) {
-    ReactDOM.createRoot(root).render(React.createElement(DistributionDashboard));
-    // Initialize Lucide icons after React renders
-    setTimeout(() => {
-      if (window.lucide) lucide.createIcons();
-    }, 100);
+  // Clear existing timers
+  if (cacheTimer) clearInterval(cacheTimer);
+  if (datetimeTimer) clearInterval(datetimeTimer);
+  
+  // Update datetime
+  updateDateTime();
+  datetimeTimer = setInterval(updateDateTime, 1000);
+  
+  // Update cache status
+  cacheTimer = setInterval(updateCacheStatus, 1000);
+  
+  // Attach button events
+  const refreshBtn = document.getElementById('refreshBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => loadData(true));
+  }
+  
+  if (exportBtn) {
+    exportBtn.addEventListener('click', exportExcel);
+  }
+  
+  // Load initial data
+  loadData();
+  
+  // Initialize Lucide icons
+  if (window.lucide) lucide.createIcons();
+}
+
+// Wait for scripts to load before initializing
+function waitForScripts(callback, attempts = 0) {
+  if (typeof Recharts !== 'undefined' && typeof lucide !== 'undefined') {
+    callback();
+  } else if (attempts < 50) {
+    setTimeout(() => waitForScripts(callback, attempts + 1), 100);
+  } else {
+    console.error('Scripts did not load in time');
   }
 }
 
 // Auto-initialize when page loads
-document.addEventListener('DOMContentLoaded', initDistributionDashboard);
+document.addEventListener('DOMContentLoaded', () => {
+  waitForScripts(initDistributionDashboard);
+});
+
 window.addEventListener('pageInit', (e) => {
   if (e.detail.page === 'distribution') {
-    initDistributionDashboard();
+    waitForScripts(initDistributionDashboard);
   }
 });
