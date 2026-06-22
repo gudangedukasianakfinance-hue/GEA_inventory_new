@@ -13,8 +13,8 @@
   if (window.DistributionDashboardInitialized) return;
   window.DistributionDashboardInitialized = true;
 
-  // Use our own API endpoint (Vercel server-side proxy to avoid CORS)
-  const API_URL = '/shipments';
+  // Use API endpoint with /api prefix (configured in vercel.json routes)
+  const API_URL = '/api/shipments';
 
   // Cache configuration
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -77,10 +77,21 @@
         if (cached) return { success: true, data: cached.data, kpi: cached.kpi, fromCache: true };
       }
 
+      console.log('Fetching from:', API_URL);
+
       try {
         const response = await fetch(API_URL);
+        console.log('Response Status:', response.status);
+        
+        const contentType = response.headers.get('content-type');
+        console.log('Content Type:', contentType);
+        
         if (!response.ok) {
           throw new Error('HTTP ' + response.status);
+        }
+        
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('API returned non-JSON response');
         }
         
         const result = await response.json();
@@ -95,7 +106,8 @@
         return { success: true, data: data, kpi: kpi, fromCache: false };
         
       } catch (error) {
-        console.warn('API fetch failed, using sample data:', error.message);
+        console.error('API fetch failed:', error.message);
+        if (window.showToast) window.showToast('Gagal memuat data: ' + error.message, 'error');
         return { success: false, error: error.message, useSample: true };
       }
     },

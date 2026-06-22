@@ -149,6 +149,7 @@ const routes = {
 
   // Shipments Module routes
   "GET /shipments": apiShipmentsHandler,
+  "GET /api/shipments": apiShipmentsHandler,
   "GET /v1/shipments": apiShipmentsHandler,
 
   // GET /forecast REMOVED - feature deprecated
