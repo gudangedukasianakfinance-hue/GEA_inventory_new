@@ -56,23 +56,28 @@ export default async function handler(req, res) {
     
     // Transform Google Sheets data to array format
     let rows = [];
-    if (rawData.values && Array.isArray(rawData.values)) {
-      const headers = rawData.values[0] || [];
+    
+    // Format 1: Direct array (as shown in your example)
+    if (Array.isArray(rawData)) {
+      rows = rawData;
+    }
+    // Format 2: { values: [[headers], [data], ...] }
+    else if (rawData.values && Array.isArray(rawData.values)) {
+      const headers = rawData.values[0].map(h => h.trim()) || [];
       const dataRows = rawData.values.slice(1) || [];
       
       rows = dataRows.map(row => {
         const record = {};
         headers.forEach((header, index) => {
-          record[header] = row[index] || null;
+          record[header] = (row[index] || '').toString().trim() || null;
         });
         return record;
       });
-    } else if (Array.isArray(rawData)) {
-      rows = rawData;
     }
     
     stats.total = rows.length;
     console.log(`[Sync Shipments] Found ${stats.total} rows from Google Sheets`);
+    console.log('[Sync Shipments] Sample row keys:', Object.keys(rows[0] || {}));
 
     if (stats.total === 0) {
       return res.status(200).json({
@@ -88,12 +93,43 @@ export default async function handler(req, res) {
     
     for (const row of rows) {
       try {
-        // Map Google Sheets columns to database columns (EXACT column names from sheet)
-        const noResi = row['No Resi'] || null;
+        // Helper to get value with flexible column name matching
+        const getValue = (obj, ...keys) => {
+          for (const key of keys) {
+            // Try exact match first
+            if (obj[key] !== undefined) return obj[key];
+            // Try case-insensitive match
+            const lowerKey = key.toLowerCase();
+            for (const k of Object.keys(obj)) {
+              if (k.toLowerCase() === lowerKey || k.toLowerCase().trim() === lowerKey) {
+                return obj[k];
+              }
+            }
+          }
+          return null;
+        };
+
+        // Get values with flexible column matching
+        const noResi = getValue(row, 'No Resi', 'no_resi', 'no resi') || null;
+        const tanggal = getValue(row, 'Tanggal', 'tanggal');
+        const poNumber = getValue(row, 'No Purchase Order', 'po_number', 'No PO');
+        const outlet = getValue(row, 'Outlet', 'outlet');
+        const paymentStatus = getValue(row, 'Status Pembayaran', 'payment_status');
+        const preparationStatus = getValue(row, 'Status Penyiapan', 'preparation_status');
+        const packingStatus = getValue(row, 'Status Packing', 'packing_status');
+        const deliveryStatus = getValue(row, 'Status Delivery', 'delivery_status');
+        const ekspedisi = getValue(row, 'Ekspedisi', 'ekspedisi');
+        const estimasi = getValue(row, 'Estimasi Pengiriman', 'estimasi_pengiriman');
+        const tanggalKirim = getValue(row, 'Tanggal Pengiriman', 'tanggal_pengiriman', 'Tanggal Pengiriman ');
+        const tanggalSampai = getValue(row, 'Tanggal Sampai', 'tanggal_sampai');
+        const alamat = getValue(row, 'Alamat pengiriman', 'alamat_pengiriman', 'Alamat');
+        const timeReceiving = getValue(row, 'Time Receiving', 'time_receiving');
+        const statusOTR = getValue(row, 'Status', 'status_otr');
+        const keterangan = getValue(row, 'Keterangan', 'keterangan');
         
         if (!noResi) {
           stats.failed++;
-          stats.errors.push({ row: row, error: 'Missing No Resi' });
+          stats.errors.push({ data: row, error: 'Missing No Resi' });
           continue;
         }
 
@@ -138,22 +174,22 @@ export default async function handler(req, res) {
             keterangan = EXCLUDED.keterangan,
             updated_at = NOW()
         `, [
-          parseDate(row['Tanggal']),
-          row['No Purchase Order'],
-          row['Outlet'],
-          row['Status Pembayaran'],
-          row['Status Penyiapan'],
-          row['Status Packing'],
-          row['Status Delivery'],
-          row['Ekspedisi'],
-          parseInt(row['Estimasi Pengiriman']) || null,
-          parseDate(row['Tanggal Pengiriman']),
-          parseDate(row['Tanggal Sampai']),
-          row['Alamat pengiriman'],
-          noResi,
-          parseInt(row['Time Receiving']) || null,
-          row['Status'],
-          row['Keterangan']
+          parseDate(tanggal),
+          poNumber,
+          outlet,
+          paymentStatus,
+          preparationStatus,
+          packingStatus,
+          deliveryStatus,
+          ekspedisi,
+          parseInt(estimasi) || null,
+          parseDate(tanggalKirim),
+          parseDate(tanggalSampai),
+          alamat,
+          noResi.toString(),
+          parseInt(timeReceiving) || null,
+          statusOTR,
+          keterangan
         ]);
 
         if (result.rowCount === 1) {
