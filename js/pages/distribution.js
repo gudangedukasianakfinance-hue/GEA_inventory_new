@@ -13,8 +13,9 @@
   if (window.DistributionDashboardInitialized) return;
   window.DistributionDashboardInitialized = true;
 
-  // Use Vercel API proxy to avoid CORS issues
-  const API_PROXY_URL = '/api/shipment';
+  // Use Google Apps Script directly (will fallback to sample data if fails)
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb3nDU0ul_XHAkkLWo8Gc5LbUDxNn5k3L34qOZIze2TVJxE4mZuMkq-mGdI36iZlLG/exec';
+  const USE_DIRECT_API = true;
 
   // Cache configuration
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -77,24 +78,24 @@
         if (cached) return { success: true, data: cached, fromCache: true };
       }
 
-      try {
-        const response = await fetch(API_PROXY_URL);
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        
-        const rawData = await response.json();
-        
-        // Check if API returned error
-        if (rawData.error) {
-          throw new Error(rawData.message || rawData.error);
+      // Try direct Google Apps Script API
+      if (USE_DIRECT_API) {
+        try {
+          const response = await fetch(GOOGLE_SCRIPT_URL);
+          if (response.ok) {
+            const rawData = await response.json();
+            const data = self.transformData(rawData);
+            self.setCache(data);
+            return { success: true, data: data, fromCache: false };
+          }
+        } catch (e) {
+          console.warn('Direct API failed:', e.message);
         }
-        
-        const data = self.transformData(rawData);
-        self.setCache(data);
-        return { success: true, data: data, fromCache: false };
-      } catch (error) {
-        console.warn('API fetch failed, using sample data:', error.message);
-        return { success: false, error: error.message, useSample: true };
       }
+
+      // Fallback to sample data
+      console.warn('Using sample data');
+      return { success: false, error: 'API unavailable', useSample: true };
     },
 
     transformData: function(rawData) {
