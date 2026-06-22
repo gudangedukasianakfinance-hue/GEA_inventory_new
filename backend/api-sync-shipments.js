@@ -88,13 +88,12 @@ export default async function handler(req, res) {
     
     for (const row of rows) {
       try {
-        // Map Google Sheets columns to database columns
-        // Adjust column names based on your Google Sheets headers
-        const noResi = row['No Resi'] || row['no_resi'] || row['No. Resi'] || null;
+        // Map Google Sheets columns to database columns (EXACT column names from sheet)
+        const noResi = row['No Resi'] || null;
         
         if (!noResi) {
           stats.failed++;
-          stats.errors.push({ row: row, error: 'Missing no_resi' });
+          stats.errors.push({ row: row, error: 'Missing No Resi' });
           continue;
         }
 
@@ -139,22 +138,22 @@ export default async function handler(req, res) {
             keterangan = EXCLUDED.keterangan,
             updated_at = NOW()
         `, [
-          parseDate(row['Tanggal'] || row['tanggal']),
-          row['No Purchase Order'] || row['po_number'] || row['No PO'],
-          row['Outlet'] || row['outlet'],
-          row['Status Pembayaran'] || row['payment_status'] || 'Pending',
-          row['Status Penyiapan'] || row['preparation_status'] || 'Pending',
-          row['Status Packing'] || row['packing_status'] || 'Pending',
-          row['Status Delivery'] || row['delivery_status'] || 'Menunggu',
-          row['Ekspedisi'] || row['ekspedisi'],
-          parseInt(row['Estimasi Pengiriman'] || row['estimasi_pengiriman']) || null,
-          parseDate(row['Tanggal Pengiriman'] || row['tanggal_pengiriman']),
-          parseDate(row['Tanggal Sampai'] || row['tanggal_sampai']),
-          row['Alamat pengiriman'] || row['alamat_pengiriman'] || row['Alamat'],
+          parseDate(row['Tanggal']),
+          row['No Purchase Order'],
+          row['Outlet'],
+          row['Status Pembayaran'],
+          row['Status Penyiapan'],
+          row['Status Packing'],
+          row['Status Delivery'],
+          row['Ekspedisi'],
+          parseInt(row['Estimasi Pengiriman']) || null,
+          parseDate(row['Tanggal Pengiriman']),
+          parseDate(row['Tanggal Sampai']),
+          row['Alamat pengiriman'],
           noResi,
-          parseInt(row['Time Receiving'] || row['time_receiving']) || null,
-          row['Status'] || row['status_otr'] || 'Unknown',
-          row['Keterangan'] || row['keterangan']
+          parseInt(row['Time Receiving']) || null,
+          row['Status'],
+          row['Keterangan']
         ]);
 
         if (result.rowCount === 1) {
