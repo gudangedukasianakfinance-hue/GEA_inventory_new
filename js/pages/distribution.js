@@ -13,9 +13,8 @@
   if (window.DistributionDashboardInitialized) return;
   window.DistributionDashboardInitialized = true;
 
-  // Use Google Apps Script directly (will fallback to sample data if fails)
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxb3nDU0ul_XHAkkLWo8Gc5LbUDxNn5k3L34qOZIze2TVJxE4mZuMkq-mGdI36iZlLG/exec';
-  const USE_DIRECT_API = true;
+  // Use our own API endpoint (Vercel server-side proxy to avoid CORS)
+  const API_URL = '/shipments';
 
   // Cache configuration
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -60,8 +59,8 @@
       return null;
     },
 
-    setCache: function(data) {
-      this.cache.set(this.CACHE_KEY, { data: data, timestamp: Date.now() });
+    setCache: function(data, kpi) {
+      this.cache.set(this.CACHE_KEY, { data: data, kpi: kpi, timestamp: Date.now() });
     },
 
     getCacheStatus: function() {
@@ -75,27 +74,39 @@
       const self = this;
       if (!forceRefresh && self.isCacheValid()) {
         const cached = self.getCachedData();
-        if (cached) return { success: true, data: cached, fromCache: true };
+        if (cached) return { success: true, data: cached.data, kpi: cached.kpi, fromCache: true };
       }
 
-      // Try direct Google Apps Script API
-      if (USE_DIRECT_API) {
-        try {
-          const response = await fetch(GOOGLE_SCRIPT_URL);
-          if (response.ok) {
-            const rawData = await response.json();
-            const data = self.transformData(rawData);
-            self.setCache(data);
-            return { success: true, data: data, fromCache: false };
-          }
-        } catch (e) {
-          console.warn('Direct API failed:', e.message);
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
         }
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'API error');
+        }
+        
+        const data = result.data || [];
+        const kpi = result.kpi || self.getDefaultKPI(data);
+        self.setCache(data, kpi);
+        return { success: true, data: data, kpi: kpi, fromCache: false };
+        
+      } catch (error) {
+        console.warn('API fetch failed, using sample data:', error.message);
+        return { success: false, error: error.message, useSample: true };
       }
-
-      // Fallback to sample data
-      console.warn('Using sample data');
-      return { success: false, error: 'API unavailable', useSample: true };
+    },
+    
+    getDefaultKPI: function(data) {
+      return {
+        total_po: data.length,
+        total_outlet: new Set(data.map(function(d) { return d.outlet; })).size,
+        otr_percentage: 0,
+        avg_receiving_time: 0
+      };
     },
 
     transformData: function(rawData) {
@@ -481,12 +492,11 @@
       return;
     }
     
-    var headers = ['No', 'Tanggal', 'No. SJ', 'Kode Outlet', 'Nama Outlet', 'Ekspedisi', 'No. Resi', 'Produk', 'Qty', 'Harga OTR', 'Total OTR', 'Status'];
+    var headers = ['No', 'Tanggal', 'PO Number', 'Outlet', 'Ekspedisi', 'No. Resi', 'Delivery Status', 'OTR Status', 'Receiving (hari)'];
     var rows = dashboardData.map(function(item) {
       return [
-        item.no || '', item.tanggal || '', item.no_surat_jalan || '', item.kode_outlet || '',
-        item.nama_outlet || '', item.ekspedisi || '', item.no_resi || '', item.nama_produk || '',
-        item.qty || 0, item.harga_otr || 0, item.total_otr || 0, item.status || ''
+        item.id || '', item.tanggal || '', item.po_number || '', item.outlet || '',
+        item.ekspedisi || '', item.no_resi || '', item.delivery_status || '', item.status_otr || '', item.time_receiving || ''
       ];
     });
     

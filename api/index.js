@@ -41,6 +41,7 @@ import usersApiHandler from "../backend/users-api.js";
 import approvalApiHandler from "../backend/approval-api.js";
 import settingsApiHandler from "../backend/settings-api.js";
 import apiStokHandler from "../backend/api-stok.js";
+import apiShipmentsHandler from "../backend/api-shipments.js";
 import { isDatabaseConfigured, checkDatabaseHealth } from "../services/db.js";
 
 // Health check handler
@@ -145,6 +146,10 @@ const routes = {
   "GET /v1/stok/realtime": apiStokHandler,
   "GET /v1/stok/kartu": apiStokHandler,
   "GET /v1/stok/mutasi": apiStokHandler,
+
+  // Shipments Module routes
+  "GET /shipments": apiShipmentsHandler,
+  "GET /v1/shipments": apiShipmentsHandler,
 
   // GET /forecast REMOVED - feature deprecated
   "GET /produk-list": produkListHandler,

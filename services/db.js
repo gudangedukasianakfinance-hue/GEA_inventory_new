@@ -43,4 +43,12 @@ if (!globalPool) {
   globalThis.__epicWarehousePool = pool;
 }
 
+// Helper function to run queries
+export async function query(text, params) {
+  if (!connectionString) {
+    throw new Error("DATABASE_URL not configured");
+  }
+  return await pool.query(text, params);
+}
+
 export default pool;
