@@ -63,6 +63,47 @@ function buildToken(user, loginAs) {
   return `${header}.${payloadBase}.${signature}`;
 }
 
+// Helper to read body from various formats
+async function parseBody(event) {
+  const body = event.body;
+  
+  if (!body) return {};
+  
+  // If it's a string, parse JSON
+  if (typeof body === 'string') {
+    try {
+      return JSON.parse(body);
+    } catch {
+      return {};
+    }
+  }
+  
+  // If it's a ReadableStream, read it
+  if (body && typeof body === 'object' && typeof body.getReader === 'function') {
+    try {
+      const reader = body.getReader();
+      const decoder = new TextDecoder();
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+      }
+      result += decoder.decode();
+      return JSON.parse(result);
+    } catch {
+      return {};
+    }
+  }
+  
+  // If it's already an object
+  if (typeof body === 'object') {
+    return body;
+  }
+  
+  return {};
+}
+
 export default async function handler(event) {
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -72,28 +113,8 @@ export default async function handler(event) {
     });
   }
 
-  // DEBUG: Log event
-  console.log('Path:', event.path);
-  console.log('httpMethod:', event.httpMethod);
-  console.log('body type:', typeof event.body);
-  console.log('body:', event.body);
-
-  // Parse body - handle both string and object
-  let reqBody = {};
-  if (event.body) {
-    if (typeof event.body === 'string') {
-      try {
-        reqBody = JSON.parse(event.body);
-      } catch (e) {
-        console.log('JSON parse error:', e.message);
-        reqBody = {};
-      }
-    } else if (typeof event.body === 'object') {
-      reqBody = event.body;
-    }
-  }
-
-  console.log('reqBody:', JSON.stringify(reqBody));
+  // Parse body
+  const reqBody = await parseBody(event);
 
   const { username = "", password = "" } = reqBody;
   const normalizedUsername = String(username).trim();
