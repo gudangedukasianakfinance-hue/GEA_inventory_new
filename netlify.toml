@@ -10,3 +10,15 @@
   to = "/.netlify/functions/login"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/v3-dashboard"
+  to = "/.netlify/functions/v3-dashboard"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/v1/outlet-transaksi-summary"
+  to = "/.netlify/functions/outlet-transaksi-summary"
+  status = 200
+  force = true
