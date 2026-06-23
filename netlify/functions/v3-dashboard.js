@@ -1,34 +1,6 @@
 // Netlify Function - V3 Dashboard API
 import { Pool } from "pg";
 
-// Helper to read body from various formats
-async function parseBody(event) {
-  const body = event.body;
-  if (!body) return {};
-  
-  if (typeof body === 'string') {
-    try { return JSON.parse(body); } catch { return {}; }
-  }
-  
-  if (body && typeof body === 'object' && typeof body.getReader === 'function') {
-    try {
-      const reader = body.getReader();
-      const decoder = new TextDecoder();
-      let result = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        result += decoder.decode(value, { stream: true });
-      }
-      result += decoder.decode();
-      return JSON.parse(result);
-    } catch { return {}; }
-  }
-  
-  if (typeof body === 'object') return body;
-  return {};
-}
-
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -40,11 +12,8 @@ export default async function handler(event) {
     return new Response('', { status: 200, headers: CORS_HEADERS });
   }
 
-  // Get query params from path
   const url = new URL(event.path, 'https://localhost');
   const params = Object.fromEntries(url.searchParams);
-  
-  // Override with queryStringParameters if available
   if (event.queryStringParameters) {
     Object.assign(params, event.queryStringParameters);
   }
@@ -52,7 +21,6 @@ export default async function handler(event) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
-
   const filterBulan = parseInt(params.bulan) || currentMonth;
   const filterTahun = parseInt(params.tahun) || currentYear;
 
@@ -72,136 +40,158 @@ export default async function handler(event) {
     const startDate = startOfMonth.toISOString().split('T')[0];
     const endDate = endOfMonth.toISOString().split('T')[0];
 
-    // 1. Distribusi Periode
+    // 1. Distribusi
     const distribusiPeriode = await pool.query(`
-      SELECT 
-        COUNT(DISTINCT j.sku) AS distribusi_count,
+      SELECT COUNT(DISTINCT j.sku) AS distribusi_count,
         COALESCE(SUM(j.qty), 0) AS total_qty,
         COUNT(DISTINCT j.nama_outlet) AS outlet_count
-      FROM penjualan j
-      WHERE j.tanggal >= $1 AND j.tanggal <= $2
+      FROM penjualan j WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startDate, endDate]);
 
-    // 2. Penjualan Periode
+    // 2. Penjualan
     const penjualanPeriode = await pool.query(`
-      SELECT 
-        COALESCE(SUM(qty), 0) AS total_qty,
+      SELECT COALESCE(SUM(qty), 0) AS total_qty,
         COALESCE(SUM(j.qty * p.harga_jual), 0) AS nominal,
         COUNT(DISTINCT nama_outlet) AS customer_count
-      FROM penjualan j
-      JOIN produk p ON p.sku = j.sku
+      FROM penjualan j JOIN produk p ON p.sku = j.sku
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startDate, endDate]);
 
-    // 3. Profit Periode
+    // 3. Profit
     const profitPeriode = await pool.query(`
       SELECT COALESCE(SUM((p.harga_jual - p.harga_beli) * j.qty), 0) AS total_profit
-      FROM penjualan j
-      JOIN produk p ON p.sku = j.sku
+      FROM penjualan j JOIN produk p ON p.sku = j.sku
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startDate, endDate]);
 
-    // 4. Total Siswa Aktif
+    // 4. Siswa Aktif
     const totalSiswaAktif = await pool.query(`
       SELECT COALESCE(SUM(jumlah_siswa), 0) AS total_siswa
       FROM outlet_siswa_level_bulanan
-      WHERE EXTRACT(MONTH FROM periode) = $1
-        AND EXTRACT(YEAR FROM periode) = $2
+      WHERE EXTRACT(MONTH FROM periode) = $1 AND EXTRACT(YEAR FROM periode) = $2
     `, [filterBulan, filterTahun]);
 
-    // 5. Stok Gudang
-    const stokGudang = await pool.query(`
-      SELECT COALESCE(SUM(stok), 0) AS total_stok
-      FROM produk
-    `);
-
-    // 6. Top Outlet
-    const topOutlet = await pool.query(`
-      SELECT o.nama_outlet, SUM(j.qty * p.harga_jual) AS total_nominal, SUM(j.qty) AS total_qty
-      FROM penjualan j
-      JOIN produk p ON p.sku = j.sku
-      JOIN outlet o ON o.nama_outlet = j.nama_outlet
-      WHERE j.tanggal >= $1 AND j.tanggal <= $2
-      GROUP BY o.id, o.nama_outlet
-      ORDER BY total_nominal DESC
-      LIMIT 5
+    // 5. Produk Aktif
+    const produkAktif = await pool.query(`
+      SELECT COUNT(DISTINCT sku) AS total FROM penjualan
+      WHERE tanggal >= $1 AND tanggal <= $2
     `, [startDate, endDate]);
 
-    // 7. Stok Kritis
-    const stokKritis = await pool.query(`
-      SELECT p.sku, p.nama_produk, COALESCE(s.stok, 0) AS stok
-      FROM produk p
-      LEFT JOIN (
-        SELECT sku, SUM(CASE WHEN jenis = 'masuk' THEN qty ELSE -qty END) AS stok
-        FROM stok
-        GROUP BY sku
-      ) s ON s.sku = p.sku
-      WHERE COALESCE(s.stok, 0) <= 10
-      ORDER BY stok ASC
-      LIMIT 10
+    // 6. Outlet Aktif
+    const outletAktif = await pool.query(`
+      SELECT COUNT(DISTINCT nama_outlet) AS total FROM penjualan
+      WHERE tanggal >= $1 AND tanggal <= $2
+    `, [startDate, endDate]);
+
+    // 7. Total Produk
+    const totalProduk = await pool.query(`SELECT COUNT(*) AS total FROM produk`);
+
+    // 8. Total Outlet
+    const totalOutlet = await pool.query(`SELECT COUNT(*) AS total FROM outlet`);
+
+    // 9. Stok Kritis
+    let stokKritis = { rows: [{ kritis_count: 0 }] };
+    let stokKritisList = { rows: [] };
+    try {
+      stokKritis = await pool.query(`
+        WITH produk_stok AS (
+          SELECT p.sku, p.nama_produk,
+            COALESCE((SELECT SUM(qty_awal) FROM stok_awal WHERE sku = p.sku GROUP BY sku), 0)
+            + COALESCE((SELECT SUM(qty) FROM pembelian WHERE sku = p.sku GROUP BY sku), 0)
+            - COALESCE((SELECT SUM(qty) FROM penjualan WHERE sku = p.sku GROUP BY sku), 0)
+            + COALESCE((SELECT SUM(qty) FROM stok_penyesuaian WHERE sku = p.sku GROUP BY sku), 0) AS stok_akhir
+          FROM produk p
+        )
+        SELECT COUNT(*) AS kritis_count FROM produk_stok
+        WHERE stok_akhir <= 0 OR stok_akhir < 10
+      `);
+
+      stokKritisList = await pool.query(`
+        WITH produk_stok AS (
+          SELECT p.sku, p.nama_produk,
+            COALESCE((SELECT SUM(qty_awal) FROM stok_awal WHERE sku = p.sku GROUP BY sku), 0)
+            + COALESCE((SELECT SUM(qty) FROM pembelian WHERE sku = p.sku GROUP BY sku), 0)
+            - COALESCE((SELECT SUM(qty) FROM penjualan WHERE sku = p.sku GROUP BY sku), 0)
+            + COALESCE((SELECT SUM(qty) FROM stok_penyesuaian WHERE sku = p.sku GROUP BY sku), 0) AS stok_akhir
+          FROM produk p
+        )
+        SELECT sku, nama_produk, stok_akhir FROM produk_stok
+        WHERE stok_akhir <= 0 OR stok_akhir < 10 ORDER BY stok_akhir ASC LIMIT 20
+      `);
+    } catch (err) {
+      console.error('Stok kritis error:', err.message);
+    }
+
+    // 10. SO Berjalan
+    const soBerjalan = await pool.query(`
+      SELECT COUNT(*) AS total FROM stok_opname_perintah WHERE status IN ('menunggu', 'proses')
     `);
 
-    // 8. Aktivitas Terbaru (recent transactions)
-    const aktivitasTerbaru = await pool.query(`
-      SELECT 
-        'penjualan' AS jenis,
-        j.tanggal,
-        j.nama_outlet AS outlet,
-        j.qty,
-        p.harga_jual * j.qty AS nominal
-      FROM penjualan j
-      JOIN produk p ON p.sku = j.sku
-      ORDER BY j.tanggal DESC
-      LIMIT 10
+    // 11. SO Selesai
+    const soSelesai = await pool.query(`
+      SELECT COUNT(*) AS total FROM stok_opname_perintah WHERE status = 'selesai' AND bulan = $1 AND tahun = $2
+    `, [filterBulan, filterTahun]);
+
+    // 12. Users
+    const totalUsers = await pool.query(`SELECT COUNT(*) AS total FROM users WHERE is_active = true`);
+
+    // 13. Stok Gudang
+    const stokGudang = await pool.query(`
+      WITH params AS (SELECT CURRENT_DATE AS end_date),
+      base_stock AS (SELECT COALESCE(SUM(qty_awal), 0) AS total FROM stok_awal),
+      pembelian_total AS (SELECT COALESCE(SUM(qty), 0) AS total FROM pembelian WHERE tanggal <= (SELECT end_date FROM params)),
+      penjualan_total AS (SELECT COALESCE(SUM(qty), 0) AS total FROM penjualan WHERE tanggal <= (SELECT end_date FROM params)),
+      penyesuaian_total AS (SELECT COALESCE(SUM(qty), 0) AS total FROM stok_penyesuaian WHERE tanggal <= (SELECT end_date FROM params))
+      SELECT bs.total AS stok_awal, pt.total AS pembelian, pj.total AS penjualan, pen.total AS penyesuaian,
+        bs.total + pt.total - pj.total + pen.total AS stok_akhir
+      FROM base_stock bs, pembelian_total pt, penjualan_total pj, penyesuaian_total pen
     `);
 
     const result = {
-      kpi: {
+      filter: { bulan: filterBulan, tahun: filterTahun },
+      periode: {
         distribusi: {
-          label: "Produk Terjual",
-          value: Number(distribusiPeriode.rows[0]?.distribusi_count || 0),
-          total_qty: Number(distribusiPeriode.rows[0]?.total_qty || 0),
+          count: Number(distribusiPeriode.rows[0]?.distribusi_count || 0),
+          qty: Number(distribusiPeriode.rows[0]?.total_qty || 0),
           outlet_count: Number(distribusiPeriode.rows[0]?.outlet_count || 0)
         },
         penjualan: {
-          label: "Penjualan",
-          value: Number(penjualanPeriode.rows[0]?.nominal || 0),
-          total_qty: Number(penjualanPeriode.rows[0]?.total_qty || 0),
+          qty: Number(penjualanPeriode.rows[0]?.total_qty || 0),
+          nominal: Number(penjualanPeriode.rows[0]?.nominal || 0),
           customer_count: Number(penjualanPeriode.rows[0]?.customer_count || 0)
         },
-        profit: {
-          label: "Profit",
-          value: Number(profitPeriode.rows[0]?.total_profit || 0)
-        },
-        siswaAktif: {
-          label: "Siswa Aktif",
-          value: Number(totalSiswaAktif.rows[0]?.total_siswa || 0)
-        },
-        stokGudang: {
-          label: "Stok Gudang",
-          value: Number(stokGudang.rows[0]?.total_stok || 0)
-        }
+        profit: Number(profitPeriode.rows[0]?.total_profit || 0),
+        total_siswa: Number(totalSiswaAktif.rows[0]?.total_siswa || 0)
       },
-      topOutlet: topOutlet.rows.map(r => ({
-        nama_outlet: r.nama_outlet,
-        total_nominal: Number(r.total_nominal || 0),
-        total_qty: Number(r.total_qty || 0)
-      })),
+      produk: {
+        aktif: Number(produkAktif.rows[0]?.total || 0),
+        total: Number(totalProduk.rows[0]?.total || 0)
+      },
+      outlet: {
+        aktif: Number(outletAktif.rows[0]?.total || 0),
+        total: Number(totalOutlet.rows[0]?.total || 0)
+      },
       stok: {
-        kritis_list: stokKritis.rows.map(r => ({
+        kritis: Number(stokKritis.rows[0]?.kritis_count || 0),
+        kritis_list: stokKritisList.rows.map(r => ({
           sku: r.sku,
           nama_produk: r.nama_produk,
-          stok: Number(r.stok || 0)
-        }))
+          stok: Number(r.stok_akhir || 0)
+        })),
+        gudang: {
+          awal: Number(stokGudang.rows[0]?.stok_awal || 0),
+          pembelian: Number(stokGudang.rows[0]?.pembelian || 0),
+          penjualan: Number(stokGudang.rows[0]?.penjualan || 0),
+          penyesuaian: Number(stokGudang.rows[0]?.penyesuaian || 0),
+          akhir: Number(stokGudang.rows[0]?.stok_akhir || 0)
+        }
       },
-      aktivitasTerbaru: aktivitasTerbaru.rows.map(r => ({
-        jenis: r.jenis,
-        tanggal: r.tanggal,
-        outlet: r.outlet,
-        qty: Number(r.qty || 0),
-        nominal: Number(r.nominal || 0)
-      })),
-      filter: { bulan: filterBulan, tahun: filterTahun }
+      opname: {
+        berjalan: Number(soBerjalan.rows[0]?.total || 0),
+        selesai_bulan_ini: Number(soSelesai.rows[0]?.total || 0)
+      },
+      users: { total: Number(totalUsers.rows[0]?.total || 0) },
+      generated_at: new Date().toISOString()
     };
 
     return new Response(JSON.stringify(result), {
