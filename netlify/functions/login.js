@@ -72,6 +72,12 @@ export default async function handler(event) {
     });
   }
 
+  // DEBUG: Log event
+  console.log('Path:', event.path);
+  console.log('httpMethod:', event.httpMethod);
+  console.log('body type:', typeof event.body);
+  console.log('body:', event.body);
+
   // Parse body - handle both string and object
   let reqBody = {};
   if (event.body) {
@@ -79,12 +85,15 @@ export default async function handler(event) {
       try {
         reqBody = JSON.parse(event.body);
       } catch (e) {
+        console.log('JSON parse error:', e.message);
         reqBody = {};
       }
     } else if (typeof event.body === 'object') {
       reqBody = event.body;
     }
   }
+
+  console.log('reqBody:', JSON.stringify(reqBody));
 
   const { username = "", password = "" } = reqBody;
   const normalizedUsername = String(username).trim();
