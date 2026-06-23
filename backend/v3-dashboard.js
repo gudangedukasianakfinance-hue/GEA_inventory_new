@@ -27,64 +27,66 @@ export default async function handler(req, res) {
     // 2. Penjualan Periode - Qty and Nominal
     const penjualanPeriode = await pool.query(`
       SELECT 
-        COALESCE(SUM(qty), 0) AS total_qty,
-        COALESCE(SUM(j.qty * p.harga_jual), 0) AS nominal,
-        COUNT(DISTINCT nama_outlet) AS customer_count,
+        COALESCE(SUM(j.qty), 0) AS total_qty,
+        COALESCE(SUM(j.qty * COALESCE(p.harga_jual, 0)), 0) AS nominal,
+        COUNT(DISTINCT j.nama_outlet) AS customer_count,
         COUNT(*) AS total_transaksi
       FROM penjualan j
-      JOIN produk p ON p.sku = j.sku
+      LEFT JOIN produk p ON p.sku = j.sku
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
     // 2a. Outlet Stats - Transaksi vs Non Transaksi
-    const outletStats = await pool.query(`
-      WITH outlet_transaksi AS (
-        SELECT DISTINCT nama_outlet
-        FROM penjualan
-        WHERE tanggal >= $1 AND tanggal <= $2
-      ),
-      total_outlet AS (
-        SELECT COUNT(*) AS total FROM outlet
-      ),
-      transaksi_outlet AS (
-        SELECT COUNT(*) AS jumlah FROM outlet_transaksi
-      ),
-      non_transaksi_outlet AS (
-        SELECT COUNT(*) AS jumlah 
-        FROM outlet o
-        WHERE o.nama_outlet NOT IN (SELECT nama_outlet FROM outlet_transaksi)
-      ),
-      detail_transaksi AS (
+    let outletStats = { rows: [{ total_outlet: 0, outlet_transaksi: 0, outlet_non_transaksi: 0, outlet_detail: [], outlet_non_transaksi_detail: [] }] };
+    try {
+      // Get outlet with transactions
+      const outletTransaksiData = await pool.query(`
         SELECT o.nama_outlet, o.kota,
           COALESCE(SUM(j.qty), 0) AS total_qty,
-          COALESCE(SUM(j.qty * p.harga_jual), 0) AS total_nominal,
+          COALESCE(SUM(j.qty * COALESCE(p.harga_jual, 0)), 0) AS total_nominal,
           COUNT(j.qty) AS jumlah_transaksi
         FROM outlet o
         LEFT JOIN penjualan j ON j.nama_outlet = o.nama_outlet 
           AND j.tanggal >= $1 AND j.tanggal <= $2
         LEFT JOIN produk p ON p.sku = j.sku
         GROUP BY o.nama_outlet, o.kota
+        HAVING COALESCE(SUM(j.qty), 0) > 0
         ORDER BY total_qty DESC
-      ),
-      detail_non_transaksi AS (
-        SELECT nama_outlet, kota
+      `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
+      
+      // Get outlet without transactions
+      const outletNonTransaksiData = await pool.query(`
+        SELECT o.nama_outlet, o.kota
         FROM outlet o
-        WHERE o.nama_outlet NOT IN (SELECT nama_outlet FROM outlet_transaksi)
+        WHERE NOT EXISTS (
+          SELECT 1 FROM penjualan j2 
+          WHERE j2.nama_outlet = o.nama_outlet 
+          AND j2.tanggal >= $1 AND j2.tanggal <= $2
+        )
         ORDER BY o.nama_outlet
-      )
-      SELECT 
-        (SELECT jumlah FROM total_outlet) AS total_outlet,
-        (SELECT jumlah FROM transaksi_outlet) AS outlet_transaksi,
-        (SELECT jumlah FROM non_transaksi_outlet) AS outlet_non_transaksi,
-        (SELECT json_agg(row_to_json(d)) FROM detail_transaksi d) AS outlet_detail,
-        (SELECT json_agg(row_to_json(d)) FROM detail_non_transaksi d) AS outlet_non_transaksi_detail
-    `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
+      `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
+      
+      const totalOutlet = await pool.query(`SELECT COUNT(*) AS total FROM outlet`);
+      
+      outletStats = {
+        rows: [{
+          total_outlet: Number(totalOutlet.rows[0]?.total || 0),
+          outlet_transaksi: outletTransaksiData.rows.length,
+          outlet_non_transaksi: outletNonTransaksiData.rows.length,
+          outlet_detail: outletTransaksiData.rows,
+          outlet_non_transaksi_detail: outletNonTransaksiData.rows
+        }]
+      };
+    } catch (err) {
+      console.error('Outlet stats query error:', err.message);
+      outletStats = { rows: [{ total_outlet: 0, outlet_transaksi: 0, outlet_non_transaksi: 0, outlet_detail: [], outlet_non_transaksi_detail: [] }] };
+    }
 
     // 3. Profit Periode (simplified: based on harga_jual - harga_beli)
     const profitPeriode = await pool.query(`
-      SELECT COALESCE(SUM((p.harga_jual - p.harga_beli) * j.qty), 0) AS total_profit
+      SELECT COALESCE(SUM((COALESCE(p.harga_jual, 0) - COALESCE(p.harga_beli, 0)) * j.qty), 0) AS total_profit
       FROM penjualan j
-      JOIN produk p ON p.sku = j.sku
+      LEFT JOIN produk p ON p.sku = j.sku
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
