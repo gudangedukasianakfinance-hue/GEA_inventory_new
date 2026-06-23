@@ -142,8 +142,16 @@ function formatNum(val) { return Number(val || 0); }
 async function handleLogin(event) {
   const body = await parseBody(event);
   const { username = "", password = "" } = body;
-  const route = getRoute(event);
-  const portal = route.includes('/admin') ? 'admin' : (route.includes('/user') ? 'user' : null);
+  
+  // Get original path from headers for portal detection
+  const originalPath = event.headers?.['x-bb-path'] || 
+                       event.headers?.['x-original-path'] ||
+                       event.headers?.['x-forwarded-uri'] ||
+                       event.rawUrl ||
+                       event.path || '/';
+  const portal = originalPath.includes('/admin') ? 'admin' : (originalPath.includes('/user') ? 'user' : null);
+  
+  console.log('Login - originalPath:', originalPath, 'portal:', portal);
 
   if (!username || !password) {
     return { status: 400, data: { success: false, message: "Username dan password wajib diisi" } };
