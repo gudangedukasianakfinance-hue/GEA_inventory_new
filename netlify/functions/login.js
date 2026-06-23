@@ -72,7 +72,21 @@ export default async function handler(event) {
     });
   }
 
-  const { username = "", password = "" } = event.body ? JSON.parse(event.body) : {};
+  // Parse body - handle both string and object
+  let reqBody = {};
+  if (event.body) {
+    if (typeof event.body === 'string') {
+      try {
+        reqBody = JSON.parse(event.body);
+      } catch (e) {
+        reqBody = {};
+      }
+    } else if (typeof event.body === 'object') {
+      reqBody = event.body;
+    }
+  }
+
+  const { username = "", password = "" } = reqBody;
   const normalizedUsername = String(username).trim();
 
   if (!normalizedUsername || !password) {
