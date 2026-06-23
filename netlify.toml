@@ -4,26 +4,18 @@
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-# Individual function configurations
-[functions."login/login"]
-  included_files = ["services/**", "backend/**", "api/**", "node_modules/**"]
 
 [[redirects]]
   from = "/api/v1/auth/login/admin"
-  to = "/.netlify/functions/login/login"
+  to = "/.netlify/functions/login"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/api/v1/auth/login/user"
-  to = "/.netlify/functions/login/login"
+  to = "/.netlify/functions/login"
   status = 200
-  force = true
 
 [[redirects]]
   from = "/api/v1/auth/login"
-  to = "/.netlify/functions/login/login"
+  to = "/.netlify/functions/login"
   status = 200
-  force = true

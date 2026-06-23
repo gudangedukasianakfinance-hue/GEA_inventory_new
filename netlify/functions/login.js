@@ -7,11 +7,6 @@ const TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
 
 const USER_PORTAL_ROLES = ["staff_gudang", "checker_opname"];
 
-function send(res, status, payload) {
-  res.statusCode = status;
-  res.body = JSON.stringify(payload);
-}
-
 function safeEqualHex(expected, actual) {
   try {
     const expectedBuffer = Buffer.from(String(expected || ""), "hex");
@@ -63,18 +58,17 @@ function buildToken(user, loginAs) {
   return `${header}.${payloadBase}.${signature}`;
 }
 
-async function login(req) {
-  const { username = "", password = "" } = req.body || {};
+async function doLogin(reqBody, portal) {
+  const { username = "", password = "" } = reqBody || {};
   const normalizedUsername = String(username).trim();
-  const portal = req.query?.portal || null;
 
   if (!normalizedUsername || !password) {
-    return { success: false, message: "Username dan password wajib diisi" };
+    return { statusCode: 400, body: { success: false, message: "Username dan password wajib diisi" } };
   }
 
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    return { success: false, message: "Database tidak dikonfigurasi" };
+    return { statusCode: 500, body: { success: false, message: "Database URL not configured" } };
   }
 
   const pool = new Pool({
@@ -91,52 +85,52 @@ async function login(req) {
     const user = result.rows[0];
 
     if (!user || !verifyPassword(password, user.password_hash)) {
-      return { success: false, message: "Username atau password salah" };
+      return { statusCode: 401, body: { success: false, message: "Username atau password salah" } };
     }
 
     if (user.is_active === false) {
-      return { success: false, message: "Akun tidak aktif. Hubungi administrator" };
+      return { statusCode: 401, body: { success: false, message: "Akun tidak aktif" } };
     }
 
     if (portal === "admin" && user.role !== "admin") {
-      return { success: false, message: "Portal admin hanya untuk akun administrator" };
+      return { statusCode: 401, body: { success: false, message: "Portal admin hanya untuk admin" } };
     }
 
     if (portal === "user") {
       if (user.role === "admin") {
-        return { success: false, message: "Akun administrator harus masuk melalui portal admin" };
+        return { statusCode: 401, body: { success: false, message: "Gunakan portal admin untuk admin" } };
       }
       if (!USER_PORTAL_ROLES.includes(user.role)) {
-        return { success: false, message: "Role tidak diizinkan login melalui portal ini" };
+        return { statusCode: 401, body: { success: false, message: "Role tidak diizinkan" } };
       }
     }
 
-    await pool.query(
-      "UPDATE users SET failed_login_count = 0, last_login = NOW() WHERE id = $1",
-      [user.id]
-    );
+    await pool.query("UPDATE users SET failed_login_count = 0, last_login = NOW() WHERE id = $1", [user.id]);
 
     const loginAs = user.role === "admin" ? "admin" : "user";
     const token = buildToken(user, loginAs);
 
     return {
-      success: true,
-      message: "Login berhasil",
-      data: {
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          nama_lengkap: user.nama_lengkap,
-          role: user.role,
-          email: user.email,
-          loginAs
+      statusCode: 200,
+      body: {
+        success: true,
+        message: "Login berhasil",
+        data: {
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            nama_lengkap: user.nama_lengkap,
+            role: user.role,
+            email: user.email,
+            loginAs
+          }
         }
       }
     };
   } catch (error) {
     console.error("Login error:", error);
-    return { success: false, message: "Terjadi kesalahan server" };
+    return { statusCode: 500, body: { success: false, message: "Server error: " + error.message } };
   } finally {
     await pool.end();
   }
@@ -153,36 +147,39 @@ export default async function handler(event) {
     return { statusCode: 200, headers: corsHeaders, body: '' };
   }
 
-  const response = {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    body: ''
-  };
-
   try {
-    // Parse route from path
-    const pathParts = event.path.split('/').filter(Boolean);
-    const isAdmin = pathParts.includes('admin');
-    const isUser = pathParts.includes('user');
-
+    // Determine portal from path
+    const path = event.path || "";
+    const isAdmin = path.includes('/admin');
+    const isUser = path.includes('/user');
     let portal = null;
     if (isAdmin) portal = "admin";
     else if (isUser) portal = "user";
 
-    const mockReq = {
-      body: event.body ? JSON.parse(event.body) : {},
-      query: { ...event.queryStringParameters, portal }
-    };
+    // Parse body
+    let reqBody = {};
+    if (event.body) {
+      try {
+        reqBody = JSON.parse(event.body);
+      } catch {
+        reqBody = {};
+      }
+    }
 
-    const result = await login(mockReq);
-    response.body = JSON.stringify(result);
-    response.statusCode = result.success ? 200 : (result.message?.includes('salah') ? 401 : 400);
+    const result = await doLogin(reqBody, portal);
+
+    return {
+      statusCode: result.statusCode,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      body: JSON.stringify(result.body)
+    };
 
   } catch (error) {
     console.error('Handler error:', error);
-    response.statusCode = 500;
-    response.body = JSON.stringify({ success: false, message: 'Internal server error' });
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      body: JSON.stringify({ success: false, message: 'Internal error' })
+    };
   }
-
-  return response;
 }
