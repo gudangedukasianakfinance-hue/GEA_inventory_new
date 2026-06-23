@@ -17,18 +17,7 @@ export default async function handler(req, res) {
     const startOfMonth = new Date(filterTahun, filterBulan - 1, 1);
     const endOfMonth = new Date(filterTahun, filterBulan, 0);
 
-    // 1. Distribusi Periode (from outlet_stok_masuk)
-    const distribusiPeriode = await pool.query(`
-      SELECT 
-        COUNT(*) AS distribusi_count,
-        COALESCE(SUM(qty), 0) AS total_qty,
-        COUNT(DISTINCT outlet_id) AS outlet_count
-      FROM outlet_stok_masuk
-      WHERE tanggal >= $1 AND tanggal <= $2
-        AND sumber = 'warehouse_sale_auto'
-    `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
-
-    // 2. Penjualan Periode - Qty and Nominal
+    // 1. Penjualan Periode - Qty and Nominal
     const penjualanPeriode = await pool.query(`
       SELECT 
         COALESCE(SUM(qty), 0) AS total_qty,
@@ -208,11 +197,6 @@ export default async function handler(req, res) {
         tahun: filterTahun
       },
       periode: {
-        distribusi: {
-          count: Number(distribusiPeriode.rows[0]?.distribusi_count || 0),
-          qty: Number(distribusiPeriode.rows[0]?.total_qty || 0),
-          outlet_count: Number(distribusiPeriode.rows[0]?.outlet_count || 0)
-        },
         penjualan: {
           qty: Number(penjualanPeriode.rows[0]?.total_qty || 0),
           nominal: Number(penjualanPeriode.rows[0]?.nominal || 0),

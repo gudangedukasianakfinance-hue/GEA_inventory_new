@@ -17,9 +17,7 @@ const AppRouter = {
     'task-saya': 'pages/task-saya.html',
     'riwayat-so': 'pages/riwayat-so.html',
     'penyesuaian-stok': 'pages/penyesuaian-stok.html',
-    'distribusi-outlet': 'pages/distribusi-outlet.html',
     'monitoring-outlet': 'pages/monitoring-outlet.html',
-    'distribution': 'pages/distribution.html',
     'laporan': 'pages/laporan.html',
     'user': 'pages/user.html',
     'pengaturan': 'pages/pengaturan.html',
@@ -94,9 +92,7 @@ const AppRouter = {
       'task-saya': 'Task Saya',
       'riwayat-so': 'Riwayat SO',
       'penyesuaian-stok': 'Penyesuaian Stok',
-      'distribusi-outlet': 'Distribusi Outlet',
       'monitoring-outlet': 'Monitoring Outlet',
-      'distribution': 'Dashboard Pengiriman',
       'laporan': 'Laporan',
       'user': 'Manajemen User',
       'pengaturan': 'Pengaturan',
@@ -179,7 +175,6 @@ const AppRouter = {
     if (page === 'task-saya' && typeof loadTaskList === 'function') loadTaskList();
     if (page === 'riwayat-so' && typeof loadHistory === 'function') loadHistory();
     if (page === 'penyesuaian-stok' && typeof loadAdjustmentList === 'function') loadAdjustmentList();
-    if (page === 'distribution' && typeof initDistributionDashboard === 'function') initDistributionDashboard();
     
     window.dispatchEvent(new CustomEvent('pageLoaded', { detail: { page } }));
   },

@@ -212,7 +212,7 @@ if (typeof window.Dashboard !== 'undefined') {
   getEmptyData() {
     return {
       filter: { bulan: this.selectedMonth, tahun: this.selectedYear },
-      periode: { distribusi: { qty: 0 }, penjualan: { qty: 0, nominal: 0 }, profit: 0, total_siswa: 0 },
+      periode: { penjualan: { qty: 0, nominal: 0 }, profit: 0, total_siswa: 0 },
       produk: { aktif: 0, total: 0 },
       outlet: { aktif: 0, total: 0 },
       stok: { kritis: 0, gudang: { akhir: 0 } },
@@ -230,7 +230,6 @@ if (typeof window.Dashboard !== 'undefined') {
     this.setKPIValue('kpi-stok-gudang', this.formatNumber(data.stok?.gudang?.akhir || 0));
     this.setKPIValue('kpi-stok-outlet', '-');
     
-    this.setKPIValue('kpi-distribusi', this.formatNumber(data.periode?.distribusi?.qty || 0));
     this.setKPIValue('kpi-penjualan', 'Rp ' + this.formatNumber(data.periode?.penjualan?.nominal || 0));
     this.setKPIValue('kpi-so-berjalan', this.formatNumber(data.opname?.berjalan || 0));
     this.setKPIValue('kpi-stok-kritis', this.formatNumber(data.stok?.kritis || 0));

@@ -41,8 +41,6 @@ import usersApiHandler from "../backend/users-api.js";
 import approvalApiHandler from "../backend/approval-api.js";
 import settingsApiHandler from "../backend/settings-api.js";
 import apiStokHandler from "../backend/api-stok.js";
-import apiShipmentsHandler from "../backend/api-shipments.js";
-import apiSyncShipmentsHandler from "../backend/api-sync-shipments.js";
 import { isDatabaseConfigured, checkDatabaseHealth } from "../services/db.js";
 
 // Health check handler
@@ -147,15 +145,6 @@ const routes = {
   "GET /v1/stok/realtime": apiStokHandler,
   "GET /v1/stok/kartu": apiStokHandler,
   "GET /v1/stok/mutasi": apiStokHandler,
-
-  // Shipments Module routes
-  "GET /shipments": apiShipmentsHandler,
-  "GET /api/shipments": apiShipmentsHandler,
-  "GET /v1/shipments": apiShipmentsHandler,
-
-  // Shipments Sync routes (Google Sheets to Neon)
-  "GET /api/sync-shipments": apiSyncShipmentsHandler,
-  "POST /api/sync-shipments": apiSyncShipmentsHandler,
 
   // GET /forecast REMOVED - feature deprecated
   "GET /produk-list": produkListHandler,
