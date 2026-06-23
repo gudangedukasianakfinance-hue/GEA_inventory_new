@@ -446,6 +446,73 @@
   overflow-y: auto;
 }
 
+/* Table Card Actions */
+.table-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.table-filter-select {
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.table-filter-select:hover {
+  border-color: var(--border-hover);
+}
+
+.table-filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(255, 77, 58, 0.1);
+}
+
+/* Outlet Transaksi Table */
+.outlet-transaksi-table-wrapper {
+  overflow-x: auto;
+}
+
+.outlet-transaksi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.outlet-transaksi-table th,
+.outlet-transaksi-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.outlet-transaksi-table th {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.outlet-transaksi-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.outlet-transaksi-table td {
+  color: var(--text);
+}
+
 /* Stok Kritis Table */
 .stok-item {
   display: flex;

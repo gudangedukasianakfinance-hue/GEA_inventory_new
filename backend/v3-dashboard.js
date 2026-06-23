@@ -17,15 +17,14 @@ export default async function handler(req, res) {
     const startOfMonth = new Date(filterTahun, filterBulan - 1, 1);
     const endOfMonth = new Date(filterTahun, filterBulan, 0);
 
-    // 1. Distribusi Periode (from outlet_stok_masuk)
+    // 1. Distribusi Periode - SAMAKAN DENGAN PRODUK TERJUAL (dari penjualan)
     const distribusiPeriode = await pool.query(`
       SELECT 
-        COUNT(*) AS distribusi_count,
-        COALESCE(SUM(qty), 0) AS total_qty,
-        COUNT(DISTINCT outlet_id) AS outlet_count
-      FROM outlet_stok_masuk
-      WHERE tanggal >= $1 AND tanggal <= $2
-        AND sumber = 'warehouse_sale_auto'
+        COUNT(DISTINCT j.sku) AS distribusi_count,
+        COALESCE(SUM(j.qty), 0) AS total_qty,
+        COUNT(DISTINCT j.nama_outlet) AS outlet_count
+      FROM penjualan j
+      WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
     // 2. Penjualan Periode - Qty and Nominal

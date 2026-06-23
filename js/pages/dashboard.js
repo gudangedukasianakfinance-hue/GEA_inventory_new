@@ -122,6 +122,7 @@ if (typeof window.Dashboard !== 'undefined') {
       this.renderStokKritisList();
       this.renderRecentActivity();
       this.updateUserGreeting();
+      this.loadOutletTransaksi();
       
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -560,6 +561,98 @@ if (typeof window.Dashboard !== 'undefined') {
     }).join('');
     
     container.innerHTML = listHtml;
+  },
+
+  // Outlet Transaksi Summary Methods
+  outletTransaksiData: [],
+
+  async loadOutletTransaksi() {
+    const container = document.getElementById('outletTransaksiTable');
+    if (!container) return;
+
+    const typeFilter = document.getElementById('filterOutletType');
+    const type = typeFilter ? typeFilter.value : 'transaksi';
+    const { selectedMonth, selectedYear } = this;
+
+    try {
+      const response = await fetch(`/api/v1/outlet-transaksi-summary?type=${type}&bulan=${selectedMonth}&tahun=${selectedYear}`);
+      if (!response.ok) throw new Error('Gagal memuat data outlet');
+
+      const result = await response.json();
+      this.outletTransaksiData = result.data || [];
+      this.renderOutletTransaksiTable(result);
+    } catch (error) {
+      console.error('Error loading outlet transaksi:', error);
+      container.innerHTML = '<div class="table-card__empty"><i data-lucide="alert-circle"></i><p class="table-card__empty-text">Gagal memuat data</p></div>';
+    }
+  },
+
+  renderOutletTransaksiTable(result) {
+    const container = document.getElementById('outletTransaksiTable');
+    if (!container) return;
+
+    const data = result.data || [];
+    const type = result.type || 'transaksi';
+
+    if (!data.length) {
+      container.innerHTML = '<div class="table-card__empty"><i data-lucide="store"></i><p class="table-card__empty-text">Tidak ada outlet ' + (type === 'transaksi' ? 'transaksi' : 'non-transaksi') + '</p></div>';
+      return;
+    }
+
+    let tableHtml = '<div class="outlet-transaksi-table-wrapper">' +
+      '<table class="outlet-transaksi-table">' +
+      '<thead><tr><th>#</th><th>Nama Outlet</th><th>Total Transaksi</th><th>Total Qty</th><th>Total Nominal</th></tr></thead>' +
+      '<tbody>';
+
+    data.forEach((item, index) => {
+      const nominalDisplay = type === 'transaksi' ? 'Rp ' + this.formatNumber(item.total_nominal) : '-';
+      tableHtml += '<tr>' +
+        '<td class="text-center">' + (index + 1) + '</td>' +
+        '<td>' + item.nama_outlet + '</td>' +
+        '<td class="text-center">' + (type === 'transaksi' ? this.formatNumber(item.total_transaksi) : '-') + '</td>' +
+        '<td class="text-center">' + (type === 'transaksi' ? this.formatNumber(item.total_qty) : '-') + '</td>' +
+        '<td class="text-right">' + nominalDisplay + '</td>' +
+        '</tr>';
+    });
+
+    tableHtml += '</tbody></table></div>';
+    container.innerHTML = tableHtml;
+  },
+
+  exportOutletTransaksi(format) {
+    const data = this.outletTransaksiData || [];
+    const typeFilter = document.getElementById('filterOutletType');
+    const type = typeFilter ? typeFilter.value : 'transaksi';
+
+    if (!data.length) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const headers = ['No', 'Nama Outlet'];
+    if (type === 'transaksi') {
+      headers.push('Total Transaksi', 'Total Qty', 'Total Nominal');
+    }
+
+    let csvContent = headers.join(',') + '\n';
+
+    data.forEach((item, index) => {
+      let row = [index + 1, '"' + item.nama_outlet + '"'];
+      if (type === 'transaksi') {
+        row.push(item.total_transaksi, item.total_qty, item.total_nominal);
+      }
+      csvContent += row.join(',') + '\n';
+    });
+
+    const bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][this.selectedMonth - 1];
+    const filename = 'Outlet_' + (type === 'transaksi' ? 'Transaksi' : 'NonTransaksi') + '_' + bulanNama + '_' + this.selectedYear + '.' + format;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
   },
   
   startAutoRefresh() {

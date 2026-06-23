@@ -20,6 +20,7 @@ import outletStatusHandler from "../backend/outlet-status.js";
 import outletListHandler from "../backend/outlet-list.js";
 import persediaanHandler from "../backend/persediaan.js";
 import outletTransaksiHandler from "../backend/outlet-transaksi.js";
+import outletTransaksiSummaryHandler from "../backend/outlet-transaksi-summary.js";
 import produkListHandler from "../backend/produk-list.js";
 import simpanOpnameHandler from "../backend/simpan-opname.js";
 import sesuaikanOpnameHandler from "../backend/sesuaikan-opname.js";
@@ -111,6 +112,7 @@ const routes = {
   "GET /outlet-status": outletStatusHandler,
   "GET /outlet-list": outletListHandler,
   "GET /outlet-transaksi": outletTransaksiHandler,
+  "GET /v1/outlet-transaksi-summary": outletTransaksiSummaryHandler,
   "GET /template-outlet": templateOutletHandler,
   "GET /template-penjualan": templatePenjualanHandler,
   "GET /template-pembelian": templatePembelianHandler,
