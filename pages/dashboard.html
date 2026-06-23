@@ -248,15 +248,15 @@
         Statistik Outlet
       </h3>
       <div class="table-card__actions">
-        <select id="outletStatsFilter" class="filter-select" onchange="DashboardPage.renderOutletStats()">
+        <select id="outletStatsFilter" class="filter-select" onchange="Dashboard.renderOutletStats()">
           <option value="all">Semua Outlet</option>
           <option value="transaksi">Transaksi</option>
           <option value="non-transaksi">Non Transaksi</option>
         </select>
-        <button class="btn btn-sm btn-success" onclick="DashboardPage.exportOutletStats('csv')">
+        <button class="btn btn-sm btn-success" onclick="Dashboard.exportOutletStats('csv')">
           <i data-lucide="file-down"></i> CSV
         </button>
-        <button class="btn btn-sm btn-success" onclick="DashboardPage.exportOutletStats('xlsx')">
+        <button class="btn btn-sm btn-success" onclick="Dashboard.exportOutletStats('xlsx')">
           <i data-lucide="file-spreadsheet"></i> Excel
         </button>
       </div>
