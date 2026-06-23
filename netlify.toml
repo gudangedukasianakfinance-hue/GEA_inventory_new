@@ -4,10 +4,16 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
 
-# Redirect all /api/* to unified api handler
+# API redirects - catch all /api/* routes
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api"
   status = 200
-  force = true
+
+# Also handle without api prefix for function direct access
+[[redirects]]
+  from = "/.netlify/functions/api"
+  to = "/.netlify/functions/api"
+  status = 200

@@ -539,16 +539,22 @@ async function handleHealth(event) {
 // ==================== MAIN HANDLER ====================
 
 export default async function handler(event) {
+  console.log('=== API HANDLER START ===');
+  console.log('event.httpMethod:', event.httpMethod);
+  console.log('event.path:', event.path);
+  console.log('event.rawUrl:', event.rawUrl);
+  console.log('event.headers:', JSON.stringify(event.headers).substring(0, 500));
+  
   // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return new Response('', { status: 200, headers: CORS_HEADERS });
   }
 
   // Try to get original path from various sources
-  // Netlify may pass original path in headers or rawUrl
   const originalPath = event.headers?.['x-bb-path'] || 
                        event.headers?.['x-original-path'] ||
                        event.headers?.['x-forwarded-uri'] ||
+                       event.headers?.['x-nfrequesturi'] ||
                        event.rawUrl ||
                        event.path || 
                        '/';
@@ -556,16 +562,16 @@ export default async function handler(event) {
   const path = originalPath.split('?')[0];
   const method = event.httpMethod || 'GET';
   
-  console.log('Original Path:', originalPath, 'Method:', method);
-  
-  const route = path.replace(/^\/api\/?/, '').replace(/^\//, '');
-  console.log('Route:', route);
+  console.log('originalPath:', originalPath);
+  console.log('path:', path);
+  console.log('method:', method);
 
   try {
     let result;
 
     // Auth routes
     if (path.includes('/auth/login')) {
+      console.log('Routing to handleLogin');
       result = await handleLogin(event);
     }
     // Dashboard
@@ -606,9 +612,11 @@ export default async function handler(event) {
     }
     // Not found
     else {
+      console.log('No route matched, returning 404');
       result = { status: 404, data: { error: "Route not found: " + path } };
     }
 
+    console.log('Returning:', result.status, JSON.stringify(result.data).substring(0, 200));
     return new Response(JSON.stringify(result.data), {
       status: result.status,
       headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
