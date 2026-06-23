@@ -4,15 +4,26 @@
 
 [functions]
   directory = "netlify/functions"
-
-# Netlify Functions with ES Modules support
-[functions."api"]
   node_bundler = "esbuild"
+
+# Individual function configurations
+[functions."login/login"]
   included_files = ["services/**", "backend/**", "api/**", "node_modules/**"]
-  external_node_modules = ["pg", "express", "cors", "dotenv"]
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api"
+  from = "/api/v1/auth/login/admin"
+  to = "/.netlify/functions/login/login"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/v1/auth/login/user"
+  to = "/.netlify/functions/login/login"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/v1/auth/login"
+  to = "/.netlify/functions/login/login"
   status = 200
   force = true
