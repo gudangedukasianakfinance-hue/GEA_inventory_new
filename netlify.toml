@@ -1,0 +1,18 @@
+[build]
+  command = "npm install"
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+
+# Netlify Functions with ES Modules support
+[functions."api"]
+  node_bundler = "esbuild"
+  included_files = ["services/**", "backend/**", "api/**", "node_modules/**"]
+  external_node_modules = ["pg", "express", "cors", "dotenv"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
