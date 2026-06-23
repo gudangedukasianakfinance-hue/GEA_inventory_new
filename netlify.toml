@@ -6,13 +6,29 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# API redirects using splat
+# Auth login redirects - to dedicated auth function
 [[redirects]]
-  from = "/api"
+  from = "/api/v1/auth/login/admin"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/auth/login/user"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/v1/auth/login"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+# Generic API handler for other routes
+[[redirects]]
+  from = "/api/v3-dashboard"
   to = "/.netlify/functions/api"
   status = 200
 
 [[redirects]]
-  from = "/api/*"
+  from = "/api/v3-chart"
   to = "/.netlify/functions/api"
   status = 200
