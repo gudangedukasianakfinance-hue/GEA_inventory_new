@@ -4,8 +4,13 @@ import { Pool } from "pg";
 
 const JWT_SECRET = process.env.JWT_SECRET || "cvepic-warehouse-v3-secret-key-change-in-production";
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
-
 const USER_PORTAL_ROLES = ["staff_gudang", "checker_opname"];
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+};
 
 function safeEqualHex(expected, actual) {
   try {
@@ -58,23 +63,40 @@ function buildToken(user, loginAs) {
   return `${header}.${payloadBase}.${signature}`;
 }
 
-async function doLogin(reqBody, portal) {
-  const { username = "", password = "" } = reqBody || {};
+export default async function handler(event) {
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return new Response('', {
+      status: 200,
+      headers: CORS_HEADERS
+    });
+  }
+
+  const { username = "", password = "" } = event.body ? JSON.parse(event.body) : {};
   const normalizedUsername = String(username).trim();
 
   if (!normalizedUsername || !password) {
-    return { statusCode: 400, body: { success: false, message: "Username dan password wajib diisi" } };
+    return new Response(JSON.stringify({ success: false, message: "Username dan password wajib diisi" }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+    });
   }
 
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    return { statusCode: 500, body: { success: false, message: "Database URL not configured" } };
+    return new Response(JSON.stringify({ success: false, message: "Database URL not configured" }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+    });
   }
 
-  const pool = new Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false }
-  });
+  // Determine portal from path
+  const path = event.path || "";
+  let portal = null;
+  if (path.includes('/admin')) portal = "admin";
+  else if (path.includes('/user')) portal = "user";
+
+  const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
 
   try {
     const result = await pool.query(
@@ -85,23 +107,38 @@ async function doLogin(reqBody, portal) {
     const user = result.rows[0];
 
     if (!user || !verifyPassword(password, user.password_hash)) {
-      return { statusCode: 401, body: { success: false, message: "Username atau password salah" } };
+      return new Response(JSON.stringify({ success: false, message: "Username atau password salah" }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+      });
     }
 
     if (user.is_active === false) {
-      return { statusCode: 401, body: { success: false, message: "Akun tidak aktif" } };
+      return new Response(JSON.stringify({ success: false, message: "Akun tidak aktif" }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+      });
     }
 
     if (portal === "admin" && user.role !== "admin") {
-      return { statusCode: 401, body: { success: false, message: "Portal admin hanya untuk admin" } };
+      return new Response(JSON.stringify({ success: false, message: "Portal admin hanya untuk admin" }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+      });
     }
 
     if (portal === "user") {
       if (user.role === "admin") {
-        return { statusCode: 401, body: { success: false, message: "Gunakan portal admin untuk admin" } };
+        return new Response(JSON.stringify({ success: false, message: "Gunakan portal admin" }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+        });
       }
       if (!USER_PORTAL_ROLES.includes(user.role)) {
-        return { statusCode: 401, body: { success: false, message: "Role tidak diizinkan" } };
+        return new Response(JSON.stringify({ success: false, message: "Role tidak diizinkan" }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+        });
       }
     }
 
@@ -110,76 +147,32 @@ async function doLogin(reqBody, portal) {
     const loginAs = user.role === "admin" ? "admin" : "user";
     const token = buildToken(user, loginAs);
 
-    return {
-      statusCode: 200,
-      body: {
-        success: true,
-        message: "Login berhasil",
-        data: {
-          token,
-          user: {
-            id: user.id,
-            username: user.username,
-            nama_lengkap: user.nama_lengkap,
-            role: user.role,
-            email: user.email,
-            loginAs
-          }
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Login berhasil",
+      data: {
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          nama_lengkap: user.nama_lengkap,
+          role: user.role,
+          email: user.email,
+          loginAs
         }
       }
-    };
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+    });
+
   } catch (error) {
     console.error("Login error:", error);
-    return { statusCode: 500, body: { success: false, message: "Server error: " + error.message } };
+    return new Response(JSON.stringify({ success: false, message: "Server error" }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+    });
   } finally {
     await pool.end();
-  }
-}
-
-export default async function handler(event) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders, body: '' };
-  }
-
-  try {
-    // Determine portal from path
-    const path = event.path || "";
-    const isAdmin = path.includes('/admin');
-    const isUser = path.includes('/user');
-    let portal = null;
-    if (isAdmin) portal = "admin";
-    else if (isUser) portal = "user";
-
-    // Parse body
-    let reqBody = {};
-    if (event.body) {
-      try {
-        reqBody = JSON.parse(event.body);
-      } catch {
-        reqBody = {};
-      }
-    }
-
-    const result = await doLogin(reqBody, portal);
-
-    return {
-      statusCode: result.statusCode,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      body: JSON.stringify(result.body)
-    };
-
-  } catch (error) {
-    console.error('Handler error:', error);
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      body: JSON.stringify({ success: false, message: 'Internal error' })
-    };
   }
 }
