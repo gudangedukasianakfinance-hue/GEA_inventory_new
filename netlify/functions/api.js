@@ -95,13 +95,16 @@ function getRoute(event) {
 }
 
 // Get query params
-function getParams(event) {
+function getParams(event, originalPath) {
   const params = {};
-  const url = new URL(event.path || "/", "https://localhost");
-  url.searchParams.forEach((v, k) => params[k] = v);
   if (event.queryStringParameters) {
     Object.assign(params, event.queryStringParameters);
   }
+  // Also parse from original path
+  const url = new URL(originalPath || "/", "https://localhost");
+  url.searchParams.forEach((v, k) => {
+    if (!params[k]) params[k] = v;
+  });
   return params;
 }
 
@@ -178,8 +181,8 @@ async function handleLogin(event) {
 }
 
 // V3 Dashboard Handler
-async function handleDashboard(event) {
-  const params = getParams(event);
+async function handleDashboard(event, originalPath) {
+  const params = getParams(event, originalPath);
   const pool = createPool();
   const now = new Date();
   const filterBulan = parseInt(params.bulan) || now.getMonth() + 1;
@@ -300,8 +303,8 @@ async function handleDashboard(event) {
 }
 
 // V3 Chart Handler
-async function handleChart(event) {
-  const params = getParams(event);
+async function handleChart(event, originalPath) {
+  const params = getParams(event, originalPath);
   const pool = createPool();
   const now = new Date();
   const filterBulan = parseInt(params.bulan) || now.getMonth() + 1;
@@ -359,8 +362,8 @@ async function handleChart(event) {
 }
 
 // Outlet Transaksi Summary Handler
-async function handleOutletTransaksiSummary(event) {
-  const params = getParams(event);
+async function handleOutletTransaksiSummary(event, originalPath) {
+  const params = getParams(event, originalPath);
   const pool = createPool();
   const type = params.type || 'transaksi';
   const bulan = parseInt(params.bulan) || new Date().getMonth() + 1;
@@ -533,58 +536,69 @@ export default async function handler(event) {
     return new Response('', { status: 200, headers: CORS_HEADERS });
   }
 
-  const path = event.path || event.rawUrl || '/';
+  // Try to get original path from various sources
+  // Netlify may pass original path in headers or rawUrl
+  const originalPath = event.headers?.['x-bb-path'] || 
+                       event.headers?.['x-original-path'] ||
+                       event.headers?.['x-forwarded-uri'] ||
+                       event.rawUrl ||
+                       event.path || 
+                       '/';
+  
+  const path = originalPath.split('?')[0];
   const method = event.httpMethod || 'GET';
   
-  const route = getRoute(event) || path.replace(/^\/api\/?/, '').split('?')[0];
-  console.log('API Route:', route, 'Method:', method, 'Path:', path);
+  console.log('Original Path:', originalPath, 'Method:', method);
+  
+  const route = path.replace(/^\/api\/?/, '').replace(/^\//, '');
+  console.log('Route:', route);
 
   try {
     let result;
 
     // Auth routes
-    if (route.match(/^v1\/auth\/login/) || path.includes('/auth/login')) {
+    if (path.includes('/auth/login')) {
       result = await handleLogin(event);
     }
     // Dashboard
-    else if (route === 'v3-dashboard' || path.includes('/v3-dashboard')) {
-      result = await handleDashboard(event);
+    else if (path.includes('/v3-dashboard')) {
+      result = await handleDashboard(event, originalPath);
     }
     // Charts
-    else if (route === 'v3-chart' || path.includes('/v3-chart')) {
-      result = await handleChart(event);
+    else if (path.includes('/v3-chart')) {
+      result = await handleChart(event, originalPath);
     }
     // Outlet Transaksi Summary
-    else if (route === 'v1/outlet-transaksi-summary' || path.includes('/outlet-transaksi-summary')) {
-      result = await handleOutletTransaksiSummary(event);
+    else if (path.includes('/outlet-transaksi-summary')) {
+      result = await handleOutletTransaksiSummary(event, originalPath);
     }
     // Users
-    else if (route === 'v1/users' || path.includes('/v1/users')) {
+    else if (path.includes('/v1/users')) {
       result = await handleUsers(event);
     }
     // Top Outlet
-    else if (route === 'top-outlet' || path.includes('/top-outlet')) {
+    else if (path.includes('/top-outlet')) {
       result = await handleTopOutlet(event);
     }
     // Top Produk
-    else if (route === 'top-produk' || path.includes('/top-produk')) {
+    else if (path.includes('/top-produk')) {
       result = await handleTopProduk(event);
     }
     // Outlet List
-    else if (route === 'outlet-list' || path.includes('/outlet-list')) {
+    else if (path.includes('/outlet-list')) {
       result = await handleOutletList(event);
     }
     // Produk List
-    else if (route === 'produk-list' || path.includes('/produk-list')) {
+    else if (path.includes('/produk-list')) {
       result = await handleProdukList(event);
     }
     // Health
-    else if (route === 'v1/health' || route === 'health' || path.includes('/health')) {
+    else if (path.includes('/health')) {
       result = await handleHealth(event);
     }
     // Not found
     else {
-      result = { status: 404, data: { error: "Route not found: " + route } };
+      result = { status: 404, data: { error: "Route not found: " + path } };
     }
 
     return new Response(JSON.stringify(result.data), {
