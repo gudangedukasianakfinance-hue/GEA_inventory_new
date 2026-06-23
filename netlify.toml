@@ -6,14 +6,13 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# API redirects - catch all /api/* routes
+# API redirects using splat
 [[redirects]]
-  from = "/api/*"
+  from = "/api"
   to = "/.netlify/functions/api"
   status = 200
 
-# Also handle without api prefix for function direct access
 [[redirects]]
-  from = "/.netlify/functions/api"
+  from = "/api/*"
   to = "/.netlify/functions/api"
   status = 200
