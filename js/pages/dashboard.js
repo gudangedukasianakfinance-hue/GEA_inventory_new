@@ -582,20 +582,22 @@ if (typeof window.Dashboard !== 'undefined') {
     // Filter data based on selection
     let data = [];
     if (filter === 'transaksi') {
-      data = (outletStats.detail || []).filter(o => Number(o.total_qty) > 0);
+      data = outletStats.detail || [];
     } else if (filter === 'non-transaksi') {
-      data = outletStats.non_transaksi_detail || [];
+      data = (outletStats.non_transaksi_detail || []).map(o => ({
+        ...o,
+        total_qty: 0,
+        jumlah_transaksi: 0
+      }));
     } else {
       // All outlets - combine transaksi and non-transaksi
       const transaksiData = (outletStats.detail || []).map(o => ({
         ...o,
-        status: Number(o.total_qty) > 0 ? 'Transaksi' : 'Non Transaksi'
+        status: 'Transaksi'
       }));
       const nonTransaksiData = (outletStats.non_transaksi_detail || []).map(o => ({
-        nama_outlet: o.nama_outlet,
-        kota: o.kota,
+        ...o,
         total_qty: 0,
-        total_nominal: 0,
         jumlah_transaksi: 0,
         status: 'Non Transaksi'
       }));
@@ -612,7 +614,7 @@ if (typeof window.Dashboard !== 'undefined') {
       return;
     }
     
-    // Check if showing transaksi data (has columns for qty/nominal)
+    // Check if showing transaksi data
     const showDetail = filter !== 'non-transaksi';
     
     let tableHtml = '<table class="outlet-stats-table">' +
@@ -620,7 +622,7 @@ if (typeof window.Dashboard !== 'undefined') {
       '<th>#</th><th>Nama Outlet</th><th>Kota</th>';
     
     if (showDetail) {
-      tableHtml += '<th class="text-right">Jumlah Transaksi</th><th class="text-right">Total Qty</th><th class="text-right">Total Nominal</th>';
+      tableHtml += '<th class="text-right">Jumlah Transaksi</th><th class="text-right">Total Qty</th>';
     }
     tableHtml += '<th>Status</th></tr></thead><tbody>';
     
@@ -635,8 +637,7 @@ if (typeof window.Dashboard !== 'undefined') {
       
       if (showDetail) {
         tableHtml += '<td class="text-right">' + this.formatNumber(item.jumlah_transaksi || 0) + '</td>' +
-          '<td class="text-right">' + this.formatNumber(item.total_qty || 0) + '</td>' +
-          '<td class="text-right">Rp ' + this.formatNumber(item.total_nominal || 0) + '</td>';
+          '<td class="text-right">' + this.formatNumber(item.total_qty || 0) + '</td>';
       }
       
       tableHtml += '<td><span class="badge ' + statusClass + '">' + status + '</span></td></tr>';
@@ -656,34 +657,29 @@ if (typeof window.Dashboard !== 'undefined') {
     let filename = 'outlet_stats_';
     
     if (filter === 'transaksi') {
-      data = (outletStats.detail || []).filter(o => Number(o.total_qty) > 0);
+      data = (outletStats.detail || []).map(o => ({
+        ...o,
+        status: 'Transaksi'
+      }));
       filename += 'transaksi';
     } else if (filter === 'non-transaksi') {
       data = (outletStats.non_transaksi_detail || []).map(o => ({
-        nama_outlet: o.nama_outlet,
-        kota: o.kota,
+        ...o,
         jumlah_transaksi: 0,
         total_qty: 0,
-        total_nominal: 0,
         status: 'Non Transaksi'
       }));
       filename += 'non_transaksi';
     } else {
       // All outlets
       const transaksiData = (outletStats.detail || []).map(o => ({
-        nama_outlet: o.nama_outlet,
-        kota: o.kota,
-        jumlah_transaksi: o.jumlah_transaksi || 0,
-        total_qty: o.total_qty || 0,
-        total_nominal: o.total_nominal || 0,
-        status: Number(o.total_qty) > 0 ? 'Transaksi' : 'Non Transaksi'
+        ...o,
+        status: 'Transaksi'
       }));
       const nonTransaksiData = (outletStats.non_transaksi_detail || []).map(o => ({
-        nama_outlet: o.nama_outlet,
-        kota: o.kota,
+        ...o,
         jumlah_transaksi: 0,
         total_qty: 0,
-        total_nominal: 0,
         status: 'Non Transaksi'
       }));
       data = [...transaksiData, ...nonTransaksiData];
@@ -695,26 +691,25 @@ if (typeof window.Dashboard !== 'undefined') {
     filename += '_' + bulanNames[selectedMonth] + '_' + selectedYear;
     
     if (format === 'csv') {
-      this.exportToCSV(data, filename + '.csv');
+      this.exportOutletStatsToCSV(data, filename + '.csv');
     } else if (format === 'xlsx') {
-      this.exportToExcel(data, filename + '.xlsx');
+      this.exportOutletStatsToExcel(data, filename + '.xlsx');
     }
   },
   
-  exportToCSV(data, filename) {
+  exportOutletStatsToCSV(data, filename) {
     if (!data.length) {
       alert('Tidak ada data untuk diekspor');
       return;
     }
     
-    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Total Nominal', 'Status'];
+    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Status'];
     const rows = data.map((item, i) => [
       i + 1,
       item.nama_outlet || '',
       item.kota || '',
       item.jumlah_transaksi || 0,
       item.total_qty || 0,
-      item.total_nominal || 0,
       item.status || ''
     ]);
     
@@ -727,25 +722,22 @@ if (typeof window.Dashboard !== 'undefined') {
     link.click();
   },
   
-  exportToExcel(data, filename) {
+  exportOutletStatsToExcel(data, filename) {
     if (!data.length) {
       alert('Tidak ada data untuk diekspor');
       return;
     }
     
-    // Create worksheet data
-    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Total Nominal', 'Status'];
+    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Status'];
     const rows = data.map((item, i) => [
       i + 1,
       item.nama_outlet || '',
       item.kota || '',
       item.jumlah_transaksi || 0,
       item.total_qty || 0,
-      item.total_nominal || 0,
       item.status || ''
     ]);
     
-    // Create HTML table for Excel export (using data URI)
     const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
       '<head><meta charset="utf-8"><style>td{mso-number-format:\\@;}</style></head>' +
       '<body><table border="1">' +

@@ -36,32 +36,29 @@ export default async function handler(req, res) {
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
-    // 2a. Outlet Stats - Transaksi vs Non Transaksi
+    // 2a. Outlet Stats - Transaksi vs Non Transaksi (dari outlet_stok_masuk)
     let outletStats = { rows: [{ total_outlet: 0, outlet_transaksi: 0, outlet_non_transaksi: 0, outlet_detail: [], outlet_non_transaksi_detail: [] }] };
     try {
-      // Get outlet with transactions
+      // Get outlet WITH transactions (menerima barang dari gudang via outlet_stok_masuk)
       const outletTransaksiData = await pool.query(`
-        SELECT o.nama_outlet, o.kota,
-          COALESCE(SUM(j.qty), 0) AS total_qty,
-          COALESCE(SUM(j.qty * COALESCE(p.harga_jual, 0)), 0) AS total_nominal,
-          COUNT(j.qty) AS jumlah_transaksi
+        SELECT o.id, o.nama_outlet, o.kota,
+          COALESCE(SUM(osm.qty), 0) AS total_qty,
+          COUNT(osm.id) AS jumlah_transaksi
         FROM outlet o
-        LEFT JOIN penjualan j ON j.nama_outlet = o.nama_outlet 
-          AND j.tanggal >= $1 AND j.tanggal <= $2
-        LEFT JOIN produk p ON p.sku = j.sku
-        GROUP BY o.nama_outlet, o.kota
-        HAVING COALESCE(SUM(j.qty), 0) > 0
+        INNER JOIN outlet_stok_masuk osm ON osm.outlet_id = o.id
+          AND osm.tanggal >= $1 AND osm.tanggal <= $2
+        GROUP BY o.id, o.nama_outlet, o.kota
         ORDER BY total_qty DESC
       `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
       
-      // Get outlet without transactions
+      // Get outlet WITHOUT transactions
       const outletNonTransaksiData = await pool.query(`
-        SELECT o.nama_outlet, o.kota
+        SELECT o.id, o.nama_outlet, o.kota
         FROM outlet o
         WHERE NOT EXISTS (
-          SELECT 1 FROM penjualan j2 
-          WHERE j2.nama_outlet = o.nama_outlet 
-          AND j2.tanggal >= $1 AND j2.tanggal <= $2
+          SELECT 1 FROM outlet_stok_masuk osm 
+          WHERE osm.outlet_id = o.id 
+          AND osm.tanggal >= $1 AND osm.tanggal <= $2
         )
         ORDER BY o.nama_outlet
       `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
