@@ -103,10 +103,11 @@ export default async function handler(event) {
 
     // 4. Total Siswa Aktif
     const totalSiswaAktif = await pool.query(`
-      SELECT COALESCE(MAX(jumlah_siswa), 0) AS total_siswa
+      SELECT COALESCE(SUM(jumlah_siswa), 0) AS total_siswa
       FROM outlet_siswa_level_bulanan
-      WHERE tahun = $1 AND bulan = $2
-    `, [filterTahun, filterBulan]);
+      WHERE EXTRACT(MONTH FROM periode) = $1
+        AND EXTRACT(YEAR FROM periode) = $2
+    `, [filterBulan, filterTahun]);
 
     // 5. Stok Gudang
     const stokGudang = await pool.query(`
