@@ -41,19 +41,19 @@ export default async function handler(req, res) {
     try {
       // Get outlet WITH transactions (menerima barang dari gudang via outlet_stok_masuk)
       const outletTransaksiData = await pool.query(`
-        SELECT o.id, o.nama_outlet, o.kota,
+        SELECT o.id, o.nama_outlet,
           COALESCE(SUM(osm.qty), 0) AS total_qty,
           COUNT(osm.id) AS jumlah_transaksi
         FROM outlet o
         INNER JOIN outlet_stok_masuk osm ON osm.outlet_id = o.id
           AND osm.tanggal >= $1 AND osm.tanggal <= $2
-        GROUP BY o.id, o.nama_outlet, o.kota
+        GROUP BY o.id, o.nama_outlet
         ORDER BY total_qty DESC
       `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
       
       // Get outlet WITHOUT transactions
       const outletNonTransaksiData = await pool.query(`
-        SELECT o.id, o.nama_outlet, o.kota
+        SELECT o.id, o.nama_outlet
         FROM outlet o
         WHERE NOT EXISTS (
           SELECT 1 FROM outlet_stok_masuk osm 

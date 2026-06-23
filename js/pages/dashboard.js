@@ -619,7 +619,7 @@ if (typeof window.Dashboard !== 'undefined') {
     
     let tableHtml = '<table class="outlet-stats-table">' +
       '<thead><tr>' +
-      '<th>#</th><th>Nama Outlet</th><th>Kota</th>';
+      '<th>#</th><th>Nama Outlet</th>';
     
     if (showDetail) {
       tableHtml += '<th class="text-right">Jumlah Transaksi</th><th class="text-right">Total Qty</th>';
@@ -632,8 +632,7 @@ if (typeof window.Dashboard !== 'undefined') {
       
       tableHtml += '<tr>' +
         '<td>' + (i + 1) + '</td>' +
-        '<td>' + (item.nama_outlet || '-') + '</td>' +
-        '<td>' + (item.kota || '-') + '</td>';
+        '<td>' + (item.nama_outlet || '-') + '</td>';
       
       if (showDetail) {
         tableHtml += '<td class="text-right">' + this.formatNumber(item.jumlah_transaksi || 0) + '</td>' +
@@ -658,13 +657,15 @@ if (typeof window.Dashboard !== 'undefined') {
     
     if (filter === 'transaksi') {
       data = (outletStats.detail || []).map(o => ({
-        ...o,
+        nama_outlet: o.nama_outlet,
+        jumlah_transaksi: o.jumlah_transaksi,
+        total_qty: o.total_qty,
         status: 'Transaksi'
       }));
       filename += 'transaksi';
     } else if (filter === 'non-transaksi') {
       data = (outletStats.non_transaksi_detail || []).map(o => ({
-        ...o,
+        nama_outlet: o.nama_outlet,
         jumlah_transaksi: 0,
         total_qty: 0,
         status: 'Non Transaksi'
@@ -673,11 +674,13 @@ if (typeof window.Dashboard !== 'undefined') {
     } else {
       // All outlets
       const transaksiData = (outletStats.detail || []).map(o => ({
-        ...o,
+        nama_outlet: o.nama_outlet,
+        jumlah_transaksi: o.jumlah_transaksi,
+        total_qty: o.total_qty,
         status: 'Transaksi'
       }));
       const nonTransaksiData = (outletStats.non_transaksi_detail || []).map(o => ({
-        ...o,
+        nama_outlet: o.nama_outlet,
         jumlah_transaksi: 0,
         total_qty: 0,
         status: 'Non Transaksi'
@@ -703,11 +706,10 @@ if (typeof window.Dashboard !== 'undefined') {
       return;
     }
     
-    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Status'];
+    const headers = ['No', 'Nama Outlet', 'Jumlah Transaksi', 'Total Qty', 'Status'];
     const rows = data.map((item, i) => [
       i + 1,
       item.nama_outlet || '',
-      item.kota || '',
       item.jumlah_transaksi || 0,
       item.total_qty || 0,
       item.status || ''
@@ -728,11 +730,10 @@ if (typeof window.Dashboard !== 'undefined') {
       return;
     }
     
-    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Status'];
+    const headers = ['No', 'Nama Outlet', 'Jumlah Transaksi', 'Total Qty', 'Status'];
     const rows = data.map((item, i) => [
       i + 1,
       item.nama_outlet || '',
-      item.kota || '',
       item.jumlah_transaksi || 0,
       item.total_qty || 0,
       item.status || ''
