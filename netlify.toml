@@ -6,16 +6,7 @@
   directory = "netlify/functions"
 
 [[redirects]]
-  from = "/api/v1/auth/login/admin"
+  from = "/api/v1/auth/login/*"
   to = "/.netlify/functions/login"
   status = 200
-
-[[redirects]]
-  from = "/api/v1/auth/login/user"
-  to = "/.netlify/functions/login"
-  status = 200
-
-[[redirects]]
-  from = "/api/v1/auth/login"
-  to = "/.netlify/functions/login"
-  status = 200
+  force = true
