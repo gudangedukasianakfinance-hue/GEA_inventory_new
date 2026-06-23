@@ -530,53 +530,56 @@ async function handleHealth(event) {
 export default async function handler(event) {
   // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: CORS_HEADERS, body: '' };
+    return new Response('', { status: 200, headers: CORS_HEADERS });
   }
 
-  const route = getRoute(event);
-  console.log('API Route:', route, 'Method:', event.httpMethod);
+  const path = event.path || event.rawUrl || '/';
+  const method = event.httpMethod || 'GET';
+  
+  const route = getRoute(event) || path.replace(/^\/api\/?/, '').split('?')[0];
+  console.log('API Route:', route, 'Method:', method, 'Path:', path);
 
   try {
     let result;
 
     // Auth routes
-    if (route.match(/^v1\/auth\/login/)) {
+    if (route.match(/^v1\/auth\/login/) || path.includes('/auth/login')) {
       result = await handleLogin(event);
     }
     // Dashboard
-    else if (route === 'v3-dashboard') {
+    else if (route === 'v3-dashboard' || path.includes('/v3-dashboard')) {
       result = await handleDashboard(event);
     }
     // Charts
-    else if (route === 'v3-chart') {
+    else if (route === 'v3-chart' || path.includes('/v3-chart')) {
       result = await handleChart(event);
     }
     // Outlet Transaksi Summary
-    else if (route === 'v1/outlet-transaksi-summary') {
+    else if (route === 'v1/outlet-transaksi-summary' || path.includes('/outlet-transaksi-summary')) {
       result = await handleOutletTransaksiSummary(event);
     }
     // Users
-    else if (route === 'v1/users') {
+    else if (route === 'v1/users' || path.includes('/v1/users')) {
       result = await handleUsers(event);
     }
     // Top Outlet
-    else if (route === 'top-outlet') {
+    else if (route === 'top-outlet' || path.includes('/top-outlet')) {
       result = await handleTopOutlet(event);
     }
     // Top Produk
-    else if (route === 'top-produk') {
+    else if (route === 'top-produk' || path.includes('/top-produk')) {
       result = await handleTopProduk(event);
     }
     // Outlet List
-    else if (route === 'outlet-list') {
+    else if (route === 'outlet-list' || path.includes('/outlet-list')) {
       result = await handleOutletList(event);
     }
     // Produk List
-    else if (route === 'produk-list') {
+    else if (route === 'produk-list' || path.includes('/produk-list')) {
       result = await handleProdukList(event);
     }
     // Health
-    else if (route === 'v1/health' || route === 'health') {
+    else if (route === 'v1/health' || route === 'health' || path.includes('/health')) {
       result = await handleHealth(event);
     }
     // Not found
@@ -584,18 +587,16 @@ export default async function handler(event) {
       result = { status: 404, data: { error: "Route not found: " + route } };
     }
 
-    return {
-      statusCode: result.status,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-      body: JSON.stringify(result.data)
-    };
+    return new Response(JSON.stringify(result.data), {
+      status: result.status,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+    });
 
   } catch (error) {
     console.error('API Error:', error);
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-      body: JSON.stringify({ error: error.message })
-    };
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+    });
   }
 }
