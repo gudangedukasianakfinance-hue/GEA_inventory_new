@@ -17,15 +17,67 @@ export default async function handler(req, res) {
     const startOfMonth = new Date(filterTahun, filterBulan - 1, 1);
     const endOfMonth = new Date(filterTahun, filterBulan, 0);
 
-    // 1. Penjualan Periode - Qty and Nominal
+    // 1. Distribusi Periode - Total Qty keluar dari penjualan
+    const distribusiPeriode = await pool.query(`
+      SELECT COALESCE(SUM(qty), 0) AS total_qty
+      FROM penjualan
+      WHERE tanggal >= $1 AND tanggal <= $2
+    `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
+
+    // 2. Penjualan Periode - Qty and Nominal
     const penjualanPeriode = await pool.query(`
       SELECT 
         COALESCE(SUM(qty), 0) AS total_qty,
         COALESCE(SUM(j.qty * p.harga_jual), 0) AS nominal,
-        COUNT(DISTINCT nama_outlet) AS customer_count
+        COUNT(DISTINCT nama_outlet) AS customer_count,
+        COUNT(*) AS total_transaksi
       FROM penjualan j
       JOIN produk p ON p.sku = j.sku
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
+    `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
+
+    // 2a. Outlet Stats - Transaksi vs Non Transaksi
+    const outletStats = await pool.query(`
+      WITH outlet_transaksi AS (
+        SELECT DISTINCT nama_outlet
+        FROM penjualan
+        WHERE tanggal >= $1 AND tanggal <= $2
+      ),
+      total_outlet AS (
+        SELECT COUNT(*) AS total FROM outlet
+      ),
+      transaksi_outlet AS (
+        SELECT COUNT(*) AS jumlah FROM outlet_transaksi
+      ),
+      non_transaksi_outlet AS (
+        SELECT COUNT(*) AS jumlah 
+        FROM outlet o
+        WHERE o.nama_outlet NOT IN (SELECT nama_outlet FROM outlet_transaksi)
+      ),
+      detail_transaksi AS (
+        SELECT o.nama_outlet, o.kota,
+          COALESCE(SUM(j.qty), 0) AS total_qty,
+          COALESCE(SUM(j.qty * p.harga_jual), 0) AS total_nominal,
+          COUNT(j.qty) AS jumlah_transaksi
+        FROM outlet o
+        LEFT JOIN penjualan j ON j.nama_outlet = o.nama_outlet 
+          AND j.tanggal >= $1 AND j.tanggal <= $2
+        LEFT JOIN produk p ON p.sku = j.sku
+        GROUP BY o.nama_outlet, o.kota
+        ORDER BY total_qty DESC
+      ),
+      detail_non_transaksi AS (
+        SELECT nama_outlet, kota
+        FROM outlet o
+        WHERE o.nama_outlet NOT IN (SELECT nama_outlet FROM outlet_transaksi)
+        ORDER BY o.nama_outlet
+      )
+      SELECT 
+        (SELECT jumlah FROM total_outlet) AS total_outlet,
+        (SELECT jumlah FROM transaksi_outlet) AS outlet_transaksi,
+        (SELECT jumlah FROM non_transaksi_outlet) AS outlet_non_transaksi,
+        (SELECT json_agg(row_to_json(d)) FROM detail_transaksi d) AS outlet_detail,
+        (SELECT json_agg(row_to_json(d)) FROM detail_non_transaksi d) AS outlet_non_transaksi_detail
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
     // 3. Profit Periode (simplified: based on harga_jual - harga_beli)
@@ -197,13 +249,24 @@ export default async function handler(req, res) {
         tahun: filterTahun
       },
       periode: {
+        distribusi: {
+          qty: Number(distribusiPeriode.rows[0]?.total_qty || 0)
+        },
         penjualan: {
           qty: Number(penjualanPeriode.rows[0]?.total_qty || 0),
           nominal: Number(penjualanPeriode.rows[0]?.nominal || 0),
-          customer_count: Number(penjualanPeriode.rows[0]?.customer_count || 0)
+          customer_count: Number(penjualanPeriode.rows[0]?.customer_count || 0),
+          total_transaksi: Number(penjualanPeriode.rows[0]?.total_transaksi || 0)
         },
         profit: Number(profitPeriode.rows[0]?.total_profit || 0),
         total_siswa: Number(totalSiswaAktif.rows[0]?.total_siswa || 0)
+      },
+      outlet_stats: {
+        total: Number(outletStats.rows[0]?.total_outlet || 0),
+        transaksi: Number(outletStats.rows[0]?.outlet_transaksi || 0),
+        non_transaksi: Number(outletStats.rows[0]?.outlet_non_transaksi || 0),
+        detail: outletStats.rows[0]?.outlet_detail || [],
+        non_transaksi_detail: outletStats.rows[0]?.outlet_non_transaksi_detail || []
       },
       produk: {
         aktif: Number(produkAktif.rows[0]?.total || 0),

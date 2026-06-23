@@ -121,6 +121,7 @@ if (typeof window.Dashboard !== 'undefined') {
       this.renderModulLevelTable();
       this.renderStokKritisList();
       this.renderRecentActivity();
+      this.renderOutletStats();
       this.updateUserGreeting();
       
     } catch (error) {
@@ -212,7 +213,8 @@ if (typeof window.Dashboard !== 'undefined') {
   getEmptyData() {
     return {
       filter: { bulan: this.selectedMonth, tahun: this.selectedYear },
-      periode: { penjualan: { qty: 0, nominal: 0 }, profit: 0, total_siswa: 0 },
+      periode: { distribusi: { qty: 0 }, penjualan: { qty: 0, nominal: 0 }, profit: 0, total_siswa: 0 },
+      outlet_stats: { total: 0, transaksi: 0, non_transaksi: 0, detail: [], non_transaksi_detail: [] },
       produk: { aktif: 0, total: 0 },
       outlet: { aktif: 0, total: 0 },
       stok: { kritis: 0, gudang: { akhir: 0 } },
@@ -230,6 +232,7 @@ if (typeof window.Dashboard !== 'undefined') {
     this.setKPIValue('kpi-stok-gudang', this.formatNumber(data.stok?.gudang?.akhir || 0));
     this.setKPIValue('kpi-stok-outlet', '-');
     
+    this.setKPIValue('kpi-distribusi', this.formatNumber(data.periode?.distribusi?.qty || 0));
     this.setKPIValue('kpi-penjualan', 'Rp ' + this.formatNumber(data.periode?.penjualan?.nominal || 0));
     this.setKPIValue('kpi-so-berjalan', this.formatNumber(data.opname?.berjalan || 0));
     this.setKPIValue('kpi-stok-kritis', this.formatNumber(data.stok?.kritis || 0));
@@ -559,6 +562,202 @@ if (typeof window.Dashboard !== 'undefined') {
     }).join('');
     
     container.innerHTML = listHtml;
+  },
+  
+  renderOutletStats() {
+    const container = document.getElementById('outletStatsTable');
+    const totalEl = document.getElementById('outlet-total');
+    const transaksiEl = document.getElementById('outlet-transaksi');
+    const nonTransaksiEl = document.getElementById('outlet-non-transaksi');
+    if (!container) return;
+    
+    const outletStats = this.data.outlet_stats || {};
+    const filter = document.getElementById('outletStatsFilter')?.value || 'all';
+    
+    // Update summary badges
+    if (totalEl) totalEl.textContent = this.formatNumber(outletStats.total || 0);
+    if (transaksiEl) transaksiEl.textContent = this.formatNumber(outletStats.transaksi || 0);
+    if (nonTransaksiEl) nonTransaksiEl.textContent = this.formatNumber(outletStats.non_transaksi || 0);
+    
+    // Filter data based on selection
+    let data = [];
+    if (filter === 'transaksi') {
+      data = (outletStats.detail || []).filter(o => Number(o.total_qty) > 0);
+    } else if (filter === 'non-transaksi') {
+      data = outletStats.non_transaksi_detail || [];
+    } else {
+      // All outlets - combine transaksi and non-transaksi
+      const transaksiData = (outletStats.detail || []).map(o => ({
+        ...o,
+        status: Number(o.total_qty) > 0 ? 'Transaksi' : 'Non Transaksi'
+      }));
+      const nonTransaksiData = (outletStats.non_transaksi_detail || []).map(o => ({
+        nama_outlet: o.nama_outlet,
+        kota: o.kota,
+        total_qty: 0,
+        total_nominal: 0,
+        jumlah_transaksi: 0,
+        status: 'Non Transaksi'
+      }));
+      data = [...transaksiData, ...nonTransaksiData].sort((a, b) => {
+        if (a.status === 'Transaksi' && b.status !== 'Transaksi') return -1;
+        if (a.status !== 'Transaksi' && b.status === 'Transaksi') return 1;
+        return (b.total_qty || 0) - (a.total_qty || 0);
+      });
+    }
+    
+    if (!data.length) {
+      container.innerHTML = '<div class="table-card__empty"><i data-lucide="store"></i><p class="table-card__empty-text">Tidak ada data outlet</p></div>';
+      if (window.lucide) lucide.createIcons({ nodes: [container] });
+      return;
+    }
+    
+    // Check if showing transaksi data (has columns for qty/nominal)
+    const showDetail = filter !== 'non-transaksi';
+    
+    let tableHtml = '<table class="outlet-stats-table">' +
+      '<thead><tr>' +
+      '<th>#</th><th>Nama Outlet</th><th>Kota</th>';
+    
+    if (showDetail) {
+      tableHtml += '<th class="text-right">Jumlah Transaksi</th><th class="text-right">Total Qty</th><th class="text-right">Total Nominal</th>';
+    }
+    tableHtml += '<th>Status</th></tr></thead><tbody>';
+    
+    data.forEach((item, i) => {
+      const status = item.status || (Number(item.total_qty) > 0 ? 'Transaksi' : 'Non Transaksi');
+      const statusClass = status === 'Transaksi' ? 'badge--success' : 'badge--secondary';
+      
+      tableHtml += '<tr>' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td>' + (item.nama_outlet || '-') + '</td>' +
+        '<td>' + (item.kota || '-') + '</td>';
+      
+      if (showDetail) {
+        tableHtml += '<td class="text-right">' + this.formatNumber(item.jumlah_transaksi || 0) + '</td>' +
+          '<td class="text-right">' + this.formatNumber(item.total_qty || 0) + '</td>' +
+          '<td class="text-right">Rp ' + this.formatNumber(item.total_nominal || 0) + '</td>';
+      }
+      
+      tableHtml += '<td><span class="badge ' + statusClass + '">' + status + '</span></td></tr>';
+    });
+    
+    tableHtml += '</tbody></table>';
+    container.innerHTML = tableHtml;
+  },
+  
+  exportOutletStats(format) {
+    const outletStats = this.data.outlet_stats || {};
+    const filter = document.getElementById('outletStatsFilter')?.value || 'all';
+    const { selectedMonth, selectedYear } = this;
+    
+    // Prepare data based on filter
+    let data = [];
+    let filename = 'outlet_stats_';
+    
+    if (filter === 'transaksi') {
+      data = (outletStats.detail || []).filter(o => Number(o.total_qty) > 0);
+      filename += 'transaksi';
+    } else if (filter === 'non-transaksi') {
+      data = (outletStats.non_transaksi_detail || []).map(o => ({
+        nama_outlet: o.nama_outlet,
+        kota: o.kota,
+        jumlah_transaksi: 0,
+        total_qty: 0,
+        total_nominal: 0,
+        status: 'Non Transaksi'
+      }));
+      filename += 'non_transaksi';
+    } else {
+      // All outlets
+      const transaksiData = (outletStats.detail || []).map(o => ({
+        nama_outlet: o.nama_outlet,
+        kota: o.kota,
+        jumlah_transaksi: o.jumlah_transaksi || 0,
+        total_qty: o.total_qty || 0,
+        total_nominal: o.total_nominal || 0,
+        status: Number(o.total_qty) > 0 ? 'Transaksi' : 'Non Transaksi'
+      }));
+      const nonTransaksiData = (outletStats.non_transaksi_detail || []).map(o => ({
+        nama_outlet: o.nama_outlet,
+        kota: o.kota,
+        jumlah_transaksi: 0,
+        total_qty: 0,
+        total_nominal: 0,
+        status: 'Non Transaksi'
+      }));
+      data = [...transaksiData, ...nonTransaksiData];
+      filename += 'semua';
+    }
+    
+    // Add month/year to filename
+    const bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    filename += '_' + bulanNames[selectedMonth] + '_' + selectedYear;
+    
+    if (format === 'csv') {
+      this.exportToCSV(data, filename + '.csv');
+    } else if (format === 'xlsx') {
+      this.exportToExcel(data, filename + '.xlsx');
+    }
+  },
+  
+  exportToCSV(data, filename) {
+    if (!data.length) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+    
+    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Total Nominal', 'Status'];
+    const rows = data.map((item, i) => [
+      i + 1,
+      item.nama_outlet || '',
+      item.kota || '',
+      item.jumlah_transaksi || 0,
+      item.total_qty || 0,
+      item.total_nominal || 0,
+      item.status || ''
+    ]);
+    
+    const csvContent = [headers, ...rows].map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  },
+  
+  exportToExcel(data, filename) {
+    if (!data.length) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+    
+    // Create worksheet data
+    const headers = ['No', 'Nama Outlet', 'Kota', 'Jumlah Transaksi', 'Total Qty', 'Total Nominal', 'Status'];
+    const rows = data.map((item, i) => [
+      i + 1,
+      item.nama_outlet || '',
+      item.kota || '',
+      item.jumlah_transaksi || 0,
+      item.total_qty || 0,
+      item.total_nominal || 0,
+      item.status || ''
+    ]);
+    
+    // Create HTML table for Excel export (using data URI)
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
+      '<head><meta charset="utf-8"><style>td{mso-number-format:\\@;}</style></head>' +
+      '<body><table border="1">' +
+      '<tr>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr>' +
+      rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join('') + '</tr>').join('') +
+      '</table></body></html>';
+    
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
   },
   
   startAutoRefresh() {

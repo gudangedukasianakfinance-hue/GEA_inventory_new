@@ -80,6 +80,16 @@
   <!-- KPI Section - Row 2 -->
   <div class="kpi-grid">
     <div class="kpi-card">
+      <div class="kpi-card__icon kpi-card__icon--info">
+        <i data-lucide="send"></i>
+      </div>
+      <div class="kpi-card__content">
+        <div class="kpi-card__label">Distribusi Periode</div>
+        <div class="kpi-card__value" id="kpi-distribusi">0</div>
+      </div>
+    </div>
+    
+    <div class="kpi-card">
       <div class="kpi-card__icon kpi-card__icon--success">
         <i data-lucide="shopping-cart"></i>
       </div>
@@ -226,6 +236,49 @@
             <div class="so-progress-count" id="so-selesai">0</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outlet Stats Widget -->
+  <div class="table-card" style="grid-column: span 2;">
+    <div class="table-card__header">
+      <h3 class="table-card__title">
+        <i data-lucide="store"></i>
+        Statistik Outlet
+      </h3>
+      <div class="table-card__actions">
+        <select id="outletStatsFilter" class="filter-select" onchange="DashboardPage.renderOutletStats()">
+          <option value="all">Semua Outlet</option>
+          <option value="transaksi">Transaksi</option>
+          <option value="non-transaksi">Non Transaksi</option>
+        </select>
+        <button class="btn btn-sm btn-success" onclick="DashboardPage.exportOutletStats('csv')">
+          <i data-lucide="file-down"></i> CSV
+        </button>
+        <button class="btn btn-sm btn-success" onclick="DashboardPage.exportOutletStats('xlsx')">
+          <i data-lucide="file-spreadsheet"></i> Excel
+        </button>
+      </div>
+    </div>
+    <div class="outlet-stats-summary" id="outletStatsSummary">
+      <div class="outlet-stats-badge outlet-stats-badge--total">
+        <span class="outlet-stats-badge__label">Total Outlet</span>
+        <span class="outlet-stats-badge__value" id="outlet-total">0</span>
+      </div>
+      <div class="outlet-stats-badge outlet-stats-badge--transaksi">
+        <span class="outlet-stats-badge__label">Transaksi</span>
+        <span class="outlet-stats-badge__value" id="outlet-transaksi">0</span>
+      </div>
+      <div class="outlet-stats-badge outlet-stats-badge--non-transaksi">
+        <span class="outlet-stats-badge__label">Non Transaksi</span>
+        <span class="outlet-stats-badge__value" id="outlet-non-transaksi">0</span>
+      </div>
+    </div>
+    <div class="table-card__body" id="outletStatsTable">
+      <div class="table-card__empty">
+        <i data-lucide="store"></i>
+        <p class="table-card__empty-text">Tidak ada data outlet</p>
       </div>
     </div>
   </div>
