@@ -36,29 +36,29 @@ export default async function handler(req, res) {
       WHERE j.tanggal >= $1 AND j.tanggal <= $2
     `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
 
-    // 2a. Outlet Stats - Transaksi vs Non Transaksi (dari outlet_stok_masuk)
+    // 2a. Outlet Stats - Transaksi vs Non Transaksi (dari penjualan langsung)
     let outletStats = { rows: [{ total_outlet: 0, outlet_transaksi: 0, outlet_non_transaksi: 0, outlet_detail: [], outlet_non_transaksi_detail: [] }] };
     try {
-      // Get outlet WITH transactions (menerima barang dari gudang via outlet_stok_masuk)
+      // Get outlet WITH transactions (ada di penjualan)
       const outletTransaksiData = await pool.query(`
         SELECT o.id, o.nama_outlet,
-          COALESCE(SUM(osm.qty), 0) AS total_qty,
-          COUNT(osm.id) AS jumlah_transaksi
+          COALESCE(SUM(pj.qty), 0) AS total_qty,
+          COUNT(pj.id) AS jumlah_transaksi
         FROM outlet o
-        INNER JOIN outlet_stok_masuk osm ON osm.outlet_id = o.id
-          AND osm.tanggal >= $1 AND osm.tanggal <= $2
+        INNER JOIN penjualan pj ON UPPER(pj.nama_outlet) = UPPER(o.nama_outlet)
+          AND pj.tanggal >= $1 AND pj.tanggal <= $2
         GROUP BY o.id, o.nama_outlet
         ORDER BY total_qty DESC
       `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
       
-      // Get outlet WITHOUT transactions
+      // Get outlet WITHOUT transactions (ada di outlet tapi tidak ada di penjualan periode ini)
       const outletNonTransaksiData = await pool.query(`
         SELECT o.id, o.nama_outlet
         FROM outlet o
         WHERE NOT EXISTS (
-          SELECT 1 FROM outlet_stok_masuk osm 
-          WHERE osm.outlet_id = o.id 
-          AND osm.tanggal >= $1 AND osm.tanggal <= $2
+          SELECT 1 FROM penjualan pj 
+          WHERE UPPER(pj.nama_outlet) = UPPER(o.nama_outlet) 
+          AND pj.tanggal >= $1 AND pj.tanggal <= $2
         )
         ORDER BY o.nama_outlet
       `, [startOfMonth.toISOString().split('T')[0], endOfMonth.toISOString().split('T')[0]]);
