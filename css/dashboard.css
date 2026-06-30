@@ -1,5 +1,5 @@
 /* ============================================
-   EPIC Warehouse - Dashboard Styles
+   GEA Warehouse - Dashboard Styles
    Dark Navy Theme | Modern Admin Dashboard
    ============================================ */
 
@@ -74,6 +74,7 @@
 .kpi-card:hover {
   border-color: var(--border-hover);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .kpi-card__icon {
@@ -92,7 +93,7 @@
 }
 
 .kpi-card__icon--primary {
-  background: rgba(255, 77, 58, 0.1);
+  background: var(--primary-bg);
   color: var(--primary);
 }
 
@@ -173,6 +174,12 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.chart-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
 }
 
 .chart-card__header {
