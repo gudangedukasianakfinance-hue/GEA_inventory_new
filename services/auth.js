@@ -1,5 +1,5 @@
 /* ============================================
-   CV GEA Warehouse V3 - Authentication Middleware
+   PT. GEA Warehouse V3 - Authentication Middleware
    JWT Validation, Role-based Access Control, Route Protection
    ============================================ */
 
