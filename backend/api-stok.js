@@ -1,5 +1,5 @@
 /* ============================================
-   CV GEA Warehouse - Stok Module API
+   PT. GEA Warehouse - Stok Module API
    Sprint 4.1 - Modul Persediaan
    ============================================ */
 

@@ -1,5 +1,5 @@
 /* ============================================
-   CV GEA Warehouse V3 - Approval API Handler
+   PT. GEA Warehouse V3 - Approval API Handler
    Handles approval workflow using existing database
    Reuses stok_opname_perintah table
    ============================================ */
