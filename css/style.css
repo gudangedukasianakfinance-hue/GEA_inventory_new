@@ -1,5 +1,5 @@
 /* ============================================
-   EPIC Warehouse - Utility Styles
+   GEA Warehouse - Utility Styles
    Extends Design System V4
    ============================================ */
 
@@ -240,6 +240,13 @@ body.auth-locked .main {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.stats-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .stats-card__icon {
@@ -258,7 +265,7 @@ body.auth-locked .main {
 }
 
 .stats-card__icon--primary {
-  background: rgba(255, 77, 58, 0.1);
+  background: var(--primary-bg);
   color: var(--primary);
 }
 
@@ -602,7 +609,7 @@ code {
 }
 
 .role-badge--admin {
-  background: rgba(255, 77, 58, 0.1);
+  background: var(--primary-bg);
   color: var(--primary);
 }
 
@@ -612,8 +619,8 @@ code {
 }
 
 .role-badge--checker_opname {
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
+  background: rgba(139, 92, 246, 0.12);
+  color: #8B5CF6;
 }
 
 /* ===== Status Badges ===== */

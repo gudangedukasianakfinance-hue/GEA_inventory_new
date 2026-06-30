@@ -1,5 +1,5 @@
 /* ============================================
-   CV EPIC Warehouse V3 - Settings API Handler
+   CV GEA Warehouse V3 - Settings API Handler
    Handles profile, settings, and system configuration
    Reuses existing users table and auth system
    ============================================ */
@@ -210,7 +210,7 @@ async function getSystemSettings(req, res) {
   return send(res, 200, {
     success: true,
     data: {
-      company_name: "CV EPIC Warehouse",
+      company_name: "CV GEA Warehouse",
       version: "3.0.0",
       database_status: "connected",
       last_backup: null,

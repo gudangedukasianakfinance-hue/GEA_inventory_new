@@ -1,36 +1,41 @@
 /* ============================================
-   CV EPIC Warehouse - Landing Page CSS
-   Dark Red EPIC Theme | Mobile First
+   CV GEA Warehouse - Landing Page CSS
+   Logo Theme - Green & Red | Mobile First
    ============================================ */
 
 /* ===== CSS Variables ===== */
 :root {
-  /* Dark Red EPIC Theme */
-  --primary: #DC2626;
-  --primary-dark: #B91C1C;
-  --primary-light: #EF4444;
-  --primary-glow: rgba(220, 38, 38, 0.4);
+  /* Primary Colors - Based on Logo (Green #47704c & Red #f63914) */
+  --primary: #47704c;
+  --primary-dark: #2d4a30;
+  --primary-light: #5a875c;
+  --primary-glow: rgba(71, 112, 76, 0.35);
   
-  /* Dark Theme Colors */
-  --bg-primary: #09090B;
-  --bg-secondary: #18181B;
-  --bg-card: #27272A;
-  --bg-elevated: #3F3F46;
+  /* Accent Red (from logo) */
+  --accent: #f63914;
+  --accent-dark: #c42e10;
+  --accent-light: #ff5a30;
+  
+  /* Dark Theme Colors matching logo */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #252525;
+  --bg-card: #303030;
+  --bg-elevated: #3a3a3a;
   
   /* Text Colors */
-  --text-primary: #FAFAFA;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #a0a0a0;
   
   /* Borders */
   --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.16);
+  --border-hover: rgba(255, 255, 255, 0.15);
   
   /* Accents */
   --accent-blue: #3B82F6;
-  --accent-green: #22C55E;
-  --accent-purple: #A855F7;
-  --accent-orange: #F97316;
+  --accent-green: #47704c;
+  --accent-purple: #8B5CF6;
+  --accent-orange: #F59E0B;
   
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -90,8 +95,8 @@ body {
   position: fixed;
   inset: 0;
   background-image: 
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
   background-size: 60px 60px;
   pointer-events: none;
   z-index: 0;
@@ -108,13 +113,13 @@ body {
   background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .bg-gradient {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, var(--bg-primary) 100%);
+  background: linear-gradient(180deg, rgba(11, 17, 32, 0.3) 0%, var(--bg-primary) 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -130,8 +135,8 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-md) var(--space-lg);
-  background: rgba(9, 9, 11, 0.8);
-  backdrop-filter: blur(12px);
+  background: rgba(11, 17, 32, 0.85);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
 }
 
@@ -272,8 +277,8 @@ body {
   align-items: center;
   gap: var(--space-sm);
   padding: 8px 16px;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: rgba(71, 112, 76, 0.12);
+  border: 1px solid rgba(71, 112, 76, 0.35);
   border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 500;
@@ -363,7 +368,7 @@ body {
   background: var(--bg-elevated);
 }
 
-.preview-dots span:first-child { background: #EF4444; }
+.preview-dots span:first-child { background: #47704c; }
 .preview-dots span:nth-child(2) { background: #F59E0B; }
 .preview-dots span:nth-child(3) { background: #22C55E; }
 
@@ -408,7 +413,7 @@ body {
 }
 
 .preview-kpi-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
-.preview-kpi-icon.red { background: rgba(220, 38, 38, 0.15); color: var(--primary); }
+.preview-kpi-icon.red { background: rgba(71, 112, 76, 0.18); color: var(--primary); }
 .preview-kpi-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
 .preview-kpi-icon.purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
 
@@ -466,8 +471,8 @@ body {
 .section-badge {
   display: inline-block;
   padding: 6px 14px;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: rgba(71, 112, 76, 0.12);
+  border: 1px solid rgba(71, 112, 76, 0.25);
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
@@ -507,7 +512,7 @@ body {
 
 .feature-card:hover {
   border-color: var(--primary);
-  box-shadow: 0 0 30px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 30px rgba(71, 112, 76, 0.12);
   transform: translateY(-2px);
 }
 
@@ -517,7 +522,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(220, 38, 38, 0.1);
+  background: rgba(71, 112, 76, 0.12);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
 }
@@ -582,7 +587,7 @@ body {
 }
 
 .role-badge.admin {
-  background: rgba(220, 38, 38, 0.15);
+  background: rgba(71, 112, 76, 0.18);
   color: var(--primary);
 }
 
@@ -710,8 +715,8 @@ body {
   align-items: center;
   justify-content: center;
   padding: var(--space-lg);
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(11, 17, 32, 0.85);
+  backdrop-filter: blur(12px);
   opacity: 0;
   visibility: hidden;
   transition: all var(--transition-base);
@@ -725,7 +730,7 @@ body {
 .modal {
   position: relative;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   padding: var(--space-xl);
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -743,13 +748,13 @@ body {
   position: absolute;
   top: var(--space-md);
   right: var(--space-md);
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-card);
-  border: none;
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-muted);
   cursor: pointer;
@@ -759,6 +764,7 @@ body {
 .modal-close:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
+  border-color: var(--border-hover);
 }
 
 .modal-close i {
@@ -772,11 +778,12 @@ body {
 }
 
 .modal-logo {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   margin: 0 auto var(--space-md);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: 0 0 20px var(--primary-glow);
 }
 
 .modal-logo img {
@@ -786,14 +793,14 @@ body {
 }
 
 .modal-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--space-xs);
 }
 
 .modal-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
@@ -892,6 +899,7 @@ body {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
+  background: var(--bg-card);
 }
 
 .input-wrapper {
@@ -983,7 +991,7 @@ body {
 }
 
 .toast-error {
-  border-color: rgba(220, 38, 38, 0.3);
+  border-color: rgba(71, 112, 76, 0.35);
 }
 
 .toast-error i {

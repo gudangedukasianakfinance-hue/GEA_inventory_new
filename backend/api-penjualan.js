@@ -1,5 +1,5 @@
 /* ============================================
-   CV EPIC Warehouse - Penjualan CRUD API
+   CV GEA Warehouse - Penjualan CRUD API
    Sprint 1 Backend - Sales/Transaction API
    ============================================ */
 

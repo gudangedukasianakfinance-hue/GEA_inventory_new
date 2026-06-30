@@ -1,5 +1,5 @@
 /* ============================================
-   CV EPIC Warehouse V3 - Authentication Middleware
+   CV GEA Warehouse V3 - Authentication Middleware
    JWT Validation, Role-based Access Control, Route Protection
    ============================================ */
 

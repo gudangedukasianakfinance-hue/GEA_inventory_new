@@ -1,5 +1,5 @@
 /* ============================================
-   CV EPIC Warehouse - Dashboard Module
+   CV GEA Warehouse - Dashboard Module
    Final Dashboard V1 - Fixed
    ============================================ */
 

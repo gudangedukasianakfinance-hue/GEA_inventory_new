@@ -1,54 +1,61 @@
 /* ============================================
-   EPIC Warehouse - Design System V4
-   Dark Navy Theme | Modern Admin Dashboard
+   GEA Warehouse - Design System V4
+   Logo Theme - Green & Red | Clean Admin Dashboard
    ============================================ */
 
 /* ===== CSS Variables ===== */
 :root {
-  /* Primary Colors */
-  --primary: #DC2626;
-  --primary-dark: #B91C1C;
-  --primary-light: #EF4444;
-  --primary-glow: rgba(220, 38, 38, 0.3);
+  /* Primary Colors - Based on Logo (Green #47704c & Red #f63914) */
+  --primary: #47704c;
+  --primary-dark: #2d4a30;
+  --primary-light: #5a875c;
+  --primary-glow: rgba(71, 112, 76, 0.3);
+  --primary-bg: rgba(71, 112, 76, 0.1);
   
-  /* Background Colors */
-  --bg: #09090B;
-  --bg-secondary: #18181B;
-  --surface: #27272A;
-  --surface-2: #3F3F46;
-  --surface-3: #52525B;
+  /* Accent Red (from logo) */
+  --accent: #f63914;
+  --accent-dark: #c42e10;
+  --accent-light: #ff5a30;
+  --accent-glow: rgba(246, 57, 20, 0.3);
+  
+  /* Background Colors - Dark theme matching logo background */
+  --bg: #1a1a1a;
+  --bg-secondary: #252525;
+  --surface: #303030;
+  --surface-2: #3a3a3a;
+  --surface-3: #4a4a4a;
   
   /* Text Colors */
-  --text: #FAFAFA;
-  --text-secondary: #A1A1AA;
-  --muted: #71717A;
-  --muted-2: #52525B;
+  --text: #ffffff;
+  --text-secondary: #e0e0e0;
+  --muted: #a0a0a0;
+  --muted-2: #707070;
   
   /* Status Colors */
-  --success: #22C55E;
-  --success-light: #4ADE80;
-  --success-bg: rgba(16, 185, 129, 0.1);
+  --success: #47704c;
+  --success-light: #5a875c;
+  --success-bg: rgba(71, 112, 76, 0.15);
   --warning: #f59e0b;
   --warning-light: #fbbf24;
-  --warning-bg: rgba(245, 158, 11, 0.1);
-  --danger: #ef4444;
-  --danger-light: #f87171;
-  --danger-bg: rgba(239, 68, 68, 0.1);
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --danger: #f63914;
+  --danger-light: #ff5a30;
+  --danger-bg: rgba(246, 57, 20, 0.15);
   --info: #3b82f6;
   --info-light: #60a5fa;
-  --info-bg: rgba(59, 130, 246, 0.1);
+  --info-bg: rgba(59, 130, 246, 0.15);
   
   /* Border Colors */
   --border: rgba(255, 255, 255, 0.08);
   --border-light: rgba(255, 255, 255, 0.04);
-  --border-hover: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.15);
   
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 30px var(--primary-glow);
+  --shadow-glow: 0 0 20px var(--primary-glow);
   
   /* Spacing */
   --space-xs: 4px;
@@ -171,8 +178,8 @@ img {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-lg);
-  background: rgba(6, 11, 22, 0.95);
-  backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   z-index: var(--z-header);
 }
@@ -237,7 +244,7 @@ img {
   align-items: center;
   gap: var(--space-sm);
   padding: 10px var(--space-md);
-  background: var(--surface);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
@@ -426,8 +433,8 @@ img {
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(6px);
   z-index: calc(var(--z-sidebar) - 1);
   opacity: 0;
   visibility: hidden;
@@ -446,7 +453,7 @@ img {
   left: 0;
   bottom: 0;
   width: 260px;
-  background: var(--surface);
+  background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -527,12 +534,12 @@ img {
 }
 
 .sidebar__link:hover {
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--text);
 }
 
 .sidebar__link.active {
-  background: linear-gradient(135deg, rgba(255, 77, 58, 0.15), rgba(255, 77, 58, 0.05));
+  background: linear-gradient(135deg, var(--primary-bg), rgba(71, 112, 76, 0.05));
   color: var(--primary);
 }
 
@@ -1255,26 +1262,26 @@ textarea.form-input {
 }
 /* ===== Dark Theme ===== */
 [data-theme="dark"] {
-  --bg: #09090B;
-  --bg-secondary: #18181B;
-  --surface: #27272A;
-  --surface-2: #3F3F46;
-  --surface-3: #52525B;
-  --text: #FAFAFA;
-  --text-secondary: #A1A1AA;
+  --bg: #1a1a1a;
+  --bg-secondary: #252525;
+  --surface: #303030;
+  --surface-2: #3a3a3a;
+  --surface-3: #4a4a4a;
+  --text: #ffffff;
+  --text-secondary: #e0e0e0;
   --border: rgba(255, 255, 255, 0.08);
-  --primary: #DC2626;
+  --primary: #47704c;
 }
 
 /* ===== Light Theme ===== */
 [data-theme="light"] {
-  --bg: #f8fafc;
-  --bg-secondary: #ffffff;
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f5;
   --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --surface-3: #e2e8f0;
-  --text: #1f2937;
-  --text-secondary: #6b7280;
-  --border: #e5e7eb;
-  --primary: #DC2626;
+  --surface-2: #eeeeee;
+  --surface-3: #e0e0e0;
+  --text: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --border: #d0d0d0;
+  --primary: #47704c;
 }

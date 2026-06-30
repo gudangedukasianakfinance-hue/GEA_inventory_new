@@ -1,5 +1,5 @@
 /* ============================================
-   CV EPIC Warehouse - Pembelian CRUD API
+   CV GEA Warehouse - Pembelian CRUD API
    Sprint 2 - Purchase/Transaction API
    Pattern: Follow Penjualan API structure
    ============================================ */

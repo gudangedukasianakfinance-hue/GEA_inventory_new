@@ -1,5 +1,5 @@
 /***********************************************
- * CV EPIC Warehouse - Client-Side Router
+ * CV GEA Warehouse - Client-Side Router
  * SPA Page Navigation
  ***********************************************/
 
@@ -98,7 +98,7 @@ const AppRouter = {
       'pengaturan': 'Pengaturan',
       'stok-gudang': 'Stok Gudang'
     };
-    document.title = 'CV EPIC Warehouse - ' + (titles[page] || 'Dashboard');
+    document.title = 'CV GEA Warehouse - ' + (titles[page] || 'Dashboard');
   },
   
   async loadPage(page, forceReload = false) {

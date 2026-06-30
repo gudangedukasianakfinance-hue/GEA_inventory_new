@@ -1,5 +1,5 @@
 /* ============================================
-   CV EPIC Warehouse V3 - Users API Handler
+   CV GEA Warehouse V3 - Users API Handler
    Handles user management CRUD operations
    ============================================ */
 
