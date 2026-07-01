@@ -897,8 +897,8 @@
     const template = [
       'Tanggal,Nama Supplier,SKU,Qty',
       '2026-06-14,PT Maju Bersama,100001,10',
-      '2026-06-15,CV Sumber Rejeki,100002,25',
-      '2026-06-16,Toko Elektronik ABC,100003,5'
+      '2026-06-15,,100002,25',
+      '2026-06-16,CV Sumber Rejeki,100003,5'
     ].join('\n');
     
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
@@ -917,6 +917,66 @@
     document.getElementById('importModal').classList.remove('active');
   }
 
+  // Parse CSV properly handling quoted fields
+  function parseCSVLine(line) {
+    const cols = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        cols.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    cols.push(current.trim());
+    return cols;
+  }
+
+  // Format date for API (YYYY-MM-DD)
+  function normalizeDateForImport(value) {
+    if (!value) return null;
+    value = value.trim();
+    
+    // Already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value;
+    }
+    
+    // MM/DD/YYYY or DD/MM/YYYY - try common formats
+    const slashParts = value.split('/');
+    if (slashParts.length === 3) {
+      const [part1, part2, part3] = slashParts;
+      // Assume MM/DD/YYYY
+      if (part1.length === 2 && part2.length === 2 && part3.length === 4) {
+        return `${part3}-${part1.padStart(2, '0')}-${part2.padStart(2, '0')}`;
+      }
+      // Assume DD/MM/YYYY
+      if (part1.length === 2 && part2.length === 2 && part3.length === 4) {
+        return `${part3}-${part2.padStart(2, '0')}-${part1.padStart(2, '0')}`;
+      }
+    }
+    
+    // Try to parse as Date
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    return value; // Return as-is and let API validate
+  }
+
   // Process import
   async function processImport() {
     const fileInput = document.getElementById('importFile');
@@ -933,19 +993,16 @@
 
     try {
       const text = await file.text();
-      const rows = text.split('\n').filter(row => row.trim());
+      const rows = text.split(/\r?\n/).filter(row => row.trim());
       
       if (rows.length < 2) {
         throw new Error('File tidak valid atau tidak ada data');
       }
 
-      // Parse CSV (assuming comma-separated)
-      const data = rows.slice(1).map(row => {
-        const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-        return cols;
-      });
+      // Parse CSV properly
+      const data = rows.slice(1).map(row => parseCSVLine(row));
 
-      // Validate data
+      // Send to API
       const response = await fetch('/api/v1/pembelian/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1115,15 +1172,22 @@
   // Save all items
   async function saveAllPembelian() {
     const tanggal = document.getElementById('inputTanggal').value;
-    const supplierId = document.getElementById('inputSupplier').value;
+    const supplierIdInput = document.getElementById('inputSupplier').value;
 
     if (!tanggal) {
       showToast('Tanggal wajib diisi', false);
       return;
     }
 
-    if (!supplierId) {
+    if (!supplierIdInput) {
       showToast('Supplier wajib dipilih', false);
+      return;
+    }
+
+    // Parse supplier_id safely - could be integer ID or null
+    const supplierId = supplierIdInput ? parseInt(supplierIdInput, 10) : null;
+    if (supplierId === null || isNaN(supplierId)) {
+      showToast('Supplier tidak valid', false);
       return;
     }
 
@@ -1184,7 +1248,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               tanggal,
-              supplier_id: parseInt(supplierId),
+              supplier_id: supplierId,
               sku: item.sku,
               qty: item.qty
             })
@@ -1390,20 +1454,26 @@
 
   // Export to Excel (CSV)
   function exportExcel() {
+    const headers = ['Tanggal', 'Nama Supplier', 'SKU', 'Qty'];
+    const rows = window.PembelianPage.pembelianList.map(item => [
+      item.tanggal ? item.tanggal.split('T')[0] : '',
+      item.nama_supplier || '',
+      item.sku || '',
+      item.qty || 0
+    ]);
+    
     const csvContent = [
-      ['Tanggal', 'Supplier', 'SKU', 'Nama Produk', 'Qty', 'Harga Beli', 'Nominal'].join(','),
-      ...window.PembelianPage.pembelianList.map(item => [
-        formatDate(item.tanggal),
-        `"${(item.nama_supplier || '').replace(/"/g, '""')}"`,
-        item.sku || '',
-        `"${(item.nama_produk || '').replace(/"/g, '""')}"`,
-        item.qty || 0,
-        parseFloat(item.harga_beli) || 0,
-        parseFloat(item.nominal) || 0
-      ].join(','))
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        // Escape CSV special characters
+        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
+          return `"${cell.replace(/"/g, '""')}"`;
+        }
+        return cell;
+      }).join(','))
     ].join('\n');
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `pembelian_${new Date().toISOString().split('T')[0]}.csv`;

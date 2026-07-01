@@ -476,6 +476,54 @@ async function listSupplier(req, res) {
 // ============================================
 // POST /v1/pembelian/import - Import pembelian from CSV/Excel
 // ============================================
+
+// Helper function to parse and normalize date
+function normalizeDate(value) {
+  if (!value) return null;
+  value = String(value).trim();
+  
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+  
+  // MM/DD/YYYY format
+  const mmddyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const mmddMatch = value.match(mmddyyyy);
+  if (mmddMatch) {
+    const [, month, day, year] = mmddMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // DD/MM/YYYY format
+  const ddmmyyyy = /^(\d{1,2})-(\d{1,2})-(\d{4})$/;
+  const ddmmMatch = value.match(ddmmyyyy);
+  if (ddmmMatch) {
+    const [, day, month, year] = ddmmMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Try native Date parsing
+  const date = new Date(value);
+  if (!isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
+  }
+  
+  return null; // Invalid date
+}
+
+// Validate date format (returns normalized date or null)
+function validateDate(value) {
+  const normalized = normalizeDate(value);
+  if (!normalized) return null;
+  
+  // Verify it's a valid date
+  const date = new Date(normalized);
+  if (isNaN(date.getTime())) return null;
+  
+  return normalized;
+}
+
 async function importPembelian(req, res) {
   try {
     // Parse body - expects { data: [[tanggal, supplier_name, sku, qty], ...] }
@@ -494,8 +542,10 @@ async function importPembelian(req, res) {
       pool.query("SELECT id, nama_supplier FROM supplier")
     ]);
 
-    const validSkuSet = new Set(produkResult.rows.map(r => r.sku));
-    const validSupplierMap = new Map(supplierResult.rows.map(r => [r.nama_supplier.toLowerCase(), r.id]));
+    const validSkuSet = new Set(produkResult.rows.map(r => String(r.sku).trim()));
+    const validSupplierMap = new Map(
+      supplierResult.rows.map(r => [String(r.nama_supplier).trim().toLowerCase(), r.id])
+    );
 
     // Validate all rows first
     const errors = [];
@@ -506,29 +556,35 @@ async function importPembelian(req, res) {
       const rowNum = i + 2; // Excel row (1 = header, data starts at 2)
 
       // Expected: [tanggal, supplier_name, sku, qty]
-      const tanggal = row[0] ? String(row[0]).trim() : "";
+      const tanggalRaw = row[0] ? String(row[0]).trim() : "";
       const supplier_name = row[1] ? String(row[1]).trim() : "";
       const sku = row[2] ? String(row[2]).trim() : "";
-      const qty = row[3] !== undefined ? parseInt(row[3]) : 0;
+      const qtyRaw = row[3];
 
-      // Validation
+      // Validation: tanggal
+      const tanggal = validateDate(tanggalRaw);
       if (!tanggal) {
-        errors.push({ row: rowNum, message: `Tanggal wajib diisi` });
+        errors.push({ row: rowNum, message: `Format tanggal salah. Gunakan: YYYY-MM-DD, MM/DD/YYYY, atau DD-MM-YYYY` });
         continue;
       }
 
+      // Validation: SKU
       if (!sku) {
         errors.push({ row: rowNum, message: `SKU wajib diisi` });
         continue;
       }
 
-      if (qty <= 0) {
-        errors.push({ row: rowNum, message: `Qty harus lebih dari 0` });
+      // Validation: Qty
+      const qty = parseInt(qtyRaw, 10);
+      if (isNaN(qty) || qty <= 0) {
+        errors.push({ row: rowNum, message: `Qty harus angka lebih dari 0` });
         continue;
       }
 
-      // Check SKU exists
-      if (!validSkuSet.has(sku)) {
+      // Check SKU exists (case-insensitive)
+      const skuLower = sku.toLowerCase();
+      const skuExists = Array.from(validSkuSet).some(s => s.toLowerCase() === skuLower);
+      if (!skuExists) {
         errors.push({ row: rowNum, message: `SKU "${sku}" tidak ditemukan di master produk` });
         continue;
       }
@@ -538,16 +594,9 @@ async function importPembelian(req, res) {
       if (supplier_name) {
         supplierId = validSupplierMap.get(supplier_name.toLowerCase());
         if (!supplierId) {
-          errors.push({ row: rowNum, message: `Supplier "${supplier_name}" tidak ditemukan di master supplier` });
+          errors.push({ row: rowNum, message: `Supplier "${supplier_name}" tidak ditemukan` });
           continue;
         }
-      }
-
-      // Validate date format
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(tanggal)) {
-        errors.push({ row: rowNum, message: `Format tanggal salah. Gunakan format: YYYY-MM-DD` });
-        continue;
       }
 
       validRows.push({ tanggal, supplier_id: supplierId, sku, qty });
